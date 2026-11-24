@@ -150,3 +150,4 @@ export const CircleX = StubIcon;
 export const CircleDashed = StubIcon;
 export const ScrollText = StubIcon;
 export const Trees = StubIcon;
+export const LoaderCircle = StubIcon;

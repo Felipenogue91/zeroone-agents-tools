@@ -1,15 +1,15 @@
 //! "Code Forest" tab: the forest of projects (separate repo,
-//! `~/Workspace/projects/code-forest`) opened in its own native window.
+//! `~/Workspace/projects/code-forest`) shown inside the tab as an iframe of the
+//! forest's local server.
 //!
-//! The forest page forbids being framed (`frame-ancestors 'none'`, it guards
-//! the prune button), so it is not an iframe: it is a top-level webview
-//! window of this app pointing at the forest's local server. Nothing of the
-//! forest is bundled here; the tab only shows up when the repo exists.
+//! The forest only lets this app frame it (`frame-ancestors` lists the app's
+//! origins; any other site stays blocked, which guards the prune button).
+//! Nothing of the forest is bundled here; the tab only shows up when the repo
+//! exists.
 
 use serde::Serialize;
 use std::path::PathBuf;
 use std::time::Duration;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const PORT: u16 = 4790;
 
@@ -59,9 +59,9 @@ pub async fn code_forest_status() -> Result<CodeForestStatus, String> {
 }
 
 /// Start the forest server if needed (its own `serve`, detached so it
-/// outlives the app, like `code-forest open` does) and open/focus the window.
+/// outlives the app, like `code-forest open` does). The tab frames it after.
 #[tauri::command]
-pub async fn open_code_forest(app: AppHandle) -> Result<(), String> {
+pub async fn start_code_forest() -> Result<(), String> {
     let dir =
         forest_dir().ok_or("Code Forest não encontrado em ~/Workspace/projects/code-forest")?;
     let up = tauri::async_runtime::spawn_blocking(move || -> Result<bool, String> {
@@ -93,15 +93,5 @@ pub async fn open_code_forest(app: AppHandle) -> Result<(), String> {
             "O servidor do Code Forest não respondeu em 30 s (veja `code-forest status`).".into(),
         );
     }
-    if let Some(w) = app.get_webview_window("code-forest") {
-        let _ = w.unminimize();
-        return w.set_focus().map_err(|e| e.to_string());
-    }
-    let parsed = url().parse().map_err(|e| format!("{}", e))?;
-    WebviewWindowBuilder::new(&app, "code-forest", WebviewUrl::External(parsed))
-        .title("Code Forest")
-        .inner_size(1400.0, 900.0)
-        .build()
-        .map_err(|e| e.to_string())?;
     Ok(())
 }

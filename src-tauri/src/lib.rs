@@ -532,7 +532,7 @@ pub fn run() {
             commands::context::list_context_hooks,
             commands::context::run_context_hook,
             commands::code_forest::code_forest_status,
-            commands::code_forest::open_code_forest,
+            commands::code_forest::start_code_forest,
             commands::containers::list_docker_containers,
             commands::containers::docker_container_action,
             commands::containers::docker_container_logs,

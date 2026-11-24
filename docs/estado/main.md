@@ -1,4 +1,4 @@
-# Estado (atualizado em 2026-11-24 19:55 por claude-code)
+# Estado (atualizado em 2026-11-24 20:00 por claude-code)
 
 ## Fazendo agora
 
@@ -44,6 +44,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Aba Code Forest embutida (2026-11-24 20:00):** a janela separada ficava branca porque o WebKitGTK quebrava no driver NVIDIA 595 (`libnvidia-eglcore`, divide error) ao desenhar WebGL. Conserto: `main.rs` liga `WEBKIT_DISABLE_DMABUF_RENDERER=1` no Linux (testado fora do app: sem ele crasha, com ele roda liso). A floresta agora é um iframe na área da aba; o code-forest libera `frame-ancestors` só pras origens do app (commit no repo code-forest). Verificado: iframe 1056×689, app conectado no servidor 4790, nenhum crash no kernel. Falta o Felipe olhar com os próprios olhos (print do bridge não captura iframe).
 
 - **Aba Contexto, Codex e agy (2026-11-24 19:55, Claude Code):** `services/context_cli.rs`. Codex: lê `~/.codex/sessions/**/rollout-*.jsonl` (prompt do sistema, ferramentas nativas, lista de skills com caminho, AGENTS.md, MCPs adiados só com nome, saída dos hooks, `token_usage_record` medido). agy: lê `~/.gemini/antigravity-cli/conversations/<id>.db` em modo `immutable` (nunca toca o WAL); o último `gen_metadata` traz o pedido inteiro em protobuf (seções do prompt, ferramentas, mensagens com tokens exatos) e cada geração tem o uso medido; leitor de protobuf sem schema embutido; subagentes aparecem como "Subagente: nome". Hooks configurados: Codex `~/.codex/hooks.json` (+ projeto), agy `~/.gemini/config/hooks.json`; "Rodar agora" funciona nos três. Comandos ganharam `cli`. Medido × estimado nas sessões reais: Codex 21,6 × 25,3 mil; agy 14,7 × 15,6 mil e 20,0 × 22,7 mil (zeroone-agents-tools). Verificado: `cargo test` 2153, Vitest 1581, `check` no baseline (11), três abas conferidas no app via tauri-mcp.
 
