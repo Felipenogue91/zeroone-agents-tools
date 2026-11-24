@@ -122,6 +122,33 @@ impl Secrets {
         }
     }
 
+    /// Turn resolved secret values back into `${VAR}` references (used when
+    /// importing an entry from a generated file into the source).
+    pub fn unresolve(&self, v: &Value) -> Value {
+        match v {
+            Value::String(s) => {
+                let mut pairs: Vec<(&String, &String)> = self
+                    .values
+                    .iter()
+                    .filter(|(_, val)| val.len() >= 4)
+                    .collect();
+                pairs.sort_by_key(|(_, val)| std::cmp::Reverse(val.len()));
+                let mut out = s.clone();
+                for (name, val) in pairs {
+                    out = out.replace(val.as_str(), &format!("${{{}}}", name));
+                }
+                Value::String(out)
+            }
+            Value::Array(a) => Value::Array(a.iter().map(|x| self.unresolve(x)).collect()),
+            Value::Object(m) => Value::Object(
+                m.iter()
+                    .map(|(k, x)| (k.clone(), self.unresolve(x)))
+                    .collect(),
+            ),
+            other => other.clone(),
+        }
+    }
+
     /// Hide every known secret value in a text (diff previews, reports).
     pub fn mask(&self, text: &str) -> String {
         let mut vals: Vec<&String> = self.values.values().filter(|v| v.len() >= 4).collect();

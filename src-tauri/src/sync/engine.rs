@@ -48,8 +48,39 @@ pub struct FileChange {
     /// `(repo folder, relative path)` to add to `.git/info/exclude`.
     pub ensure_ignored: Option<(PathBuf, String)>,
     /// `~/.claude.json` is rewritten by Claude Code all the time: apply
-    /// re-reads it and only replaces `mcpServers` with this value.
-    pub claude_user_servers: Option<Map<String, Value>>,
+    /// re-reads it and only applies this patch on the fresh content.
+    pub claude_patch: Option<ClaudePatch>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ClaudePatch {
+    /// Replace the user-scope `mcpServers`.
+    UserServers(Map<String, Value>),
+    /// Remove local-scope entries `projects[project].mcpServers[names]`.
+    RemoveLocal { project: String, names: Vec<String> },
+}
+
+impl ClaudePatch {
+    pub fn apply_to(&self, doc: &mut Value) {
+        let Value::Object(m) = doc else { return };
+        match self {
+            ClaudePatch::UserServers(servers) => {
+                m.insert("mcpServers".into(), Value::Object(servers.clone()));
+            }
+            ClaudePatch::RemoveLocal { project, names } => {
+                if let Some(servers) = m
+                    .get_mut("projects")
+                    .and_then(|p| p.get_mut(project.as_str()))
+                    .and_then(|p| p.get_mut("mcpServers"))
+                    .and_then(|s| s.as_object_mut())
+                {
+                    for n in names {
+                        servers.remove(n);
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -393,7 +424,7 @@ impl<'a> Engine<'a> {
                             .map(|s| s["claude:".len()..].to_string())
                             .collect(),
                         ensure_ignored: None,
-                        claude_user_servers: Some(want_c.clone()),
+                        claude_patch: Some(ClaudePatch::UserServers(want_c.clone())),
                     });
                     changed.extend(diff);
                 }
@@ -454,7 +485,7 @@ impl<'a> Engine<'a> {
                             .map(|s| s["codex:".len()..].to_string())
                             .collect(),
                         ensure_ignored: None,
-                        claude_user_servers: None,
+                        claude_patch: None,
                     });
                     changed.extend(diff);
                 }
@@ -499,7 +530,7 @@ impl<'a> Engine<'a> {
                 mode: Some(0o600),
                 servers: diff.iter().map(|s| s["agy:".len()..].to_string()).collect(),
                 ensure_ignored: None,
-                claude_user_servers: None,
+                claude_patch: None,
             });
             changed.extend(diff);
         }
@@ -610,7 +641,7 @@ impl<'a> Engine<'a> {
                         mode: Some(0o600),
                         servers: changed_names(&cur.unwrap_or_default(), &want, ""),
                         ensure_ignored: after.map(|_| (p.clone(), AGY_PROJECT_REL.to_string())),
-                        claude_user_servers: None,
+                        claude_patch: None,
                     });
                 }
                 changed.push(format!("agy@{}", label));
@@ -684,7 +715,7 @@ impl<'a> Engine<'a> {
                                 .collect(),
                             ensure_ignored: (ignored_mcp && ctext.is_none())
                                 .then(|| (p.clone(), CODEX_PROJECT_REL.to_string())),
-                            claude_user_servers: None,
+                            claude_patch: None,
                         });
                         changed.extend(diff);
                     }
@@ -882,7 +913,7 @@ pub fn apply(changes: &[FileChange], backup_root: &Path) -> anyhow::Result<Apply
 
     for (i, ch) in changes.iter().enumerate() {
         let current = read_text(&ch.path);
-        let after: Option<String> = if let Some(servers) = &ch.claude_user_servers {
+        let after: Option<String> = if let Some(patch) = &ch.claude_patch {
             let mut doc = match current.as_deref() {
                 Some(t) => match serde_json::from_str::<Value>(t) {
                     Ok(d) => d,
@@ -896,9 +927,7 @@ pub fn apply(changes: &[FileChange], backup_root: &Path) -> anyhow::Result<Apply
                 },
                 None => Value::Object(Map::new()),
             };
-            if let Value::Object(m) = &mut doc {
-                m.insert("mcpServers".into(), Value::Object(servers.clone()));
-            }
+            patch.apply_to(&mut doc);
             Some(pretty(&doc))
         } else {
             if current != ch.before {

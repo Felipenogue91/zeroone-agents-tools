@@ -175,7 +175,7 @@ pub fn plan_agy_skill(
         mode: None,
         servers: vec![name.to_string()],
         ensure_ignored: None,
-        claude_user_servers: None,
+        claude_patch: None,
     })
 }
 
@@ -218,7 +218,7 @@ pub fn plan_agy_reads_shared(home: &Path, agents: &AgentsHome) -> Option<FileCha
         mode: None,
         servers: vec![],
         ensure_ignored: None,
-        claude_user_servers: None,
+        claude_patch: None,
     })
 }
 

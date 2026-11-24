@@ -1,12 +1,12 @@
-# Estado (atualizado em 2026-11-24 20:30 por claude-code)
+# Estado (atualizado em 2026-11-24 21:05 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0, 1 e 2 concluídas.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 3 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
 
 ## Próximo passo exato
 
-- Fase 3 (watcher + saúde): crate `notify` nos arquivos de config, comando de saúde com divergências por CLI (no arquivo e não na fonte / na fonte e não no arquivo) e ações importar/reaplicar.
+- Fase 4 (projetos): várias CLIs por projeto (sem `editor_type` único), salvar direto na fonte (`.mcp.json` / `disabledMcpjsonServers`) + aplicar com desfazer, herança global visível, worktrees, adicionar projeto ao `sync.json`.
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
@@ -18,6 +18,13 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases 
 
 ## Feito e verificado
 
+- **Fase 3 sync multi-CLI (2026-11-24, Claude Code):**
+  - `src-tauri/src/sync/watcher.rs`: watcher (`notify` 6) nas pastas de config (não recursivo, filtrado por nome, debounce 600 ms); no app emite `sync-changed`, atualiza o índice de ocorrências e se reinicia quando o `sync.json` muda.
+  - `src-tauri/src/sync/health.rs`: divergências `OnlyInCli`, `MissingInCli`, `Drift`, `ClaudeLocalScope`, `AgySkillsFolder`, cada uma com ações (`Import`, `Reapply`, `RemoveLocalCopy`, `FixAgySkills`). Importar converte Codex/agy → formato Claude e devolve valor resolvido para `${VAR}`.
+  - `src-tauri/src/sync/jsonedit.rs`: edição cirúrgica de `mcpServers` no estilo do arquivo (híbrido do `global.json` ou pretty do `.mcp.json`); ida e volta byte a byte conferida nos 7 arquivos-fonte reais (teste ignorado `real_sources_roundtrip`).
+  - Comandos: `get_sync_health`, `health_action_preview`, `health_action_apply`. Terminal: `--sync-health [--json]`.
+  - Máquina real (só leitura): 66 recursos, 34 divergências, coerentes com o `mcp-sync --check`.
+  - Verificação: `cargo test` 2105/2105 (+2 ignorados manuais), Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes.
 - **Fase 2 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/sync/engine.rs`: porta Rust do `mcp-sync` (`read → plan → diff → apply`): Claude user scope (patch só de `mcpServers` no `~/.claude.json`, relido na hora de gravar), Codex global (preserva `codexGlobalKeep`, extras e o resto do TOML) e projeto (só `${VAR}`, vai pro git), agy global e por pasta/worktree (valor resolvido, 0600, `info/exclude`). `pluginProvided`, `overrides`, `disabledMcpjsonServers`, avisos de escopo local do Claude.
   - `apply` com backup por conjunto (`<data>/com.zeroone.agents-tools/sync-backups/<id>`, 0700, últimos 30), pula arquivo que mudou desde a prévia e `undo` restaura. Diff unificado com segredos mascarados (`secrets.rs`).

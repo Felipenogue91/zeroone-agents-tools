@@ -70,6 +70,9 @@ regex = "1"
 
 # Unified diffs for sync previews
 similar = "2"
+
+# File watcher for config changes
+notify = "6"
 tar = "0.4"
 
 # TOML parsing for Codex CLI config

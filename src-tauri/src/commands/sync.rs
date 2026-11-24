@@ -269,15 +269,185 @@ pub fn run_external_sync_check() -> Result<Option<serde_json::Value>, String> {
         .map_err(|e| e.to_string())
 }
 
+// ------------------------------------------------------------------ health
+
+/// Divergences between the source and every CLI file, plus the engine
+/// report. Read-only.
+#[tauri::command]
+pub fn get_sync_health(
+    db: State<'_, Arc<Mutex<Database>>>,
+) -> Result<crate::sync::health::Health, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let projects = {
+        let db = db.lock().map_err(|e| e.to_string())?;
+        known_projects(&db, &snap)
+    };
+    let occ = occurrences::collect(&home, &projects);
+    if let Ok(db) = db.lock() {
+        let _ = db.replace_occurrences(&occ);
+    }
+    let eng = Engine::new(&snap);
+    let plan = eng.plan(None);
+    let mut health = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+    for d in &mut health.divergences {
+        d.message = eng.secrets.mask(&d.message);
+    }
+    for r in &mut health.report {
+        r.summary = eng.secrets.mask(&r.summary);
+        r.detail = r.detail.as_ref().map(|d| eng.secrets.mask(d));
+    }
+    Ok(health)
+}
+
+fn parse_scope(project: Option<String>) -> crate::sync::model::Scope {
+    match project {
+        Some(path) => crate::sync::model::Scope::Project { path },
+        None => crate::sync::model::Scope::Global,
+    }
+}
+
+/// Preview of a health action (masked diff), nothing written.
+#[tauri::command]
+pub fn health_action_preview(
+    action: crate::sync::health::HealthAction,
+    cli: Cli,
+    project: Option<String>,
+    name: String,
+    file_path: String,
+) -> Result<Vec<ChangeView>, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let eng = Engine::new(&snap);
+    let changes = health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
+    Ok(changes.iter().map(|c| change_view(&eng, c)).collect())
+}
+
+/// Run a health action (with backup; undo through `sync_undo`).
+#[tauri::command]
+pub fn health_action_apply(
+    db: State<'_, Arc<Mutex<Database>>>,
+    action: crate::sync::health::HealthAction,
+    cli: Cli,
+    project: Option<String>,
+    name: String,
+    file_path: String,
+) -> Result<ApplyOutcome, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let eng = Engine::new(&snap);
+    let changes = health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
+    let out = engine::apply(&changes, &backup_root()?).map_err(|e| e.to_string())?;
+    if let Ok(db) = db.lock() {
+        let _ = refresh_occurrences_in_db(&db);
+    }
+    Ok(out)
+}
+
+fn health_changes(
+    snap: &SourceSnapshot,
+    eng: &Engine,
+    action: crate::sync::health::HealthAction,
+    cli: Cli,
+    project: Option<String>,
+    name: &str,
+    file_path: &str,
+) -> Result<Vec<FileChange>, String> {
+    use crate::sync::health::{self, HealthAction};
+    match action {
+        HealthAction::Import => {
+            let scope = parse_scope(project);
+            Ok(vec![health::plan_import(
+                snap,
+                &eng.secrets,
+                cli,
+                &scope,
+                std::path::Path::new(file_path),
+                name,
+            )?])
+        }
+        HealthAction::Reapply => {
+            let plan = eng.plan(project.as_deref().map(std::path::Path::new));
+            Ok(plan.changes.into_iter().filter(|c| c.cli == cli).collect())
+        }
+        HealthAction::RemoveLocalCopy => {
+            let project = project.ok_or("RemoveLocalCopy precisa do projeto")?;
+            Ok(
+                health::plan_remove_local(snap, &project, &[name.to_string()])
+                    .into_iter()
+                    .collect(),
+            )
+        }
+        HealthAction::FixAgySkills => Ok(crate::sync::skills::plan_agy_reads_shared(
+            &snap.home,
+            &snap.agents,
+        )
+        .into_iter()
+        .collect()),
+    }
+}
+
+// ------------------------------------------------------------------ watcher
+
+pub struct WatcherState(pub Mutex<Option<crate::sync::watcher::ConfigWatcher>>);
+
+/// (Re)start the config watcher. Emits `sync-changed` with the changed
+/// paths; restarts itself when `sync.json` changes (project list).
+pub fn start_config_watcher(app: &tauri::AppHandle) {
+    use tauri::{Emitter, Manager};
+    let Ok(home) = home_dir() else { return };
+    let projects = {
+        let snap = SourceSnapshot::load(&home);
+        let db = app.state::<Arc<Mutex<Database>>>();
+        let guard = db.lock();
+        match guard {
+            Ok(db) => known_projects(&db, &snap),
+            Err(_) => snap.projects.iter().map(|p| p.path.clone()).collect(),
+        }
+    };
+    let spec = crate::sync::watcher::watch_spec(&home, &projects);
+    let handle = app.clone();
+    let started =
+        crate::sync::watcher::start(spec, std::time::Duration::from_millis(600), move |paths| {
+            let db = handle.state::<Arc<Mutex<Database>>>();
+            if let Ok(db) = db.lock() {
+                let _ = refresh_occurrences_in_db(&db);
+            }
+            let list: Vec<String> = paths
+                .iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+            let _ = handle.emit("sync-changed", &list);
+            if paths.iter().any(|p| p.ends_with("sync.json")) {
+                let h = handle.clone();
+                std::thread::spawn(move || start_config_watcher(&h));
+            }
+        });
+    match started {
+        Ok(w) => {
+            if let Some(state) = app.try_state::<WatcherState>() {
+                if let Ok(mut slot) = state.0.lock() {
+                    *slot = Some(w);
+                }
+            }
+        }
+        Err(e) => log::warn!("[watcher] não iniciou: {}", e),
+    }
+}
+
 // ------------------------------------------------------------------ CLI
 
 /// Terminal entry points (no window):
 /// - `--sync-here`: session hook, updates the agy file of the current folder;
 /// - `--sync-check [--json]`: report only;
-/// - `--sync-apply`: apply everything (with backup).
+/// - `--sync-apply`: apply everything (with backup);
+/// - `--sync-health [--json]`: divergences per CLI (read-only).
 pub fn run_cli(args: &[String]) -> Option<i32> {
     let first = args.first()?.as_str();
-    if !matches!(first, "--sync-here" | "--sync-check" | "--sync-apply") {
+    if !matches!(
+        first,
+        "--sync-here" | "--sync-check" | "--sync-apply" | "--sync-health"
+    ) {
         return None;
     }
     let home = match home_dir() {
@@ -298,6 +468,38 @@ pub fn run_cli(args: &[String]) -> Option<i32> {
                 match backup_root().and_then(|r| engine::apply(&plan.changes, &r).map_err(|e| e.to_string())) {
                     Ok(_) => println!("zeroone-agents-tools: MCPs do projeto atualizados pro agy (vale na próxima sessão do agy)."),
                     Err(e) => eprintln!("zeroone-agents-tools: {}", e),
+                }
+            }
+            Some(0)
+        }
+        "--sync-health" => {
+            let projects: Vec<PathBuf> = snap.projects.iter().map(|p| p.path.clone()).collect();
+            let occ = occurrences::collect(&home, &projects);
+            let plan = eng.plan(None);
+            let h = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+            if args.iter().any(|a| a == "--json") {
+                println!(
+                    "{}",
+                    eng.secrets
+                        .mask(&serde_json::to_string(&h).unwrap_or_default())
+                );
+            } else {
+                println!(
+                    "{} recursos · {}",
+                    h.resources,
+                    if h.in_sync {
+                        "tudo sincronizado".to_string()
+                    } else {
+                        format!("{} divergências", h.divergences.len())
+                    }
+                );
+                for d in &h.divergences {
+                    println!(
+                        "  [{:?}] {}  → {:?}",
+                        d.kind,
+                        eng.secrets.mask(&d.message),
+                        d.actions
+                    );
                 }
             }
             Some(0)

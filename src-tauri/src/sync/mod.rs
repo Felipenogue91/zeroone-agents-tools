@@ -6,8 +6,11 @@
 
 pub mod codex;
 pub mod engine;
+pub mod health;
+pub mod jsonedit;
 pub mod model;
 pub mod occurrences;
 pub mod secrets;
 pub mod skills;
 pub mod source;
+pub mod watcher;

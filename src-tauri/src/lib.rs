@@ -105,6 +105,10 @@ pub fn run() {
             let gateway_state = Arc::new(GatewayServerState::with_config(gateway_config.clone(), database_arc.clone()));
             app.manage(gateway_state.clone());
 
+            // Watch every config file of the multi-CLI sync
+            app.manage(commands::sync::WatcherState(Mutex::new(None)));
+            commands::sync::start_config_watcher(app.handle());
+
             // Run startup scan
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -247,6 +251,9 @@ pub fn run() {
             commands::sync::list_sync_backups,
             commands::sync::set_skill_target,
             commands::sync::run_external_sync_check,
+            commands::sync::get_sync_health,
+            commands::sync::health_action_preview,
+            commands::sync::health_action_apply,
             commands::config::get_claude_paths,
             commands::config::open_config_file,
             commands::config::backup_configs,
