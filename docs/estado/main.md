@@ -1,8 +1,10 @@
-# Estado (atualizado em 2026-11-24 18:20 por claude-code)
+# Estado (atualizado em 2026-11-24 18:50 por claude-code)
 
 ## Fazendo agora
 
-Frente **UI que organiza de verdade**: itens 1–11 feitos e commitados (sem push). Aguardando o Felipe conferir no `npm run tauri dev`.
+Frente **aba Contexto**: parte do **Claude Code feita** (commits `4fd9e7b` e seguinte, sem push). Aguardando o Felipe conferir em `/context` no `npm run tauri dev`. Codex e agy aparecem como "em breve".
+
+Frente anterior **UI que organiza de verdade**: itens 1–11 feitos e commitados (sem push).
 
 Histórico da frente: (Felipe testou a fase 7 e reprovou: mostra sem deixar ajustar). Varredura feita em 2026-11-24 17:10 no app rodando (`npm run tauri dev`, tauri-mcp). Problemas achados:
 
@@ -22,13 +24,9 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- **Próxima frente (Felipe pediu em 2026-11-24, esperando o ok para começar): aba "Contexto"**. Escolhe CLI + projeto e mostra, com arquivo de origem e tokens estimados (caracteres/4):
-  1. *Entra sempre no começo da sessão*: instruções (`~/.claude/CLAUDE.md` + `CLAUDE.md` do projeto com `@imports`; `AGENTS.md` do Codex; equivalente do agy), nome+descrição de cada skill ligada, definições de ferramentas de cada MCP ligado (perguntar `tools/list` ao servidor), saída dos hooks `SessionStart`.
-  2. *A cada mensagem*: hooks `UserPromptSubmit` e equivalentes do Codex/agy.
-  3. *Só quando usa*: corpo das skills, subagentes, comandos.
-  - Número medido: tokens de entrada da 1ª resposta nas sessões do Claude (`~/.claude/projects/*/*.jsonl`, campo `usage`); Codex se o histórico tiver.
-  - Hook só roda com clique (pode ter efeito colateral); por padrão mostra o comando.
-  - Começar pelo Claude (dá pra medir), depois Codex e agy. Referência: os hooks SessionStart do Felipe injetam ~10 KB por sessão.
+- **Aba Contexto, etapa 2: Codex e agy.** Ver o que o histórico de sessão de cada um grava (Codex: `~/.codex/sessions/**/rollout-*.jsonl`; agy: a descobrir). Onde não houver log com o que foi carregado, montar pela config (instruções `AGENTS.md`, skills ligadas, MCPs ligados) e estimar.
+- Decisão tomada na etapa 1: em vez de reconstruir pela config e perguntar `tools/list` aos MCPs, a aba lê o log da sessão do Claude, que já registra cada pedaço injetado (`instructions`, `skill_listing`, `mcp_instructions_delta`, `deferred_tools_delta`, `agent_listing_delta`, `hook_success`, `api-request-shape`). O número medido é o `usage` da 1ª resposta. O Claude Code lista só o **nome** das ferramentas MCP (as definições entram sob demanda), então `tools/list` não foi preciso.
+- Achados para o Felipe: na sessão medida (65,3 mil tokens), ~47% é fixo do Claude Code (a ferramenta Artifact sozinha ~9 mil); skills 7,5 mil; MCPs 9,5 mil (Higgsfield sozinho: 205 ferramentas e ~3,4 mil); hooks de início só 1,4 mil porque o Claude corta a saída do `onde-estamos.sh` (10,4 KB) para um trecho.
 
 - Felipe confere as telas. Push da `main` e empacotar Linux + Windows só com ok dele.
 - Em aberto dele: embutir a floresta dentro da janela principal exigiria liberar `frame-ancestors` no code-forest só para a origem do app.
@@ -36,8 +34,6 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
-
-- **Bug visto no `tauri dev`:** "Failed to load global rules: ambiguous column name: created_at" (query de regras globais). Não corrigido ainda.
 
 - **Aplicar na máquina real:** nada foi aplicado nas configs do Felipe. `zeroone-agents-tools --sync-health` mostra 34 divergências reais (inclui `claude-code-tool-manager` no agy e cópias antigas no escopo local do Claude); revisar e aplicar pela tela Início só com aprovação.
 - **Hook de sessão:** trocar `mcp-sync --here` por `zeroone-agents-tools --sync-here` (mesma saída, entende `cliOff`) ou manter o script — ver `docs/sync-cliOff.md`.
@@ -49,6 +45,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Aba Contexto, Claude Code (2026-11-24 18:50, Claude Code):** backend `services/context_inspector.rs` (parser do log, lista de pastas onde o Claude foi usado, sessões) e `services/context_config.rs` (hooks configurados de settings global/projeto/local + plugins ativos; rodar hook por id com stdin de hook, timeout que mata o grupo de processos; corpo das skills/subagentes). Comandos `list_context_folders`, `list_context_sessions`, `get_session_context`, `list_context_hooks`, `run_context_hook`. Tela `/context` (menu "Contexto"): seletor de CLI/pasta/sessão, medido × estimado × diferença, barra por grupo, grupos que abrem com origem e tokens por item, "Durante a sessão", "Hooks configurados" (apareceu ou não no log, "Rodar agora" com confirmação) e "Só quando usa". Verificado: `cargo test` 2148 ok, Vitest 85/1581, `npm run check` no baseline (11), tela conferida no app via tauri-mcp e "Rodar agora" testado com o `onde-estamos.sh`.
 
 - **Verificação final (2026-11-24 18:20):** `cargo test` 2136/2136 (+2 ignorados), Vitest 85 arquivos / 1581 testes, `npm run check` no baseline (11 erros antigos), e2e Playwright 46/46 (rodado com o headless shell 1255 já instalado, porque o Playwright 1.58 do projeto não baixa navegador no Ubuntu 26.04).
 

@@ -526,6 +526,7 @@ pub fn run() {
             commands::sessions::get_project_sessions,
             commands::sessions::get_session_detail,
             // Container Commands
+            commands::context::list_context_folders,
             commands::context::list_context_sessions,
             commands::context::get_session_context,
             commands::context::list_context_hooks,

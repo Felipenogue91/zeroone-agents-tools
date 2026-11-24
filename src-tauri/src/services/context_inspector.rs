@@ -215,6 +215,85 @@ impl SessionContext {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContextFolder {
+    pub path: String,
+    pub sessions: usize,
+    pub last_used: Option<String>,
+    /// The folder still exists on disk.
+    pub exists: bool,
+}
+
+/// `cwd` recorded at the head of a session log.
+fn session_cwd(path: &Path) -> Option<String> {
+    let file = File::open(path).ok()?;
+    BufReader::new(file)
+        .lines()
+        .take(300)
+        .map_while(Result::ok)
+        .find_map(|l| {
+            serde_json::from_str::<Value>(&l)
+                .ok()?
+                .get("cwd")?
+                .as_str()
+                .map(String::from)
+        })
+}
+
+/// Folders where Claude Code has sessions, most recently used first. The
+/// folder name under `~/.claude/projects` is lossy, so the real path comes
+/// from the newest log.
+pub fn list_folders(home: &Path, limit: usize) -> Vec<ContextFolder> {
+    let Ok(entries) = std::fs::read_dir(claude_projects_dir(home)) else {
+        return Vec::new();
+    };
+    let mut out: Vec<(std::time::SystemTime, ContextFolder)> = Vec::new();
+    for dir in entries
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+    {
+        let Ok(files) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        let mut logs: Vec<(std::time::SystemTime, PathBuf)> = files
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("jsonl"))
+            .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
+            .collect();
+        if logs.is_empty() {
+            continue;
+        }
+        logs.sort_by(|a, b| b.0.cmp(&a.0));
+        let Some(cwd) = logs.iter().take(3).find_map(|(_, p)| session_cwd(p)) else {
+            continue;
+        };
+        // Logs of another folder that happens to share the slug are skipped.
+        if claude_project_slug(Path::new(&cwd))
+            != dir
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default()
+        {
+            continue;
+        }
+        let newest = logs[0].0;
+        out.push((
+            newest,
+            ContextFolder {
+                exists: Path::new(&cwd).is_dir(),
+                path: cwd,
+                sessions: logs.len(),
+                last_used: Some(chrono::DateTime::<chrono::Utc>::from(newest).to_rfc3339()),
+            },
+        ));
+    }
+    out.sort_by(|a, b| b.0.cmp(&a.0));
+    out.into_iter().map(|(_, f)| f).take(limit).collect()
+}
+
 pub fn session_file(home: &Path, cwd: &Path, session_id: &str) -> Option<PathBuf> {
     // The id comes from the UI: keep it a plain file name.
     if session_id.is_empty()
@@ -1075,5 +1154,24 @@ mod tests {
         assert_eq!(list[0].title.as_deref(), Some("Nova"));
         assert_eq!(list[1].title.as_deref(), Some("primeira"));
         assert!(session_file(home, cwd, "new").is_some());
+
+        let other = Path::new("/proj/b");
+        let dir_b = claude_projects_dir(home).join(claude_project_slug(other));
+        std::fs::create_dir_all(&dir_b).unwrap();
+        std::fs::write(
+            dir_b.join("s.jsonl"),
+            "{\"type\":\"user\",\"cwd\":\"/proj/b\"}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("new.jsonl"),
+            "{\"type\":\"user\",\"cwd\":\"/proj/a\"}\n",
+        )
+        .unwrap();
+        let folders = list_folders(home, 10);
+        assert_eq!(folders.len(), 2);
+        assert_eq!(folders[0].path, "/proj/a");
+        assert_eq!(folders[0].sessions, 2);
+        assert!(!folders[0].exists);
     }
 }

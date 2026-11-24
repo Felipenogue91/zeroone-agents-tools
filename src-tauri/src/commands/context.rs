@@ -2,7 +2,7 @@
 //! Claude Code first (read from its session logs); Codex and agy come later.
 
 use crate::services::context_config::{self, ConfiguredHook, HookRun};
-use crate::services::context_inspector::{self, SessionContext, SessionRef};
+use crate::services::context_inspector::{self, ContextFolder, SessionContext, SessionRef};
 use std::path::{Path, PathBuf};
 
 fn home() -> Result<PathBuf, String> {
@@ -17,6 +17,14 @@ fn folder(project_path: Option<String>, home: &Path) -> PathBuf {
         .filter(|p| !p.trim().is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| home.to_path_buf())
+}
+
+/// Folders where Claude Code was used, most recent first.
+#[tauri::command]
+pub async fn list_context_folders() -> Result<Vec<ContextFolder>, String> {
+    tauri::async_runtime::spawn_blocking(move || Ok(context_inspector::list_folders(&home()?, 150)))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { House, FolderOpen, Library, TerminalSquare, Settings, ChevronRight, Container, PanelBottom, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Layers, FileText, Shield, Store, PanelLeftClose, PanelLeftOpen, Plug , Trees } from 'lucide-svelte';
+	import { House, FolderOpen, Library, TerminalSquare, Settings, ChevronRight, Container, PanelBottom, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Layers, FileText, Shield, Store, PanelLeftClose, PanelLeftOpen, Plug , Trees, Gauge } from 'lucide-svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { getVersion } from '@tauri-apps/api/app';
 	import TodayUsageWidget from './TodayUsageWidget.svelte';
@@ -88,6 +88,7 @@
 		{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen },
 		{ href: '/library', label: i18n.t('nav.library'), icon: Library, match: libraryPaths },
 		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare },
+		{ href: '/context', label: i18n.t('nav.context'), icon: Gauge },
 		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container },
 		...(forestInstalled ? [{ href: '/code-forest', label: 'Code Forest', icon: Trees }] : [])
 	]);
