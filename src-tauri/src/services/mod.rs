@@ -5,6 +5,7 @@ pub mod codex_config;
 pub mod command_writer;
 pub mod config_parser;
 pub mod config_writer;
+pub mod context_cli;
 pub mod context_config;
 pub mod context_inspector;
 pub mod copilot_config;

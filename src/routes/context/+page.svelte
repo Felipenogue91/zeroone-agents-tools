@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { ChevronDown, RefreshCcw, Play, TriangleAlert, CircleCheck, CircleDashed, FolderOpen, Info } from 'lucide-svelte';
+	import { ChevronDown, RefreshCcw, Play, TriangleAlert, CircleCheck, CircleDashed, FolderOpen } from 'lucide-svelte';
 	import { Header } from '$lib/components/layout';
 	import { i18n } from '$lib/i18n';
 
@@ -16,10 +16,11 @@
 	type Group = { key: string; title: string; hint: string; items: Item[]; chars: number; tokens: number };
 	type Measured = { inputTokens: number; cacheCreationTokens: number; cacheReadTokens: number; total: number };
 	type SessionContext = {
+		cli: string;
 		sessionId: string;
 		cwd: string | null;
 		startedAt: string | null;
-		claudeVersion: string | null;
+		cliVersion: string | null;
 		model: string | null;
 		title: string | null;
 		measured: Measured | null;
@@ -68,14 +69,16 @@
 	};
 
 	const CLIS = [
-		{ key: 'claude', label: 'Claude Code', ready: true },
-		{ key: 'codex', label: 'Codex', ready: false },
-		{ key: 'agy', label: 'agy', ready: false }
+		{ key: 'claude', label: 'Claude Code', cmd: 'claude' },
+		{ key: 'codex', label: 'Codex', cmd: 'codex' },
+		{ key: 'agy', label: 'agy', cmd: 'agy' }
 	] as const;
+	type Cli = (typeof CLIS)[number]['key'];
 
 	// One color per startup group, always paired with the name and number.
 	const COLORS: Record<string, string> = {
 		claude: 'bg-gray-400 dark:bg-gray-500',
+		base: 'bg-gray-400 dark:bg-gray-500',
 		instructions: 'bg-blue-500',
 		skills: 'bg-emerald-500',
 		mcpInstructions: 'bg-violet-500',
@@ -85,7 +88,8 @@
 		session: 'bg-rose-400'
 	};
 
-	let cli = $state<'claude' | 'codex' | 'agy'>('claude');
+	let cli = $state<Cli>('claude');
+	const cliInfo = $derived(CLIS.find((c) => c.key === cli) ?? CLIS[0]);
 	let folders = $state<Folder[]>([]);
 	let folder = $state<string>(''); // '' = home folder
 	let folderFilter = $state('');
@@ -143,14 +147,14 @@
 
 	async function loadFolders() {
 		try {
-			folders = await invoke<Folder[]>('list_context_folders');
+			folders = await invoke<Folder[]>('list_context_folders', { cli });
 		} catch (e) {
 			error = String(e);
 		}
 	}
 
 	async function loadSessions() {
-		sessions = await invoke<SessionRef[]>('list_context_sessions', { projectPath: projectArg() });
+		sessions = await invoke<SessionRef[]>('list_context_sessions', { projectPath: projectArg(), cli });
 	}
 
 	async function loadContext() {
@@ -160,9 +164,10 @@
 			const [c, h] = await Promise.all([
 				invoke<SessionContext | null>('get_session_context', {
 					projectPath: projectArg(),
-					sessionId: sessionId || null
+					sessionId: sessionId || null,
+					cli
 				}),
-				invoke<Hook[]>('list_context_hooks', { projectPath: projectArg() })
+				invoke<Hook[]>('list_context_hooks', { projectPath: projectArg(), cli })
 			]);
 			ctx = c;
 			hooks = h;
@@ -200,7 +205,7 @@
 		confirmHook = null;
 		runningHook = id;
 		try {
-			runs[id] = await invoke<HookRun>('run_context_hook', { projectPath: projectArg(), hookId: id });
+			runs[id] = await invoke<HookRun>('run_context_hook', { projectPath: projectArg(), hookId: id, cli });
 		} catch (e) {
 			runs[id] = String(e);
 		} finally {
@@ -222,13 +227,29 @@
 	const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 	const maxTokens = (g: Group) => Math.max(1, ...g.items.map((i) => i.tokens));
 
-	onMount(async () => {
+	/** Folders, sessions and context of the chosen CLI, starting on its most recently used folder. */
+	async function start() {
+		error = null;
+		ctx = null;
+		hooks = [];
+		sessions = [];
+		sessionId = '';
+		runs = {};
+		confirmHook = null;
 		await loadFolders();
-		// start on the most recently used folder
 		folder = folders[0]?.path ?? '';
 		await loadSessions().catch((e) => (error = String(e)));
 		await loadContext();
-	});
+	}
+
+	async function pickCli(key: Cli) {
+		if (key === cli) return;
+		cli = key;
+		folderFilter = '';
+		await start();
+	}
+
+	onMount(start);
 </script>
 
 <Header title={i18n.t('nav.context')} subtitle={i18n.t('context.subtitle')} />
@@ -243,10 +264,10 @@
 						role="tab"
 						aria-selected={cli === c.key}
 						class="btn {cli === c.key ? 'btn-primary' : 'btn-secondary'}"
-						onclick={() => (cli = c.key)}
+						onclick={() => pickCli(c.key)}
+						disabled={loading}
 					>
 						{c.label}
-						{#if !c.ready}<span class="ml-1.5 text-[11px] opacity-75">({i18n.t('context.soon')})</span>{/if}
 					</button>
 				{/each}
 				<span class="flex-1"></span>
@@ -255,8 +276,7 @@
 				</button>
 			</div>
 
-			{#if cli === 'claude'}
-				<div class="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-3">
+			<div class="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-3">
 					<div class="space-y-1">
 						<label class="text-meta" for="ctx-folder">{i18n.t('context.folder')}</label>
 						<input class="input input-sm" type="search" placeholder={i18n.t('context.filter')} bind:value={folderFilter} aria-label={i18n.t('context.filter')} />
@@ -277,17 +297,13 @@
 						</select>
 						{#if ctx}
 							<p class="text-meta">
-								{[ctx.title, ctx.model, ctx.claudeVersion ? `Claude Code ${ctx.claudeVersion}` : null].filter(Boolean).join(' · ')}
+								{[ctx.title, ctx.model, ctx.cliVersion ? `${cliInfo.label} ${ctx.cliVersion}` : null].filter(Boolean).join(' · ')}
 							</p>
 						{/if}
 					</div>
 				</div>
-			{:else}
-				<p class="text-body flex items-center gap-1.5"><Info class="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />{i18n.t('context.soonBody')}</p>
-			{/if}
 		</section>
 
-		{#if cli === 'claude'}
 			{#if error}
 				<div class="card border-red-300 dark:border-red-800 text-body text-red-700 dark:text-red-300" role="alert">
 					<p class="font-medium">{i18n.t('context.loadFailed')}</p>
@@ -296,7 +312,7 @@
 			{:else if loading && !ctx}
 				<div class="card text-body" aria-busy="true">{i18n.t('context.loading')}</div>
 			{:else if !ctx}
-				<div class="card text-body flex items-center gap-2"><FolderOpen class="w-4 h-4 text-gray-400" aria-hidden="true" />{i18n.t('context.noSessions')}</div>
+				<div class="card text-body flex items-center gap-2"><FolderOpen class="w-4 h-4 text-gray-400" aria-hidden="true" />{i18n.t('context.noSessions', { cli: cliInfo.label, cmd: cliInfo.cmd })}</div>
 			{:else}
 				{#each ctx.warnings as w (w)}
 					<p class="card text-body text-amber-700 dark:text-amber-300 flex items-start gap-2"><TriangleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{w}</p>
@@ -459,7 +475,9 @@
 										{@const run = runs[h.id]}
 										<li class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 space-y-1.5">
 											<div class="flex items-start gap-2 flex-wrap">
-												{#if seenCommands.has(h.command)}
+												{#if cli !== 'claude'}
+													<!-- Codex and agy don't record which hook printed what -->
+												{:else if seenCommands.has(h.command)}
 													<CircleCheck class="w-4 h-4 mt-0.5 text-emerald-500 shrink-0" aria-label={i18n.t('context.hookSeen')} />
 												{:else}
 													<CircleDashed class="w-4 h-4 mt-0.5 text-gray-400 shrink-0" aria-label={i18n.t('context.hookSilent')} />
@@ -469,7 +487,7 @@
 														{h.label}
 														{#if h.matcher}<span class="chip border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 ml-1">{h.matcher}</span>{/if}
 													</p>
-													<p class="text-meta">{h.origin} · {seenCommands.has(h.command) ? i18n.t('context.hookSeen') : i18n.t('context.hookSilent')}</p>
+													<p class="text-meta">{h.origin}{#if cli === 'claude'} · {seenCommands.has(h.command) ? i18n.t('context.hookSeen') : i18n.t('context.hookSilent')}{/if}</p>
 													<p class="font-mono text-[11px] text-gray-500 dark:text-gray-400 break-all">{h.command}</p>
 												</div>
 												{#if confirmHook === h.id}
@@ -494,7 +512,7 @@
 														? i18n.t('context.runTimeout')
 														: i18n.t('context.runResult', { tokens: fmt(run.injectedTokens), code: run.exitCode ?? '?', ms: run.elapsedMs })}
 												</p>
-												{#if run.injectedChars > 10000}
+												{#if cli === 'claude' && run.injectedChars > 10000}
 													<p class="text-meta text-amber-700 dark:text-amber-300">{i18n.t('context.runCut')}</p>
 												{/if}
 												{#if run.preview || run.stderr}
@@ -524,7 +542,6 @@
 					</section>
 				{/if}
 			{/if}
-		{/if}
 	</div>
 </div>
 

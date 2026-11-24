@@ -60,7 +60,7 @@ pub struct ContextItem {
 }
 
 impl ContextItem {
-    fn new(label: impl Into<String>, source: Option<String>, chars: usize) -> Self {
+    pub(crate) fn new(label: impl Into<String>, source: Option<String>, chars: usize) -> Self {
         ContextItem {
             label: label.into(),
             source,
@@ -70,7 +70,7 @@ impl ContextItem {
             count: None,
         }
     }
-    fn note(mut self, note: impl Into<String>) -> Self {
+    pub(crate) fn note(mut self, note: impl Into<String>) -> Self {
         self.note = Some(note.into());
         self
     }
@@ -88,7 +88,7 @@ pub struct ContextGroup {
 }
 
 impl ContextGroup {
-    fn new(key: &str, title: &str, hint: &str, mut items: Vec<ContextItem>) -> Self {
+    pub(crate) fn new(key: &str, title: &str, hint: &str, mut items: Vec<ContextItem>) -> Self {
         items.sort_by(|a, b| b.chars.cmp(&a.chars));
         let chars = items.iter().map(|i| i.chars).sum();
         ContextGroup {
@@ -115,11 +115,13 @@ pub struct MeasuredUsage {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionContext {
+    /// `claude`, `codex` or `agy`.
+    pub cli: String,
     pub session_id: String,
     pub file: String,
     pub cwd: Option<String>,
     pub started_at: Option<String>,
-    pub claude_version: Option<String>,
+    pub cli_version: Option<String>,
     pub model: Option<String>,
     pub title: Option<String>,
     /// Token usage of the first reply (the real number).
@@ -385,7 +387,7 @@ fn str_list(v: &Value, key: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn human_kb(chars: usize) -> String {
+pub(crate) fn human_kb(chars: usize) -> String {
     format!("{:.1} KB", chars as f64 / 1024.0)
 }
 
@@ -512,7 +514,7 @@ fn text_size_of(v: &Value) -> usize {
 // ─── Message by message ─────────────────────────────────────────────────────
 
 /// Rough size of one image in the context (~1.6k tokens for a screenshot).
-const IMAGE_CHARS: usize = 6400;
+pub(crate) const IMAGE_CHARS: usize = 6400;
 
 fn count_images(v: &Value) -> usize {
     match v {
@@ -834,11 +836,12 @@ pub fn parse_lines(
         .unwrap_or_default();
 
     let mut ctx = SessionContext {
+        cli: "claude".into(),
         session_id,
         file: path.to_string_lossy().to_string(),
         cwd: None,
         started_at: None,
-        claude_version: None,
+        cli_version: None,
         model: None,
         title: None,
         measured: None,
@@ -904,8 +907,8 @@ pub fn parse_lines(
             }
             "api-request-shape" if !started && !seen_shape => {
                 seen_shape = true;
-                if ctx.claude_version.is_none() {
-                    ctx.claude_version = v.get("version").and_then(Value::as_str).map(String::from);
+                if ctx.cli_version.is_none() {
+                    ctx.cli_version = v.get("version").and_then(Value::as_str).map(String::from);
                 }
                 if let Some(shape) = v.get("shape") {
                     let system_chars: usize = shape
@@ -944,8 +947,8 @@ pub fn parse_lines(
                     .and_then(|m| m.get("model"))
                     .and_then(Value::as_str)
                     .map(String::from);
-                if ctx.claude_version.is_none() {
-                    ctx.claude_version = v.get("version").and_then(Value::as_str).map(String::from);
+                if ctx.cli_version.is_none() {
+                    ctx.cli_version = v.get("version").and_then(Value::as_str).map(String::from);
                 }
                 if let Some(u) = msg.and_then(|m| m.get("usage")) {
                     let g = |k: &str| u.get(k).and_then(Value::as_u64).unwrap_or(0);
@@ -1339,7 +1342,7 @@ mod tests {
         assert_eq!(ctx.session_id, "abc");
         assert_eq!(ctx.cwd.as_deref(), Some("/p"));
         assert_eq!(ctx.model.as_deref(), Some("claude-opus-5-5"));
-        assert_eq!(ctx.claude_version.as_deref(), Some("2.1.331"));
+        assert_eq!(ctx.cli_version.as_deref(), Some("2.1.331"));
         assert_eq!(ctx.title.as_deref(), Some("Teste"));
         assert_eq!(ctx.measured.as_ref().unwrap().total, 152);
         assert_eq!(ctx.prompts, 2);

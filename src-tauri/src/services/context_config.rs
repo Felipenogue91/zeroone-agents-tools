@@ -128,9 +128,76 @@ fn hook_sources(home: &Path, cwd: &Path) -> Vec<(String, Value, Option<PathBuf>)
     out
 }
 
-pub fn configured_hooks(home: &Path, cwd: &Path) -> Vec<ConfiguredHook> {
+/// Codex reads `hooks.json` (same shape as Claude's `hooks`), global and
+/// per project.
+fn codex_hook_sources(home: &Path, cwd: &Path) -> Vec<(String, Value, Option<PathBuf>)> {
     let mut out = Vec::new();
-    for (origin, hooks, root) in hook_sources(home, cwd) {
+    let global = home.join(".codex/hooks.json");
+    let project = cwd.join(".codex/hooks.json");
+    for (path, label) in [
+        (global.clone(), "~/.codex/hooks.json".to_string()),
+        (project.clone(), ".codex/hooks.json (projeto)".to_string()),
+    ] {
+        if path == project && project == global {
+            continue;
+        }
+        if let Some(hooks) = read_json(&path).and_then(|v| v.get("hooks").cloned()) {
+            out.push((label, hooks, None));
+        }
+    }
+    out
+}
+
+/// agy reads `~/.gemini/config/hooks.json`, grouped by who installed it:
+/// `{ name: { Event: [ {matcher, hooks: [...]} | {type, command} ] } }`.
+fn agy_hook_sources(home: &Path) -> Vec<(String, Value, Option<PathBuf>)> {
+    let Some(root) = read_json(&home.join(".gemini/config/hooks.json")) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for (name, events) in root.as_object().into_iter().flatten() {
+        let mut norm = serde_json::Map::new();
+        for (event, entries) in events.as_object().into_iter().flatten() {
+            let groups: Vec<Value> = entries
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|e| {
+                    if e.get("hooks").is_some() {
+                        e.clone()
+                    } else {
+                        json!({ "matcher": e.get("matcher").cloned().unwrap_or(Value::Null), "hooks": [e] })
+                    }
+                })
+                .collect();
+            norm.insert(event.clone(), Value::Array(groups));
+        }
+        out.push((
+            format!("~/.gemini/config/hooks.json ({})", name),
+            Value::Object(norm),
+            None,
+        ));
+    }
+    out
+}
+
+/// Hooks of one CLI (`claude`, `codex` or `agy`).
+pub fn configured_hooks_for(cli: &str, home: &Path, cwd: &Path) -> Vec<ConfiguredHook> {
+    let sources = match cli {
+        "codex" => codex_hook_sources(home, cwd),
+        "agy" => agy_hook_sources(home),
+        _ => hook_sources(home, cwd),
+    };
+    hooks_from(sources)
+}
+
+pub fn configured_hooks(home: &Path, cwd: &Path) -> Vec<ConfiguredHook> {
+    hooks_from(hook_sources(home, cwd))
+}
+
+fn hooks_from(sources: Vec<(String, Value, Option<PathBuf>)>) -> Vec<ConfiguredHook> {
+    let mut out = Vec::new();
+    for (origin, hooks, root) in sources {
         for (event, groups) in hooks.as_object().into_iter().flatten() {
             for (gi, group) in groups.as_array().into_iter().flatten().enumerate() {
                 let matcher = group
@@ -359,7 +426,7 @@ fn skill_files(root: &Path) -> BTreeMap<String, PathBuf> {
     out
 }
 
-fn body_item(label: &str, path: &Path, home: &Path) -> Option<ContextItem> {
+pub(crate) fn body_item(label: &str, path: &Path, home: &Path) -> Option<ContextItem> {
     let text = std::fs::read_to_string(path).ok()?;
     let chars = strip_frontmatter(&text).chars().count();
     let shown = match path.strip_prefix(home) {

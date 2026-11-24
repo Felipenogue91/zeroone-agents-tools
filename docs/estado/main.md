@@ -1,8 +1,8 @@
-# Estado (atualizado em 2026-11-24 19:02 por claude-code)
+# Estado (atualizado em 2026-11-24 19:55 por claude-code)
 
 ## Fazendo agora
 
-Frente **aba Contexto**: parte do **Claude Code feita** (commits `4fd9e7b` e seguinte, sem push). Aguardando o Felipe conferir em `/context` no `npm run tauri dev`. Codex e agy aparecem como "em breve".
+Frente **aba Contexto**: Claude Code, **Codex e agy feitos** (sem push). Aguardando o Felipe conferir em `/context` no `npm run tauri dev`.
 
 Frente anterior **UI que organiza de verdade**: itens 1–11 feitos e commitados (sem push).
 
@@ -24,8 +24,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- **Aba Contexto, etapa 2: Codex e agy.** Ver o que o histórico de sessão de cada um grava (Codex: `~/.codex/sessions/**/rollout-*.jsonl`; agy: a descobrir). Onde não houver log com o que foi carregado, montar pela config (instruções `AGENTS.md`, skills ligadas, MCPs ligados) e estimar.
-- Decisão tomada na etapa 1: em vez de reconstruir pela config e perguntar `tools/list` aos MCPs, a aba lê o log da sessão do Claude, que já registra cada pedaço injetado (`instructions`, `skill_listing`, `mcp_instructions_delta`, `deferred_tools_delta`, `agent_listing_delta`, `hook_success`, `api-request-shape`). O número medido é o `usage` da 1ª resposta. O Claude Code lista só o **nome** das ferramentas MCP (as definições entram sob demanda), então `tools/list` não foi preciso.
+- Felipe confere as três abas da tela Contexto. Ideia em aberto: no agy a soma "Respostas do agy" passa do crescimento real em mensagens longas (o raciocínio conta na saída mas não fica no contexto); dá pra descontar se ele achar confuso.
 - Achados para o Felipe: na sessão medida (65,3 mil tokens), ~47% é fixo do Claude Code (a ferramenta Artifact sozinha ~9 mil); skills 7,5 mil; MCPs 9,5 mil (Higgsfield sozinho: 205 ferramentas e ~3,4 mil); hooks de início só 1,4 mil porque o Claude corta a saída do `onde-estamos.sh` (10,4 KB) para um trecho.
 
 - Felipe confere as telas. Push da `main` e empacotar Linux + Windows só com ok dele.
@@ -45,6 +44,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Aba Contexto, Codex e agy (2026-11-24 19:55, Claude Code):** `services/context_cli.rs`. Codex: lê `~/.codex/sessions/**/rollout-*.jsonl` (prompt do sistema, ferramentas nativas, lista de skills com caminho, AGENTS.md, MCPs adiados só com nome, saída dos hooks, `token_usage_record` medido). agy: lê `~/.gemini/antigravity-cli/conversations/<id>.db` em modo `immutable` (nunca toca o WAL); o último `gen_metadata` traz o pedido inteiro em protobuf (seções do prompt, ferramentas, mensagens com tokens exatos) e cada geração tem o uso medido; leitor de protobuf sem schema embutido; subagentes aparecem como "Subagente: nome". Hooks configurados: Codex `~/.codex/hooks.json` (+ projeto), agy `~/.gemini/config/hooks.json`; "Rodar agora" funciona nos três. Comandos ganharam `cli`. Medido × estimado nas sessões reais: Codex 21,6 × 25,3 mil; agy 14,7 × 15,6 mil e 20,0 × 22,7 mil (zeroone-agents-tools). Verificado: `cargo test` 2153, Vitest 1581, `check` no baseline (11), três abas conferidas no app via tauri-mcp.
 
 - **Aba Contexto, mensagem por mensagem (2026-11-24 19:02, Claude Code):** pedido do Felipe ("e o que entra a cada mensagem?"). O parser acompanha cada mensagem (digitada, só imagem ou aviso de tarefa): contexto real depois dela (`usage` da última chamada + saída), crescimento real, nº de chamadas, compactação, e de onde veio (sua mensagem com imagens ~1,6 mil tokens cada, resultados por ferramenta, respostas do Claude pelos tokens de saída medidos com raciocínio, hooks, anexos, e o resto). Tela: seção "Mensagem por mensagem" com gráfico do tamanho do contexto, lista em ordem ou por maior crescimento, detalhe ao abrir. Achado: na sessão de 2026-11-24 19:48 UTC, a mensagem 7 cresceu +274 mil (158 chamadas, 131 Bash, 14 prints). Verificado: `cargo test` 2149, Vitest 1581, `check` no baseline, conferido no app.
 
