@@ -15,4 +15,8 @@ pub mod secrets;
 pub mod skills;
 pub mod source;
 pub mod vault;
+pub mod versions;
+
+#[cfg(test)]
+mod fixture_tests;
 pub mod watcher;

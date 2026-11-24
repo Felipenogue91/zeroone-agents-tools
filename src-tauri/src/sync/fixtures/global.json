@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ai-memory": { "type": "http", "url": "http://127.0.0.1:7700/mcp" },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--userDataDir=/home/user/.cache/chrome-devtools-mcp/profile"]
+    },
+    "icecat": { "type": "http", "url": "https://icecat.example.invalid/mcp", "headers": { "Api-Token": "${ICECAT_API_TOKEN}" } },
+    "Neon": { "type": "http", "url": "https://mcp.neon.tech/mcp" },
+    "events": { "type": "sse", "url": "http://127.0.0.1:9000/sse" }
+  }
+}

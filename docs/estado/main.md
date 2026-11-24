@@ -1,12 +1,12 @@
-# Estado (atualizado em 2026-11-24 22:10 por claude-code)
+# Estado (atualizado em 2026-11-24 22:30 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 5 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 6 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
 
 ## Próximo passo exato
 
-- Fase 6 (prevenção): fixtures sanitizadas de Claude/Codex/agy, testes de ida e volta (campo desconhecido não some) e aviso de versão desconhecida das CLIs.
+- Fase 7 (UI): navegação por tarefa (Início=Saúde · Projetos · Biblioteca · CLIs · Configurações, resto em "Claude Code avançado"), chips por CLI togláveis, lista densa, painel de detalhe com diff, Ctrl+K, copy pt-BR, design system.
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
@@ -21,6 +21,11 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases 
 
 ## Feito e verificado
 
+- **Fase 6 sync multi-CLI (2026-11-24, Claude Code):**
+  - Fixtures sanitizadas em `src-tauri/src/sync/fixtures/` (estrutura real de `~/.claude.json` 2.1, `~/.codex/config.toml` 0.171 com `[tools]`, `[hooks.state]`, subtabela `.env`; agy com chaves extras; `global.json`/`sync.json` híbridos; `.mcp.json` pretty; cofre falso).
+  - `src-tauri/src/sync/fixture_tests.rs`: Codex preserva toda tabela/chave/comentário fora do que gera; `~/.claude.json` mantém as outras chaves e a ordem; agy mantém chaves desconhecidas e solta o `claude-code-tool-manager`; arquivos versionados só com `${VAR}`; segunda execução não muda nada; edição de fonte ida e volta byte a byte; saúde nas fixtures; `mcp-sync --check` concorda nas fixtures.
+  - `src-tauri/src/sync/versions.rs`: versão instalada vs testada (Claude 2.x, Codex 0.160–0.179, agy 1.5.x) com aviso; entra na saúde, no `--sync-health` e em `get_cli_versions`. Máquina real: as 3 dentro do testado.
+  - Verificação: `cargo test` 2128/2128, Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes.
 - **Fase 5 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/sync/vault.rs`: cofre `~/.agents/mcp/secrets.env` (criado/forçado 0600, edição preserva comentários e ordem). Status só com nomes: definidos, referenciados, faltando, sem uso, permissão.
   - Banco guarda só referência: fim do scan troca valores que existem no cofre por `${VAR}` (`Database::redact_known_secrets`). `get_sync_resources` mascara literais antes de mandar pra UI; saúde inclui `missingSecrets` e permissão do cofre.

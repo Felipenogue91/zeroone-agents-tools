@@ -64,6 +64,8 @@ pub struct Health {
     pub missing_secrets: Vec<String>,
     /// secrets.env readable by other users.
     pub secrets_permissions_ok: bool,
+    /// Installed CLI versions vs tested ranges (filled by the command).
+    pub cli_versions: Vec<super::versions::CliVersion>,
 }
 
 fn scope_label(scope: &Scope) -> String {
@@ -307,6 +309,7 @@ pub fn compute_health(
         checked_at: chrono::Local::now().to_rfc3339(),
         missing_secrets: Vec::new(),
         secrets_permissions_ok: true,
+        cli_versions: Vec::new(),
     }
 }
 

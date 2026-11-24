@@ -1,0 +1,54 @@
+{
+  "numStartups": 412,
+  "installMethod": "native",
+  "autoUpdates": false,
+  "tipsHistory": {
+    "new-user-warmup": 7,
+    "memory-command": 3
+  },
+  "cachedGrowthBookFeatures": {
+    "tengu_flag_a": true,
+    "tengu_flag_b": {
+      "variant": "x",
+      "nested": [1, 2, 3]
+    }
+  },
+  "projects": {
+    "/home/user/w/proj": {
+      "allowedTools": [],
+      "history": [],
+      "mcpContextUris": [],
+      "mcpServers": {
+        "legacy-local": {
+          "type": "stdio",
+          "command": "old",
+          "args": [],
+          "env": {}
+        }
+      },
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "lastCost": 0.42
+    }
+  },
+  "userID": "0000000000000000000000000000000000000000000000000000000000000000",
+  "mcpServers": {
+    "ai-memory": {
+      "type": "http",
+      "url": "http://127.0.0.1:7700/mcp"
+    },
+    "user-added": {
+      "type": "stdio",
+      "command": "user-tool",
+      "args": [],
+      "env": {}
+    }
+  },
+  "oauthAccount": {
+    "accountUuid": "00000000-0000-0000-0000-000000000000",
+    "emailAddress": "user@example.invalid"
+  },
+  "hasCompletedOnboarding": true,
+  "lastReleaseNotesSeen": "2.1.331"
+}

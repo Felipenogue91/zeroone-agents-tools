@@ -1,0 +1,30 @@
+{
+  "_doc": "fixture: projetos gerenciados e ajustes por CLI",
+  "projects": [
+    "~/w/proj"
+  ],
+  "pluginProvided": {
+    "_doc": "MCP que o CLI já recebe por plugin próprio; o sync não duplica.",
+    "claude": ["Neon"],
+    "codex": ["Neon"]
+  },
+  "codexGlobalKeep": ["node_repl"],
+  "overrides": {
+    "global": {
+      "codex": {
+        "chrome-devtools": { "args": ["-y", "chrome-devtools-mcp@latest", "--headless=true"] }
+      },
+      "agy": {
+        "chrome-devtools": { "args": ["--browserUrl=http://127.0.0.1:9222"] }
+      }
+    },
+    "*": {
+      "agy": {
+        "supabase": { "headers": { "Authorization": "Bearer ${AGY_SUPABASE_TOKEN}" } }
+      }
+    },
+    "proj": {
+      "codex": { "supabase": { "url": "https://mcp.supabase.com/mcp?project_ref=fixture&read_only=true" } }
+    }
+  }
+}

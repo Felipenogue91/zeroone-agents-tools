@@ -1,0 +1,6 @@
+{
+  "entries": [
+    { "path": "~/.agents/skills" },
+    { "path": "~/.codex/skills", "include_only": ["playwright-cli"] }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=fixture"
+    },
+    "repowise": {
+      "command": "repowise",
+      "args": [
+        "mcp",
+        "/home/user/w/proj",
+        "--transport",
+        "stdio"
+      ],
+      "description": "Busca no código do projeto"
+    },
+    "meshy": {
+      "command": "node",
+      "args": [
+        "/home/user/w/proj/.codex/meshy-launcher.mjs"
+      ],
+      "description": "Modelos 3D",
+      "env": {
+        "MESHY_API_KEY": "${MESHY_API_KEY}"
+      }
+    },
+    "brevo": {
+      "type": "http",
+      "url": "https://mcp.brevo.example.invalid/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BREVO_MCP_TOKEN}"
+      }
+    }
+  }
+}

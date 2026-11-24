@@ -264,6 +264,7 @@ pub fn run() {
             commands::sync::fix_secrets_permissions,
             commands::sync::plan_secret_migration,
             commands::sync::apply_secret_migration,
+            commands::sync::get_cli_versions,
             commands::config::get_claude_paths,
             commands::config::open_config_file,
             commands::config::backup_configs,

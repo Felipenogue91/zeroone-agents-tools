@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/agy-mcp.schema.json",
+  "mcpServers": {
+    "ai-memory": {
+      "serverUrl": "http://127.0.0.1:7700/mcp"
+    },
+    "claude-code-tool-manager": {
+      "serverUrl": "http://127.0.0.1:23847/mcp"
+    }
+  },
+  "uiState": {
+    "collapsed": ["ai-memory"]
+  }
+}

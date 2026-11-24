@@ -313,6 +313,7 @@ pub fn get_sync_health(
     if !health.missing_secrets.is_empty() || !health.secrets_permissions_ok {
         health.in_sync = false;
     }
+    health.cli_versions = crate::sync::versions::detect_all();
     for r in &mut health.report {
         r.summary = eng.secrets.mask(&r.summary);
         r.detail = r.detail.as_ref().map(|d| eng.secrets.mask(d));
@@ -506,6 +507,12 @@ pub fn sync_manage_project(
     )?;
     start_config_watcher(&app);
     Ok(out)
+}
+
+/// Installed CLI versions vs the tested ranges.
+#[tauri::command]
+pub fn get_cli_versions() -> Vec<crate::sync::versions::CliVersion> {
+    crate::sync::versions::detect_all()
 }
 
 // ------------------------------------------------------------------ secrets
@@ -820,7 +827,8 @@ pub fn run_cli(args: &[String]) -> Option<i32> {
             let projects: Vec<PathBuf> = snap.projects.iter().map(|p| p.path.clone()).collect();
             let occ = occurrences::collect(&home, &projects);
             let plan = eng.plan(None);
-            let h = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+            let mut h = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+            h.cli_versions = crate::sync::versions::detect_all();
             if args.iter().any(|a| a == "--json") {
                 println!(
                     "{}",
@@ -837,6 +845,15 @@ pub fn run_cli(args: &[String]) -> Option<i32> {
                         format!("{} divergências", h.divergences.len())
                     }
                 );
+                for v in &h.cli_versions {
+                    match (&v.installed, &v.message) {
+                        (None, _) => println!("  {}: não instalado", v.cli.label()),
+                        (Some(i), None) => {
+                            println!("  {} {} (testado: {})", v.cli.label(), i, v.tested)
+                        }
+                        (Some(_), Some(m)) => println!("  ⚠ {}", m),
+                    }
+                }
                 for d in &h.divergences {
                     println!(
                         "  [{:?}] {}  → {:?}",
