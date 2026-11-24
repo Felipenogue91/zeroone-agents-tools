@@ -22,6 +22,14 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
+- **Próxima frente (Felipe pediu em 2026-11-24, esperando o ok para começar): aba "Contexto"**. Escolhe CLI + projeto e mostra, com arquivo de origem e tokens estimados (caracteres/4):
+  1. *Entra sempre no começo da sessão*: instruções (`~/.claude/CLAUDE.md` + `CLAUDE.md` do projeto com `@imports`; `AGENTS.md` do Codex; equivalente do agy), nome+descrição de cada skill ligada, definições de ferramentas de cada MCP ligado (perguntar `tools/list` ao servidor), saída dos hooks `SessionStart`.
+  2. *A cada mensagem*: hooks `UserPromptSubmit` e equivalentes do Codex/agy.
+  3. *Só quando usa*: corpo das skills, subagentes, comandos.
+  - Número medido: tokens de entrada da 1ª resposta nas sessões do Claude (`~/.claude/projects/*/*.jsonl`, campo `usage`); Codex se o histórico tiver.
+  - Hook só roda com clique (pode ter efeito colateral); por padrão mostra o comando.
+  - Começar pelo Claude (dá pra medir), depois Codex e agy. Referência: os hooks SessionStart do Felipe injetam ~10 KB por sessão.
+
 - Felipe confere as telas. Push da `main` e empacotar Linux + Windows só com ok dele.
 - Em aberto dele: embutir a floresta dentro da janela principal exigiria liberar `frame-ancestors` no code-forest só para a origem do app.
 - Pendente menor: tela Projetos ainda lista 137 pastas com lixo (`.paperclip`, `Workspace/runs`) e colunas `0 | 0 | 0` sem rótulo (item 7 da varredura).
