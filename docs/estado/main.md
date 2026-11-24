@@ -20,7 +20,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Item 8 (catálogo de MCPs: tirar a aba e virar modelos no "Adicionar MCP").
+- Item 9 (regras: consulta `ambiguous column name: created_at`), depois 10 (containers do Docker), 11 (aba Code Forest).
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +37,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Item 8, catálogo (2026-11-24, Claude Code):** aba "Catálogo de MCPs" saiu da Biblioteca e da busca (a rota `/library/catalog` fica, por causa do Agregador e dos e2e antigos). "Adicionar MCP" ganhou "Começar de um MCP que você já usa" (copia nome+config de qualquer escopo, recusa se tiver segredo literal) e "Ligar em" Claude/Codex/agy.
 
 - **Item 5, CLIs e pendências (2026-11-24, Claude Code):** **bug corrigido:** a ação de UM item ("Reaplicar da fonte") regravava a CLI inteira e apagaria tudo que só existia nela; agora `engine::narrow_to_server` limita a mudança àquele servidor e àquele escopo (JSON do Claude/agy e TOML do Codex; teste `narrow_to_server_keeps_the_other_servers`). Tela de CLIs: resumo "+adicionar ~corrigir −remover", lista de cada pendência com o motivo (`DivergenceList.svelte`, também no Início), botões que dizem o que fazem ("Remover do agy", "Adicionar no Codex", "Igualar à fonte", "Trazer para a fonte"); "Igualar tudo à fonte" avisa em vermelho o que vai ser removido antes de aplicar.
 

@@ -8,8 +8,7 @@
 		{ href: '/subagents', key: 'nav.agents' },
 		{ href: '/hooks', key: 'nav.hooks' },
 		{ href: '/commands', key: 'nav.commands' },
-		{ href: '/rules', key: 'nav.rules' },
-		{ href: '/library/catalog', key: 'sync.tabs.catalog' }
+		{ href: '/rules', key: 'nav.rules' }
 	] as { href: string; key: string; exact?: boolean; kind?: string }[];
 
 	function isActive(href: string, exact?: boolean, kind?: string) {
