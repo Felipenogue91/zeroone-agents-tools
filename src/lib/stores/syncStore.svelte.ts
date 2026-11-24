@@ -12,7 +12,9 @@ import type {
 	ProjectSyncView,
 	ResourceView,
 	SaveOutcome,
-	ApplyOutcome
+	ApplyOutcome,
+	LiveCli,
+	TargetChange
 } from '$lib/types/sync';
 import { CLI_SHORT } from '$lib/types/sync';
 
@@ -32,6 +34,9 @@ class SyncState {
 	isLoadingHealth = $state(false);
 	isLoadingResources = $state(false);
 	error = $state<string | null>(null);
+	/** What each CLI really loads (global view), asked to the CLIs. */
+	live = $state<Partial<Record<Cli, LiveCli>> | null>(null);
+	isLoadingLive = $state(false);
 	/** uid/name currently being saved (disables its controls). */
 	busy = $state<Set<string>>(new Set());
 
@@ -63,6 +68,22 @@ class SyncState {
 		} finally {
 			this.isLoadingResources = false;
 		}
+	}
+
+	async loadLive() {
+		this.isLoadingLive = true;
+		try {
+			this.live = await invoke<Partial<Record<Cli, LiveCli>>>('get_live_mcp_status', { project: null });
+		} catch (e) {
+			console.error('[sync] live status failed', e);
+		} finally {
+			this.isLoadingLive = false;
+		}
+	}
+
+	/** Several switches as one undoable set. */
+	setTargets(changes: TargetChange[]) {
+		return this.save('bulk', () => invoke<SaveOutcome>('sync_set_targets', { changes }));
 	}
 
 	async loadManagement() {

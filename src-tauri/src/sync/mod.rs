@@ -8,6 +8,7 @@ pub mod codex;
 pub mod engine;
 pub mod health;
 pub mod jsonedit;
+pub mod live;
 pub mod model;
 pub mod occurrences;
 pub mod projects;

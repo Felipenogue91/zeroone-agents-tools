@@ -411,6 +411,70 @@ pub fn save_and_sync(
     })
 }
 
+/// Several switches (bulk edit in the Library) as ONE backup set, so one
+/// "Desfazer" reverts everything. Each switch is planned on a fresh read of
+/// the source; then every touched scope is regenerated once.
+pub fn save_many(
+    home: &Path,
+    backup_root: &Path,
+    items: Vec<(Scope, String, Cli, bool)>,
+) -> Result<SaveOutcome, String> {
+    let mut set = BackupSet::new(backup_root).map_err(|e| e.to_string())?;
+    let mut scopes: Vec<Scope> = Vec::new();
+    let mut errors: Vec<(String, String)> = Vec::new();
+    let mut clis: BTreeSet<Cli> = BTreeSet::new();
+    for (scope, name, cli, enabled) in items {
+        let snap = SourceSnapshot::load(home);
+        match plan_set_target(&snap, &scope, &name, cli, enabled) {
+            Ok(ch) => {
+                if ch
+                    .iter()
+                    .any(|c| c.path.to_string_lossy().ends_with(".claude.json"))
+                {
+                    clis.insert(Cli::Claude);
+                }
+                set.apply(&ch).map_err(|e| e.to_string())?;
+            }
+            Err(e) => errors.push((format!("{} ({})", name, cli.label()), e)),
+        }
+        if !scopes.contains(&scope) {
+            scopes.push(scope);
+        }
+    }
+    let snap = SourceSnapshot::load(home);
+    let eng = Engine::new(&snap);
+    let mut plan = super::engine::Plan::default();
+    let managed = snap.sync.project_paths(home);
+    let mut unmanaged = false;
+    for scope in &scopes {
+        match scope {
+            Scope::Global => eng.plan_global(&mut plan),
+            Scope::Project { path } => {
+                let p = PathBuf::from(path);
+                if managed.iter().any(|m| m == &p) {
+                    eng.plan_project(&p, &mut plan, false, None);
+                } else {
+                    unmanaged = true;
+                    clis.insert(Cli::Claude);
+                }
+            }
+        }
+    }
+    set.apply(&plan.changes).map_err(|e| e.to_string())?;
+    let mut out = set.finish().map_err(|e| e.to_string())?;
+    for ch in &plan.changes {
+        if out.applied.iter().any(|a| Path::new(a) == ch.path) {
+            clis.insert(ch.cli);
+        }
+    }
+    out.skipped.extend(errors);
+    Ok(SaveOutcome {
+        apply: out,
+        clis: clis.into_iter().collect(),
+        unmanaged_project: unmanaged,
+    })
+}
+
 // ------------------------------------------------------------------ view
 
 #[derive(Debug, Clone, Serialize)]
@@ -590,6 +654,37 @@ mod tests {
 
     fn snap(home: &Path) -> SourceSnapshot {
         SourceSnapshot::load(home)
+    }
+
+    #[test]
+    fn save_many_is_one_undoable_set() {
+        let (_t, home, proj) = fx();
+        let pscope = Scope::Project {
+            path: proj.to_string_lossy().to_string(),
+        };
+        let before = std::fs::read_to_string(home.join(".agents/mcp/sync.json")).unwrap();
+        let out = save_many(
+            &home,
+            &home.join("bk"),
+            vec![
+                (Scope::Global, "ctx".into(), Cli::Codex, false),
+                (pscope, "sb".into(), Cli::Agy, false),
+            ],
+        )
+        .unwrap();
+        let sync = std::fs::read_to_string(home.join(".agents/mcp/sync.json")).unwrap();
+        assert!(sync.contains("\"global\""), "{}", sync);
+        assert!(sync.contains("\"proj\""), "{}", sync);
+        assert!(
+            out.clis.contains(&Cli::Codex) && out.clis.contains(&Cli::Agy),
+            "{:?}",
+            out.clis
+        );
+        crate::sync::engine::undo(&home.join("bk"), out.apply.backup_id.as_ref().unwrap()).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(home.join(".agents/mcp/sync.json")).unwrap(),
+            before
+        );
     }
 
     #[test]

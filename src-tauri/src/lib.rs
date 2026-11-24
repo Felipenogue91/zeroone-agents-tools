@@ -258,6 +258,8 @@ pub fn run() {
             commands::sync::sync_set_server,
             commands::sync::sync_set_enabled,
             commands::sync::sync_set_target,
+            commands::sync::sync_set_targets,
+            commands::sync::get_live_mcp_status,
             commands::sync::sync_manage_project,
             commands::sync::get_secrets_status,
             commands::sync::set_secret,

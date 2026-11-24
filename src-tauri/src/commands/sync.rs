@@ -486,6 +486,46 @@ pub fn sync_set_target(
     save(&db, changes, &scope)
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TargetChange {
+    pub project: Option<String>,
+    pub name: String,
+    pub cli: Cli,
+    pub enabled: bool,
+}
+
+/// Bulk switch (Library table): one backup set, one undo.
+#[tauri::command]
+pub fn sync_set_targets(
+    db: State<'_, Arc<Mutex<Database>>>,
+    changes: Vec<TargetChange>,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let home = home_dir()?;
+    let items = changes
+        .into_iter()
+        .map(|c| (parse_scope(c.project), c.name, c.cli, c.enabled))
+        .collect();
+    let out = crate::sync::projects::save_many(&home, &backup_root()?, items)?;
+    if let Ok(db) = db.lock() {
+        let _ = refresh_occurrences_in_db(&db);
+    }
+    Ok(out)
+}
+
+/// What each CLI really loads (asks `claude/codex/agy mcp list`).
+/// `project = None` → global view (run from the home folder).
+#[tauri::command]
+pub async fn get_live_mcp_status(
+    project: Option<String>,
+) -> Result<std::collections::BTreeMap<Cli, crate::sync::live::LiveCli>, String> {
+    let home = home_dir()?;
+    let cwd = project.map(PathBuf::from).unwrap_or_else(|| home.clone());
+    tauri::async_runtime::spawn_blocking(move || crate::sync::live::live_status(&home, &cwd))
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Add/remove a project from `sync.json` (and generate its files).
 #[tauri::command]
 pub fn sync_manage_project(

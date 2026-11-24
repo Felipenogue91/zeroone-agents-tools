@@ -177,3 +177,23 @@ export function isToggleable(state: TargetState | undefined): boolean {
 export function scopeKey(scope: Scope): string {
 	return scope.type === 'global' ? 'global' : `project:${scope.path.replace(/\\/g, '/').replace(/\/+$/, '')}`;
 }
+
+// What each CLI really loads (`get_live_mcp_status`).
+export type LiveState = 'connected' | 'enabled' | 'disabled' | 'failed' | 'needsAuth';
+export interface LiveServer {
+	name: string;
+	state: LiveState;
+	detail: string;
+}
+export interface LiveCli {
+	cli: Cli;
+	servers: LiveServer[] | null;
+	error: string | null;
+	elapsedMs: number;
+}
+export interface TargetChange {
+	project: string | null;
+	name: string;
+	cli: Cli;
+	enabled: boolean;
+}
