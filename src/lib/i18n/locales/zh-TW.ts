@@ -25,8 +25,8 @@ export const zhTW: Translations = {
 	'nav.settings': '設定',
 
 	// ── 應用程式品牌 ─────────────────────────────────────
-	'app.name': 'Claude Code',
-	'app.tagline': '工具管理器',
+	'app.name': 'ZeroOne',
+	'app.tagline': 'Agents Tools',
 
 	// ── 頂部列 ───────────────────────────────────────────
 	'header.refresh': '重新整理',

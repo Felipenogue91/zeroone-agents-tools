@@ -75,8 +75,8 @@ test.describe('Navigation', () => {
 	});
 
 	test('should show app title in sidebar', async ({ page }) => {
-		await expect(page.locator('aside')).toContainText('Claude Code');
-		await expect(page.locator('aside')).toContainText('Tool Manager');
+		await expect(page.locator('aside')).toContainText('ZeroOne');
+		await expect(page.locator('aside')).toContainText('Agents Tools');
 	});
 });
 

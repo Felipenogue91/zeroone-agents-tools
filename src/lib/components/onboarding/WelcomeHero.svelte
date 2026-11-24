@@ -71,7 +71,7 @@
 
 <section class="space-y-6">
 	<!-- Welcome banner -->
-	<div class="relative overflow-hidden rounded-xl border border-primary-200 dark:border-primary-800/50 bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-primary-950/40 dark:via-gray-800 dark:to-gray-800 p-6">
+	<div class="relative overflow-hidden rounded-xl border border-primary-200 dark:border-primary-800/50 bg-gradient-to-br from-primary-50 via-white to-cyan-50/40 dark:from-primary-950/40 dark:via-gray-800 dark:to-gray-800 p-6">
 		<button
 			onclick={handleDismiss}
 			class="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-white/60 dark:hover:bg-gray-700/60 transition-colors"
@@ -81,10 +81,12 @@
 		</button>
 
 		<div class="max-w-xl">
+			<img src="/brand/zeroone-horizontal-fundo-claro.svg" alt="ZeroOne" class="h-6 w-auto mb-3 dark:hidden select-none" draggable="false" />
+			<img src="/brand/zeroone-horizontal-fundo-escuro.svg" alt="ZeroOne" class="h-6 w-auto mb-3 hidden dark:block select-none" draggable="false" />
 			{#if onboarding.isFirstRun}
-				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">Welcome to Tool Manager</p>
+				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">Welcome to ZeroOne Agents Tools</p>
 				<h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-					Manage your Claude Code setup visually
+					Manage your AI coding agents visually
 				</h2>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">
 					Add your project folders, configure MCP servers, and keep everything in sync — no more editing JSON by hand.
@@ -95,7 +97,7 @@
 					Finish setting up
 				</h2>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1.5">
-					Complete these steps to get the most out of Tool Manager.
+					Complete these steps to get the most out of ZeroOne Agents Tools.
 				</p>
 			{/if}
 		</div>

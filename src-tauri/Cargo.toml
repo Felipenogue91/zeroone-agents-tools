@@ -1,9 +1,13 @@
 [package]
-name = "claude-code-tool-manager"
-version = "3.8.5"
-description = "Desktop app to manage MCP servers, Skills, and Sub-Agents for Claude Code"
-authors = ["you"]
+name = "zeroone-agents-tools"
+version = "1.0.0"
+description = "ZeroOne Agents Tools — Desktop control plane for MCP servers, Skills, Sub-Agents, and Hooks"
+authors = ["ZeroOne <https://github.com/Felipenogue91>"]
 edition = "2021"
+
+[lib]
+name = "claude_code_tool_manager"
+path = "src/lib.rs"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

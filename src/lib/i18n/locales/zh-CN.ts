@@ -30,8 +30,8 @@ export const zhCN: Translations = {
 	'nav.settings': '设置',
 
 	// ── 应用品牌 ─────────────────────────────────────
-	'app.name': 'Claude Code',
-	'app.tagline': '工具管理器',
+	'app.name': 'ZeroOne',
+	'app.tagline': 'Agents Tools',
 
 	// ── 顶部栏 ───────────────────────────────────────────
 	'header.refresh': '刷新数据',

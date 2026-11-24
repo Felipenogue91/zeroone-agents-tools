@@ -27,7 +27,7 @@
 			label: i18n.t('dashboard.projects'),
 			value: projectCount,
 			icon: FolderOpen,
-			color: 'bg-blue-500',
+			color: 'bg-cyan-500',
 			href: '/projects'
 		},
 		{
@@ -35,7 +35,7 @@
 			value: mcpCount,
 			subtitle: `${globalMcpCount} ${i18n.t('dashboard.global')}`,
 			icon: Plug,
-			color: 'bg-purple-500',
+			color: 'bg-primary-600',
 			href: '/library'
 		},
 		{
@@ -175,13 +175,13 @@
 					{#each quickLinks as link}
 						<a
 							href={link.href}
-							class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all group"
+							class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all group"
 						>
 							<div class="flex items-center gap-3 mb-2">
-								<div class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors">
-									<link.icon class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+								<div class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+									<link.icon class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
 								</div>
-								<p class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+								<p class="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
 									{link.label}
 								</p>
 							</div>

@@ -110,13 +110,11 @@
 >
 	<!-- Header -->
 	<div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center {collapsed ? 'justify-center' : 'gap-3'}">
-		<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shrink-0">
-			<Plug class="w-5 h-5 text-white" />
-		</div>
+		<img src="/brand/zeroone-icone-app.svg" alt="" aria-hidden="true" class="w-9 h-9 shrink-0 select-none" draggable="false" />
 		{#if !collapsed}
 			<div class="overflow-hidden">
-				<h1 class="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{i18n.t('app.name')}</h1>
-				<p class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{i18n.t('app.tagline')}</p>
+				<h1 class="font-bold text-base tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-tight">{i18n.t('app.name')}</h1>
+				<p class="text-xs font-medium text-primary-600 dark:text-primary-400 whitespace-nowrap">{i18n.t('app.tagline')}</p>
 			</div>
 		{/if}
 	</div>

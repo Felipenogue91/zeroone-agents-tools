@@ -15,8 +15,8 @@ vi.mock('$lib/stores', () => ({
 	i18n: {
 		t: (key: string) => {
 			const translations: Record<string, string> = {
-				'app.name': 'Claude Code',
-				'app.tagline': 'Tool Manager',
+				'app.name': 'ZeroOne',
+				'app.tagline': 'Agents Tools',
 				'nav.core': 'Core',
 				'nav.tools': 'Tools',
 				'nav.configure': 'Configure',
@@ -151,14 +151,14 @@ describe('Sidebar Component', () => {
 		Sidebar = mod.default;
 	});
 
-	it('should render Claude Code heading', () => {
+	it('should render ZeroOne heading', () => {
 		render(Sidebar);
-		expect(screen.getByText('Claude Code')).toBeInTheDocument();
+		expect(screen.getByText('ZeroOne')).toBeInTheDocument();
 	});
 
-	it('should render Tool Manager subtitle', () => {
+	it('should render Agents Tools subtitle', () => {
 		render(Sidebar);
-		expect(screen.getByText('Tool Manager')).toBeInTheDocument();
+		expect(screen.getByText('Agents Tools')).toBeInTheDocument();
 	});
 
 	it('should render navigation groups', () => {

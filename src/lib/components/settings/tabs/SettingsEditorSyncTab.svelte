@@ -1093,16 +1093,21 @@
 	<!-- About -->
 	<div class="card">
 		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">About</h3>
-		<div class="flex items-center justify-between">
+		<div class="flex items-center justify-between gap-4">
 			<div>
+				<img src="/brand/zeroone-horizontal-fundo-claro.svg" alt="ZeroOne" class="h-6 w-auto mb-2 dark:hidden select-none" draggable="false" />
+				<img src="/brand/zeroone-horizontal-fundo-escuro.svg" alt="ZeroOne" class="h-6 w-auto mb-2 hidden dark:block select-none" draggable="false" />
 				<p class="text-sm font-medium text-gray-900 dark:text-white">
-					Claude Code Tool Manager
+					ZeroOne Agents Tools
 				</p>
 				{#if appVersion}
 					<p class="text-sm text-gray-500 dark:text-gray-400">
 						Version {appVersion}
 					</p>
 				{/if}
+				<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+					MIT Fork based on claude-code-tool-manager • ZeroOne
+				</p>
 			</div>
 			<button onclick={viewReleaseNotes} class="btn btn-secondary">
 				<Sparkles class="w-4 h-4 mr-2" />

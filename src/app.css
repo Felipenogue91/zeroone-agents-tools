@@ -4,33 +4,62 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-	--color-primary-50: #eff6ff;
-	--color-primary-100: #dbeafe;
-	--color-primary-200: #bfdbfe;
-	--color-primary-300: #93c5fd;
-	--color-primary-400: #60a5fa;
-	--color-primary-500: #3b82f6;
-	--color-primary-600: #2563eb;
-	--color-primary-700: #1d4ed8;
-	--color-primary-800: #1e40af;
-	--color-primary-900: #1e3a8a;
-	--color-primary-950: #172554;
+	--font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+
+	--color-primary-50: #f5f3ff;
+	--color-primary-100: #ede9fe;
+	--color-primary-200: #ddd6fe;
+	--color-primary-300: #c4b5fd;
+	--color-primary-400: #a78bfa;
+	--color-primary-500: #8b5cf6;
+	--color-primary-600: #6d5bff;
+	--color-primary-700: #5a47f5;
+	--color-primary-800: #4c1d95;
+	--color-primary-900: #2e1065;
+	--color-primary-950: #170936;
+
+	--color-gray-50: #f4f4f7;
+	--color-gray-100: #e4e4e7;
+	--color-gray-200: #d4d4d8;
+	--color-gray-300: #a1a1aa;
+	--color-gray-400: #71717a;
+	--color-gray-500: #52525b;
+	--color-gray-600: #3f3f46;
+	--color-gray-700: #27272a;
+	--color-gray-800: #111113;
+	--color-gray-900: #09090b;
+	--color-gray-950: #050507;
 }
 
 @layer base {
 	:root {
-		--background: 249 250 251;
-		--foreground: 17 24 39;
+		--background: 244 244 247;
+		--foreground: 11 11 20;
 	}
 
 	.dark {
-		--background: 17 24 39;
-		--foreground: 249 250 251;
+		--background: 9 9 11;
+		--foreground: 250 250 250;
 	}
 
 	body {
 		@apply antialiased;
-		font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-heading);
+		letter-spacing: -0.02em;
+	}
+
+	code,
+	pre,
+	kbd,
+	samp,
+	.font-mono {
+		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	}
 }
 

@@ -656,61 +656,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "claude-code-tool-manager"
-version = "3.8.5"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.22.1",
- "bollard",
- "bytes",
- "chrono",
- "directories",
- "dirs",
- "env_logger",
- "fern",
- "futures",
- "insta",
- "log",
- "once_cell",
- "pretty_assertions",
- "pulldown-cmark",
- "regex",
- "reqwest 0.12.28",
- "rmcp",
- "rstest",
- "rusqlite",
- "schemars 1.2.1",
- "serde",
- "serde_json",
- "serial_test",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-mcp-bridge",
- "tauri-plugin-notification",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-updater",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tokio-test",
- "toml 1.1.2+spec-1.1.0",
- "toml_edit 0.25.11+spec-1.1.0",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "urlencoding",
- "uuid",
- "walkdir",
- "wiremock",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7666,6 +7611,61 @@ name = "zeroize"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b97154e67e32c85465826e8bcc1c59429aaaf107c1e4a9e53c8d8ccd5eff88d0"
+
+[[package]]
+name = "zeroone-agents-tools"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bollard",
+ "bytes",
+ "chrono",
+ "directories",
+ "dirs",
+ "env_logger",
+ "fern",
+ "futures",
+ "insta",
+ "log",
+ "once_cell",
+ "pretty_assertions",
+ "pulldown-cmark",
+ "regex",
+ "reqwest 0.12.28",
+ "rmcp",
+ "rstest",
+ "rusqlite",
+ "schemars 1.2.1",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-mcp-bridge",
+ "tauri-plugin-notification",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-updater",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tokio-test",
+ "toml 1.1.2+spec-1.1.0",
+ "toml_edit 0.25.11+spec-1.1.0",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "urlencoding",
+ "uuid",
+ "walkdir",
+ "wiremock",
+]
 
 [[package]]
 name = "zerotrie"

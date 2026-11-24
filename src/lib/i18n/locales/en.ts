@@ -23,8 +23,8 @@ export const en = {
 	'nav.settings': 'Settings',
 
 	// ── App branding ─────────────────────────────────────
-	'app.name': 'Claude Code',
-	'app.tagline': 'Tool Manager',
+	'app.name': 'ZeroOne',
+	'app.tagline': 'Agents Tools',
 
 	// ── Header ───────────────────────────────────────────
 	'header.refresh': 'Refresh data',
@@ -67,7 +67,7 @@ export const en = {
 
 	// ── Page titles & subtitles ──────────────────────────
 	'page.dashboard.title': 'Dashboard',
-	'page.dashboard.subtitle': 'Overview of your Claude Code configuration',
+	'page.dashboard.subtitle': 'Unified control plane for MCPs, Skills, Sub-Agents, and Hooks',
 	'page.projects.title': 'Projects',
 	'page.projects.subtitle': 'Manage MCP assignments for your Claude Code projects',
 	'page.library.title': 'MCP Library',

@@ -805,7 +805,7 @@ impl ServerHandler for ToolManagerServer {
                 .build(),
         )
         .with_instructions(
-            "Claude Code Tool Manager MCP Server. Manage MCPs, Skills, Sub-Agents, Hooks, and Projects programmatically."
+            "ZeroOne Agents Tools MCP Server. Manage MCPs, Skills, Sub-Agents, Hooks, and Projects programmatically."
                 .to_string(),
         )
     }
@@ -1371,10 +1371,7 @@ mod tests {
     fn test_get_info() {
         let server = make_server();
         let info = server.get_info();
-        assert!(info
-            .instructions
-            .unwrap()
-            .contains("Claude Code Tool Manager"));
+        assert!(info.instructions.unwrap().contains("ZeroOne Agents Tools"));
         assert!(info.capabilities.tools.is_some());
     }
 
