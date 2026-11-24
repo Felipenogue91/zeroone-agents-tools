@@ -20,7 +20,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Item 5 (CLIs: lista de pendências por CLI com motivo e ação; "Reaplicar" vira "Igualar à fonte" com resumo +/~/−).
+- Item 8 (catálogo de MCPs: tirar a aba e virar modelos no "Adicionar MCP").
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +37,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Item 5, CLIs e pendências (2026-11-24, Claude Code):** **bug corrigido:** a ação de UM item ("Reaplicar da fonte") regravava a CLI inteira e apagaria tudo que só existia nela; agora `engine::narrow_to_server` limita a mudança àquele servidor e àquele escopo (JSON do Claude/agy e TOML do Codex; teste `narrow_to_server_keeps_the_other_servers`). Tela de CLIs: resumo "+adicionar ~corrigir −remover", lista de cada pendência com o motivo (`DivergenceList.svelte`, também no Início), botões que dizem o que fazem ("Remover do agy", "Adicionar no Codex", "Igualar à fonte", "Trazer para a fonte"); "Igualar tudo à fonte" avisa em vermelho o que vai ser removido antes de aplicar.
 
 - **Item 4, skills na tabela (2026-11-24, Claude Code):** aba Skills da Biblioteca agora é a mesma tabela (`/library?kind=skill`), com as skills de cada projeto conhecido (`<p>/.agents/skills` = Codex e agy leem direto; `<p>/.claude/skills` = Claude) agrupadas por projeto, e as estacionadas (`.skills-disabled`) listadas como desligadas em vez de sumirem. Ligar no Claude por projeto = link relativo `../../.agents/skills/<nome>`; desligar = tira o link ou estaciona a pasta real (nunca apaga). Abas da Biblioteca: MCPs · Skills · Agentes · Hooks · Comandos · Regras · Catálogo. `ResourceList.svelte` removido (testes migrados para `ResourceMatrix`). Na máquina real: 199 skills (17 globais + projetos).
 

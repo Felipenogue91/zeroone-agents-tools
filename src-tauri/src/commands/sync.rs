@@ -407,7 +407,18 @@ fn health_changes(
         }
         HealthAction::Reapply => {
             let plan = eng.plan(project.as_deref().map(std::path::Path::new));
-            Ok(plan.changes.into_iter().filter(|c| c.cli == cli).collect())
+            let mine = plan.changes.into_iter().filter(|c| c.cli == cli);
+            if name.is_empty() {
+                // the whole CLI ("Igualar à fonte" on the CLIs screen)
+                Ok(mine.collect())
+            } else {
+                // one item: touch only that server, only in its scope
+                let scope = parse_scope(project.clone());
+                Ok(mine
+                    .filter(|c| c.scope == scope)
+                    .filter_map(|c| crate::sync::engine::narrow_to_server(&c, name))
+                    .collect())
+            }
         }
         HealthAction::RemoveLocalCopy => {
             let project = project.ok_or("RemoveLocalCopy precisa do projeto")?;

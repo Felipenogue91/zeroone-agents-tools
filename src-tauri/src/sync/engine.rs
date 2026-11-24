@@ -334,6 +334,88 @@ fn changed_names(cur: &Map<String, Value>, want: &Map<String, Value>, prefix: &s
         .collect()
 }
 
+/// Narrow a planned file change to ONE server: the rest of the file stays as
+/// it is now. Used by per-item "fix" actions, so fixing `a` never removes `b`.
+pub fn narrow_to_server(ch: &FileChange, name: &str) -> Option<FileChange> {
+    let touches = ch
+        .servers
+        .iter()
+        .any(|s| s == name || s.ends_with(&format!(":{}", name)));
+    if !touches {
+        return None;
+    }
+    let mut out = ch.clone();
+    if let Some(ClaudePatch::UserServers(want)) = &ch.claude_patch {
+        let mut doc: Value = ch
+            .before
+            .as_deref()
+            .and_then(|t| serde_json::from_str(t).ok())
+            .unwrap_or_else(|| Value::Object(Map::new()));
+        let mut cur: Map<String, Value> = doc
+            .get("mcpServers")
+            .and_then(|m| m.as_object())
+            .cloned()
+            .unwrap_or_default();
+        match want.get(name) {
+            Some(v) => {
+                cur.insert(name.to_string(), v.clone());
+            }
+            None => {
+                cur.remove(name);
+            }
+        }
+        let patch = ClaudePatch::UserServers(cur);
+        patch.apply_to(&mut doc);
+        out.after = Some(pretty(&doc));
+        out.claude_patch = Some(patch);
+    } else if ch.path.extension().map(|e| e == "toml").unwrap_or(false) {
+        let want = codex_current(ch.after.as_deref()).ok()?;
+        let entry: Vec<(String, Map<String, Value>)> = want
+            .get(name)
+            .and_then(|v| v.as_object())
+            .map(|m| vec![(name.to_string(), m.clone())])
+            .unwrap_or_default();
+        let drop: BTreeSet<String> = [name.to_string()].into_iter().collect();
+        out.after = Some(codex_rewrite(
+            ch.before.as_deref().unwrap_or(""),
+            Some(&drop),
+            &entry,
+        ));
+    } else {
+        // agy JSON (`mcpServers`)
+        let after: Value = ch
+            .after
+            .as_deref()
+            .and_then(|t| serde_json::from_str(t).ok())
+            .unwrap_or_else(|| Value::Object(Map::new()));
+        let mut doc: Value = ch
+            .before
+            .as_deref()
+            .and_then(|t| serde_json::from_str(t).ok())
+            .unwrap_or_else(|| Value::Object(Map::new()));
+        let Value::Object(root) = &mut doc else {
+            return None;
+        };
+        let servers = root
+            .entry("mcpServers")
+            .or_insert_with(|| Value::Object(Map::new()));
+        let Value::Object(servers) = servers else {
+            return None;
+        };
+        match after.get("mcpServers").and_then(|m| m.get(name)) {
+            Some(v) => {
+                servers.insert(name.to_string(), v.clone());
+            }
+            None => {
+                servers.remove(name);
+            }
+        }
+        out.after = Some(pretty(&doc));
+    }
+    out.servers = vec![name.to_string()];
+    Some(out)
+}
+
 // ------------------------------------------------------------------ engine
 
 pub struct Engine<'a> {
@@ -1162,6 +1244,50 @@ pub fn list_backups(backup_root: &Path) -> Vec<BackupInfo> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn narrow_to_server_keeps_the_other_servers() {
+        let ch = FileChange {
+            cli: Cli::Agy,
+            scope: Scope::Global,
+            label: "agy".into(),
+            path: PathBuf::from("/x/mcp_config.json"),
+            before: Some(
+                r#"{"mcpServers":{"a":{"command":"old"},"extra":{"command":"keep"}}}"#.into(),
+            ),
+            after: Some(r#"{"mcpServers":{"a":{"command":"new"}}}"#.into()),
+            mode: Some(0o600),
+            servers: vec!["a".into(), "extra".into()],
+            ensure_ignored: None,
+            claude_patch: None,
+        };
+        let n = narrow_to_server(&ch, "a").unwrap();
+        let v: Value = serde_json::from_str(n.after.as_deref().unwrap()).unwrap();
+        assert_eq!(v["mcpServers"]["a"]["command"], "new");
+        assert_eq!(v["mcpServers"]["extra"]["command"], "keep");
+        assert!(narrow_to_server(&ch, "zzz").is_none());
+        // removing one server leaves the rest
+        let r = narrow_to_server(&ch, "extra").unwrap();
+        let v: Value = serde_json::from_str(r.after.as_deref().unwrap()).unwrap();
+        assert!(v["mcpServers"].get("extra").is_none());
+        assert_eq!(v["mcpServers"]["a"]["command"], "old");
+
+        // Codex TOML
+        let ch = FileChange {
+            cli: Cli::Codex,
+            path: PathBuf::from("/x/config.toml"),
+            before: Some("model = \"m\"\n\n[mcp_servers.a]\ncommand = \"old\"\n\n[mcp_servers.extra]\ncommand = \"keep\"\n".into()),
+            after: Some("model = \"m\"\n\n[mcp_servers.a]\ncommand = \"new\"\n".into()),
+            mode: None,
+            ..ch
+        };
+        let n = narrow_to_server(&ch, "a").unwrap();
+        let cur = codex_current(n.after.as_deref()).unwrap();
+        assert_eq!(cur["a"]["command"], "new");
+        assert_eq!(cur["extra"]["command"], "keep");
+        assert!(n.after.unwrap().contains("model = \"m\""));
+    }
+
     use super::*;
     use serde_json::json;
     use std::collections::HashMap;
