@@ -148,3 +148,4 @@ export const Power = StubIcon;
 export const CircleAlert = StubIcon;
 export const CircleX = StubIcon;
 export const CircleDashed = StubIcon;
+export const ScrollText = StubIcon;

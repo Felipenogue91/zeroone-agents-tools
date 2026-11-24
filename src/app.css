@@ -127,6 +127,10 @@
 	.input {
 		@apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500;
 	}
+	/* native controls (select popups, scrollbars) follow the theme */
+	.dark {
+		color-scheme: dark;
+	}
 	/* compact control for dense toolbars */
 	.input-sm {
 		@apply h-8 py-1 text-sm;

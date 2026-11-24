@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Header } from '$lib/components/layout';
 	import { ContainerList, ContainerForm, ContainerDetail } from '$lib/components/containers';
+	import DockerContainers from '$lib/components/containers/DockerContainers.svelte';
 	import { ConfirmDialog } from '$lib/components/shared';
 	import { containerLibrary, notifications } from '$lib/stores';
 	import { i18n } from '$lib/i18n';
@@ -62,8 +63,15 @@
 	subtitle={i18n.t('page.containers.subtitle')}
 />
 
-<div class="flex-1 overflow-auto p-6">
-	<div class="flex items-center justify-between mb-6">
+<div class="flex-1 overflow-auto p-6 space-y-8">
+	{#if containerLibrary.dockerAvailable !== false}
+		<DockerContainers />
+	{/if}
+
+	<div>
+	<h2 class="text-title mb-1">{i18n.t('docker.appTitle')}</h2>
+	<p class="text-meta mb-4">{i18n.t('docker.appHint')}</p>
+	<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
 		<div class="flex items-center gap-3">
 			<div class="relative">
 				<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
@@ -110,6 +118,7 @@
 		onDelete={(container) => deletingContainer = container}
 		onView={(container) => viewingContainer = container}
 	/>
+	</div>
 </div>
 
 <!-- Add Container Modal -->

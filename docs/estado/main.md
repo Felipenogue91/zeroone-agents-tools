@@ -20,7 +20,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Item 9 (regras: consulta `ambiguous column name: created_at`), depois 10 (containers do Docker), 11 (aba Code Forest).
+- Item 11 (aba Code Forest), depois verificação final (e2e, screenshots) e push só com ok.
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +37,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Itens 9 e 10 (2026-11-24, Claude Code):** Regras: consultas com join usavam `created_at` sem prefixo (ambíguo) e a tela ficava vazia; corrigido com `rule_fields_as("r")` + teste. (Na máquina não há `~/.claude/rules`, então "0 regras" é real.) Containers: seção "Containers do Docker nesta máquina" (`list_docker_containers`, `docker_container_action`, `docker_container_logs`; bollard `all: true`), agrupada por projeto do compose com pasta, estado, portas, iniciar/parar/reiniciar, logs e "iniciar/parar todos"; atualiza a cada 5 s. Seletores nativos seguem o tema escuro (`color-scheme: dark`).
 
 - **Item 8, catálogo (2026-11-24, Claude Code):** aba "Catálogo de MCPs" saiu da Biblioteca e da busca (a rota `/library/catalog` fica, por causa do Agregador e dos e2e antigos). "Adicionar MCP" ganhou "Começar de um MCP que você já usa" (copia nome+config de qualquer escopo, recusa se tiver segredo literal) e "Ligar em" Claude/Codex/agy.
 

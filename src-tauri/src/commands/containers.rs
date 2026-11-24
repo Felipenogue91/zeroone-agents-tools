@@ -145,6 +145,41 @@ fn row_to_container(row: &rusqlite::Row) -> rusqlite::Result<Container> {
 // Tauri command wrappers
 // ============================================================================
 
+/// Every container on the local Docker, not only the ones the app created.
+#[tauri::command]
+pub async fn list_docker_containers(
+    docker_mgr: State<'_, Arc<DockerClientManager>>,
+) -> Result<Vec<crate::services::docker::client::DockerContainerInfo>, String> {
+    docker_mgr.list_all(1).await
+}
+
+/// start | stop | restart a container by its Docker id (local Docker).
+#[tauri::command]
+pub async fn docker_container_action(
+    docker_mgr: State<'_, Arc<DockerClientManager>>,
+    docker_id: String,
+    action: String,
+) -> Result<(), String> {
+    match action.as_str() {
+        "start" => docker_mgr.start_container(&docker_id, 1).await,
+        "stop" => docker_mgr.stop_container(&docker_id, 1).await,
+        "restart" => docker_mgr.restart_container(&docker_id, 1).await,
+        other => Err(format!("ação desconhecida: {}", other)),
+    }
+}
+
+/// Last log lines of a container by its Docker id.
+#[tauri::command]
+pub async fn docker_container_logs(
+    docker_mgr: State<'_, Arc<DockerClientManager>>,
+    docker_id: String,
+    tail: Option<u32>,
+) -> Result<Vec<ContainerLog>, String> {
+    docker_mgr
+        .get_logs(&docker_id, 1, tail.or(Some(200)), None)
+        .await
+}
+
 #[tauri::command]
 pub fn get_all_containers(db: State<'_, Arc<Mutex<Database>>>) -> Result<Vec<Container>, String> {
     info!("[Container] Loading all containers");

@@ -526,6 +526,9 @@ pub fn run() {
             commands::sessions::get_project_sessions,
             commands::sessions::get_session_detail,
             // Container Commands
+            commands::containers::list_docker_containers,
+            commands::containers::docker_container_action,
+            commands::containers::docker_container_logs,
             commands::containers::get_all_containers,
             commands::containers::get_container,
             commands::containers::create_container,

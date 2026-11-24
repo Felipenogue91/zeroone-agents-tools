@@ -17,6 +17,27 @@ use tokio::sync::RwLock;
 
 use crate::db::models::{Container, ContainerLog, ContainerStats, ContainerStatus, ExecResult};
 
+/// A container that exists in Docker (created by the app or not).
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerContainerInfo {
+    pub docker_id: String,
+    pub name: String,
+    pub image: String,
+    /// running, exited, paused, created, restarting, dead
+    pub state: String,
+    /// Human text from Docker ("Up 14 minutes (healthy)").
+    pub status: String,
+    /// "8080→80/tcp"
+    pub ports: Vec<String>,
+    /// `com.docker.compose.project`
+    pub compose_project: Option<String>,
+    pub compose_service: Option<String>,
+    /// `com.docker.compose.project.working_dir`
+    pub working_dir: Option<String>,
+    pub created: i64,
+}
+
 /// Manages Docker client connections for container operations.
 pub struct DockerClientManager {
     clients: RwLock<HashMap<i64, Docker>>,
@@ -301,6 +322,71 @@ impl DockerClientManager {
 
         info!("[Docker] Created container: {}", response.id);
         Ok(response.id)
+    }
+
+    /// Every container on the local Docker (running and stopped).
+    pub async fn list_all(&self, host_id: i64) -> Result<Vec<DockerContainerInfo>, String> {
+        let client = self.get_client(host_id).await?;
+        let list = client
+            .list_containers(Some(bollard::container::ListContainersOptions::<String> {
+                all: true,
+                ..Default::default()
+            }))
+            .await
+            .map_err(|e| format!("Failed to list containers: {}", e))?;
+        let mut out: Vec<DockerContainerInfo> = list
+            .into_iter()
+            .map(|c| {
+                let labels = c.labels.unwrap_or_default();
+                let mut ports: Vec<String> = c
+                    .ports
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|p| {
+                        let proto = p
+                            .typ
+                            .map(|t| format!("{:?}", t).to_lowercase())
+                            .unwrap_or_default();
+                        match p.public_port {
+                            Some(pub_port) => format!("{}→{}/{}", pub_port, p.private_port, proto),
+                            None => format!("{}/{}", p.private_port, proto),
+                        }
+                    })
+                    .collect();
+                ports.sort();
+                ports.dedup();
+                DockerContainerInfo {
+                    docker_id: c.id.unwrap_or_default(),
+                    name: c
+                        .names
+                        .and_then(|n| n.first().cloned())
+                        .unwrap_or_default()
+                        .trim_start_matches('/')
+                        .to_string(),
+                    image: c.image.unwrap_or_default(),
+                    state: c
+                        .state
+                        .map(|s| s.to_string().trim_matches('"').to_lowercase())
+                        .unwrap_or_default(),
+                    status: c.status.unwrap_or_default(),
+                    ports,
+                    compose_project: labels.get("com.docker.compose.project").cloned(),
+                    compose_service: labels.get("com.docker.compose.service").cloned(),
+                    working_dir: labels
+                        .get("com.docker.compose.project.working_dir")
+                        .cloned(),
+                    created: c.created.unwrap_or_default(),
+                }
+            })
+            .collect();
+        out.sort_by(|a, b| {
+            (a.compose_project.is_none(), &a.compose_project, &a.name).cmp(&(
+                b.compose_project.is_none(),
+                &b.compose_project,
+                &b.name,
+            ))
+        });
+        Ok(out)
     }
 
     /// Start a Docker container
