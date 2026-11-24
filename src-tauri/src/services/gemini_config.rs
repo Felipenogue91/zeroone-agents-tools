@@ -88,22 +88,28 @@ fn parse_mcp_entry(name: &str, config: &Value) -> Result<ParsedGeminiMcp> {
         .as_object()
         .ok_or_else(|| anyhow::anyhow!("MCP config entry is not an object"))?;
 
-    // Determine type based on presence of url/httpUrl vs command
+    // Determine type based on presence of url/httpUrl/serverUrl vs command
     let has_url = obj.contains_key("url");
     let has_http_url = obj.contains_key("httpUrl");
+    let has_server_url = obj.contains_key("serverUrl");
     let has_command = obj.contains_key("command");
 
-    if has_http_url || has_url {
+    if has_http_url || has_server_url || has_url {
         // HTTP/SSE transport
-        // Prefer httpUrl over url for the primary URL
+        // Prefer httpUrl / serverUrl over url for the primary URL
         let url = obj
             .get("httpUrl")
+            .or_else(|| obj.get("serverUrl"))
             .or_else(|| obj.get("url"))
             .and_then(|v| v.as_str())
             .map(String::from);
 
         // Determine type based on which field was used
-        let mcp_type = if has_http_url { "http" } else { "sse" };
+        let mcp_type = if has_http_url || has_server_url {
+            "http"
+        } else {
+            "sse"
+        };
 
         // Gemini uses direct headers
         let headers = obj.get("headers").and_then(|v| v.as_object()).map(|h| {
@@ -930,5 +936,40 @@ mod tests {
         assert!(backup_path.exists());
         let backup_content = fs::read_to_string(&backup_path).unwrap();
         assert_eq!(backup_content, original);
+    }
+
+    #[test]
+    fn test_parse_gemini_mcps_antigravity_server_url() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("mcp_config.json");
+
+        fs::write(
+            &config_path,
+            r#"{
+                "mcpServers": {
+                    "ai-memory": {
+                        "serverUrl": "http://127.0.0.1:49374/mcp",
+                        "headers": {
+                            "X-Test": "1"
+                        }
+                    }
+                }
+            }"#,
+        )
+        .unwrap();
+
+        let mcps = parse_gemini_mcps(&config_path).unwrap();
+        assert_eq!(mcps.len(), 1);
+        assert_eq!(mcps[0].name, "ai-memory");
+        assert_eq!(mcps[0].mcp_type, "http");
+        assert_eq!(mcps[0].url, Some("http://127.0.0.1:49374/mcp".to_string()));
+        assert_eq!(
+            mcps[0]
+                .headers
+                .as_ref()
+                .and_then(|h| h.get("X-Test"))
+                .map(String::as_str),
+            Some("1")
+        );
     }
 }

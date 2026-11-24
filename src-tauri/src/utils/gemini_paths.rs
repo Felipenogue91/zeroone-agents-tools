@@ -7,8 +7,9 @@ use std::path::PathBuf;
 pub struct GeminiPathsInternal {
     #[allow(dead_code)]
     pub home: PathBuf,
-    pub config_dir: PathBuf,    // ~/.gemini/
-    pub settings_file: PathBuf, // ~/.gemini/settings.json
+    pub config_dir: PathBuf,           // ~/.gemini/
+    pub settings_file: PathBuf,        // ~/.gemini/settings.json
+    pub antigravity_mcp_file: PathBuf, // ~/.gemini/antigravity-cli/mcp_config.json
 }
 
 pub fn get_gemini_paths() -> Result<GeminiPathsInternal> {
@@ -22,6 +23,7 @@ pub fn get_gemini_paths() -> Result<GeminiPathsInternal> {
 
     Ok(GeminiPathsInternal {
         settings_file: config_dir.join("settings.json"),
+        antigravity_mcp_file: config_dir.join("antigravity-cli").join("mcp_config.json"),
         home,
         config_dir,
     })

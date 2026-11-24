@@ -55,98 +55,123 @@ where
     Ok(count)
 }
 
-pub async fn run_startup_scan(app: &tauri::AppHandle) -> Result<()> {
-    let db = app.state::<std::sync::Arc<std::sync::Mutex<Database>>>();
-    let db = db.lock().map_err(|e| anyhow::anyhow!("{}", e))?;
-
+/// Run a full discovery and filesystem reconciliation scan into the database.
+pub fn run_full_scan(db: &Database) -> Result<usize> {
     // First scan global MCPs from claude.json
-    let global_mcp_count = scan_global_mcps_from_claude_json(&db)?;
+    let global_mcp_count = scan_global_mcps_from_claude_json(db)?;
     log::info!("Imported {} global MCPs from claude.json", global_mcp_count);
 
     // Then scan claude.json for projects and their MCPs
-    let claude_json_count = scan_claude_json(&db)?;
+    let claude_json_count = scan_claude_json(db)?;
     log::info!(
         "Imported {} project MCPs from claude.json",
         claude_json_count
     );
 
     // Then scan plugins/marketplaces for additional MCPs
-    let plugin_count = scan_plugins(&db)?;
+    let plugin_count = scan_plugins(db)?;
     log::info!("Found {} MCPs from plugins", plugin_count);
 
     // Scan global commands from ~/.claude/commands/
-    let command_count = scan_global_commands(&db)?;
+    let command_count = scan_global_commands(db)?;
     log::info!("Found {} commands from ~/.claude/commands/", command_count);
 
     // Scan global skills from ~/.claude/skills/
-    let skill_count = scan_global_skills(&db)?;
-    log::info!("Found {} skills from ~/.claude/skills/", skill_count);
+    let skill_count = scan_global_skills(db)?;
+    log::info!("Found {} global skills from ~/.claude/skills/", skill_count);
+
+    // Scan shared agent skills from ~/.agents/skills/ (optional)
+    let shared_skill_count = scan_agents_skills_dir(db)?;
+    log::info!(
+        "Found {} shared skills from ~/.agents/skills/",
+        shared_skill_count
+    );
 
     // Scan global agents from ~/.claude/agents/
-    let agent_count = scan_global_agents(&db)?;
+    let agent_count = scan_global_agents(db)?;
     log::info!("Found {} agents from ~/.claude/agents/", agent_count);
 
     // Scan global hooks from ~/.claude/settings.json
-    let hook_count = scan_global_hooks(&db)?;
+    let hook_count = scan_global_hooks(db)?;
     log::info!("Found {} hooks from ~/.claude/settings.json", hook_count);
 
     // Scan global rules from ~/.claude/rules/
-    let rule_count = scan_global_rules(&db)?;
+    let rule_count = scan_global_rules(db)?;
     log::info!("Found {} rules from ~/.claude/rules/", rule_count);
 
     // ============================================================================
     // OpenCode Scanning
     // ============================================================================
 
-    // Scan OpenCode global config for MCPs
-    let opencode_mcp_count = scan_opencode_config(&db)?;
+    let opencode_mcp_count = scan_opencode_config(db)?;
     log::info!("Found {} MCPs from OpenCode config", opencode_mcp_count);
 
-    // Scan OpenCode global commands from ~/.config/opencode/command/
-    let opencode_command_count = scan_opencode_global_commands(&db)?;
+    let opencode_command_count = scan_opencode_global_commands(db)?;
     log::info!("Found {} commands from OpenCode", opencode_command_count);
 
-    // Scan OpenCode global agents from ~/.config/opencode/agent/
-    let opencode_agent_count = scan_opencode_global_agents(&db)?;
+    let opencode_agent_count = scan_opencode_global_agents(db)?;
     log::info!("Found {} agents from OpenCode", opencode_agent_count);
 
     // ============================================================================
     // Codex CLI Scanning
     // ============================================================================
 
-    // Scan Codex global config for MCPs
-    let codex_mcp_count = scan_codex_config(&db)?;
+    let codex_mcp_count = scan_codex_config(db)?;
     log::info!("Found {} MCPs from Codex config", codex_mcp_count);
 
     // ============================================================================
     // GitHub Copilot CLI Scanning
     // ============================================================================
 
-    // Scan Copilot global config for MCPs
-    let copilot_mcp_count = scan_copilot_config(&db)?;
+    let copilot_mcp_count = scan_copilot_config(db)?;
     log::info!("Found {} MCPs from Copilot CLI config", copilot_mcp_count);
 
     // ============================================================================
     // Cursor IDE Scanning
     // ============================================================================
 
-    // Scan Cursor global config for MCPs
-    let cursor_mcp_count = scan_cursor_config(&db)?;
+    let cursor_mcp_count = scan_cursor_config(db)?;
     log::info!("Found {} MCPs from Cursor config", cursor_mcp_count);
 
     // ============================================================================
-    // Gemini CLI Scanning
+    // Gemini CLI & Antigravity CLI Scanning
     // ============================================================================
 
-    // Scan Gemini global config for MCPs
-    let gemini_mcp_count = scan_gemini_config(&db)?;
-    log::info!("Found {} MCPs from Gemini CLI config", gemini_mcp_count);
+    let gemini_mcp_count = scan_gemini_config(db)?;
+    log::info!(
+        "Found {} MCPs from Gemini / Antigravity CLI config",
+        gemini_mcp_count
+    );
 
+    // Reconcile deleted projects and auto-detected assets against disk
+    reconcile_filesystem_entries(db)?;
+
+    Ok(global_mcp_count
+        + claude_json_count
+        + plugin_count
+        + command_count
+        + skill_count
+        + shared_skill_count
+        + agent_count
+        + hook_count
+        + rule_count
+        + gemini_mcp_count)
+}
+
+pub async fn run_startup_scan(app: &tauri::AppHandle) -> Result<()> {
+    let db = app.state::<std::sync::Arc<std::sync::Mutex<Database>>>();
+    let db = db.lock().map_err(|e| anyhow::anyhow!("{}", e))?;
+    let _ = run_full_scan(&db)?;
     Ok(())
 }
 
 /// Scan global MCPs from claude.json (root mcpServers)
 pub fn scan_global_mcps_from_claude_json(db: &Database) -> Result<usize> {
+    let paths = get_claude_paths()?;
+    if !paths.claude_json.exists() {
+        return Ok(0);
+    }
+
     let all_mcps = match claude_json::get_all_mcps_from_claude_json() {
         Ok(m) => m,
         Err(e) => {
@@ -156,6 +181,7 @@ pub fn scan_global_mcps_from_claude_json(db: &Database) -> Result<usize> {
     };
 
     let mut count = 0;
+    let mut active_global_mcp_ids: HashSet<i64> = HashSet::new();
 
     // Only process global MCPs (those without a project_path)
     for mcp in all_mcps.iter().filter(|m| m.project_path.is_none()) {
@@ -171,6 +197,7 @@ pub fn scan_global_mcps_from_claude_json(db: &Database) -> Result<usize> {
             mcp.env.as_ref(),
             "~/.claude.json",
         )?;
+        active_global_mcp_ids.insert(mcp_id);
 
         // Add to global_mcps table if not already there
         let existing: Option<i64> = db
@@ -182,7 +209,12 @@ pub fn scan_global_mcps_from_claude_json(db: &Database) -> Result<usize> {
             )
             .ok();
 
-        if existing.is_none() {
+        if let Some(existing_id) = existing {
+            db.conn().execute(
+                "UPDATE global_mcps SET is_enabled = ? WHERE id = ?",
+                params![mcp.is_enabled, existing_id],
+            )?;
+        } else {
             // Get next display order
             let next_order: i64 = db
                 .conn()
@@ -202,6 +234,27 @@ pub fn scan_global_mcps_from_claude_json(db: &Database) -> Result<usize> {
         count += 1;
     }
 
+    // Reconcile stale non-manual/non-system global MCPs that were removed from ~/.claude.json
+    let existing_global_mcps: Vec<(i64, String)> = {
+        let mut stmt = db.conn().prepare(
+            "SELECT gm.mcp_id, COALESCE(m.source, 'auto-detected')
+             FROM global_mcps gm
+             JOIN mcps m ON m.id = gm.mcp_id",
+        )?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .filter_map(|r| r.ok())
+            .collect();
+        rows
+    };
+
+    for (mcp_id, source) in existing_global_mcps {
+        if source != "manual" && source != "system" && !active_global_mcp_ids.contains(&mcp_id) {
+            db.conn()
+                .execute("DELETE FROM global_mcps WHERE mcp_id = ?", [mcp_id])?;
+        }
+    }
+
     Ok(count)
 }
 
@@ -215,6 +268,10 @@ pub fn scan_claude_json(db: &Database) -> Result<usize> {
         }
     };
 
+    let home_norm = get_claude_paths()
+        .ok()
+        .map(|p| normalize_path(&p.home.to_string_lossy()));
+
     let mut mcp_count = 0;
     let mut seen_projects: HashSet<String> = HashSet::new();
 
@@ -225,6 +282,12 @@ pub fn scan_claude_json(db: &Database) -> Result<usize> {
             continue;
         }
         seen_projects.insert(normalized_path.clone());
+
+        // Never treat the user's home root directory as a project (prevents duplicating ~/.claude globals)
+        if home_norm.as_deref() == Some(normalized_path.as_str()) {
+            log::debug!("Skipping home root directory as project: {}", project_path);
+            continue;
+        }
 
         // Check if project directory exists
         let path_to_check = if project_path.starts_with("C:") || project_path.starts_with("c:") {
@@ -351,28 +414,49 @@ fn get_or_create_mcp(
     env: Option<&std::collections::HashMap<String, String>>,
     source_path: &str,
 ) -> Result<i64> {
-    // Try to find existing MCP by name
-    let existing_id: Option<i64> = db
-        .conn()
-        .query_row("SELECT id FROM mcps WHERE name = ?", params![name], |row| {
-            row.get(0)
-        })
-        .ok();
-
-    if let Some(id) = existing_id {
-        // Update source_path if not already set
-        db.conn().execute(
-            "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
-            params![source_path, id],
-        )?;
-        return Ok(id);
-    }
-
-    // Create new MCP
     let args_json = args.map(|a| serde_json::to_string(a).unwrap());
     let headers_json = headers.map(|h| serde_json::to_string(h).unwrap());
     let env_json = env.map(|e| serde_json::to_string(e).unwrap());
 
+    // Try to find existing MCP by name
+    let existing: Option<(i64, String)> = db
+        .conn()
+        .query_row(
+            "SELECT id, COALESCE(source, 'auto-detected') FROM mcps WHERE name = ?",
+            params![name],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .ok();
+
+    if let Some((id, source)) = existing {
+        if source != "manual" && source != "system" {
+            db.conn().execute(
+                "UPDATE mcps
+                 SET type = ?, command = ?, args = ?, url = ?, headers = ?, env = ?,
+                     source_path = CASE WHEN source_path IS NULL OR source_path = '' THEN ? ELSE source_path END,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?",
+                params![
+                    mcp_type,
+                    command,
+                    args_json,
+                    url,
+                    headers_json,
+                    env_json,
+                    source_path,
+                    id
+                ],
+            )?;
+        } else {
+            db.conn().execute(
+                "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
+                params![source_path, id],
+            )?;
+        }
+        return Ok(id);
+    }
+
+    // Create new MCP
     db.conn().execute(
         "INSERT INTO mcps (name, type, command, args, url, headers, env, source, source_path)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'auto-detected', ?)",
@@ -571,36 +655,78 @@ pub fn scan_global_commands(db: &Database) -> Result<usize> {
     })
 }
 
-/// Scan global skills from ~/.claude/skills/ directories
-pub fn scan_global_skills(db: &Database) -> Result<usize> {
-    let paths = get_claude_paths()?;
+/// Scan a skills directory, importing/updating skills and optionally registering them as global_skills.
+pub(crate) fn scan_skills_directory(
+    db: &Database,
+    skills_dir: &Path,
+    mark_global: bool,
+) -> Result<usize> {
+    if !skills_dir.exists() {
+        return Ok(0);
+    }
+
     let mut count = 0;
+    let mut active_global_skill_ids: HashSet<i64> = HashSet::new();
 
-    if paths.skills_dir.exists() {
-        for entry in std::fs::read_dir(&paths.skills_dir)? {
-            let entry = entry?;
-            let path = entry.path();
+    for entry in std::fs::read_dir(skills_dir)? {
+        let entry = entry?;
+        let path = entry.path();
 
-            // Only process directories (each skill is a directory with SKILL.md)
-            if path.is_dir() {
-                if let Some((skill, files)) = parse_agent_skill_dir(&path) {
-                    // Use get_or_create_skill to insert into skills table
-                    let source_path = path.to_string_lossy().to_string();
-                    let (skill_id, was_created) = get_or_create_skill(db, &skill, &source_path)?;
+        // Only process directories (each skill is a directory with SKILL.md)
+        if path.is_dir() {
+            if let Some((skill, files)) = parse_agent_skill_dir(&path) {
+                let source_path = path.to_string_lossy().to_string();
+                let (skill_id, was_created) = get_or_create_skill(db, &skill, &source_path)?;
 
-                    // Insert skill files if this is a new skill
-                    if was_created {
-                        if !files.is_empty() {
-                            let _ = insert_skill_files(db, skill_id, &files);
-                        }
-                        count += 1;
-                    }
+                if was_created && !files.is_empty() {
+                    let _ = insert_skill_files(db, skill_id, &files);
                 }
+
+                if mark_global {
+                    db.add_global_skill(skill_id)?;
+                    active_global_skill_ids.insert(skill_id);
+                }
+
+                count += 1;
+            }
+        }
+    }
+
+    if mark_global {
+        let existing_globals: Vec<(i64, String)> = {
+            let mut stmt = db.conn().prepare(
+                "SELECT gs.skill_id, COALESCE(s.source, 'auto-detected')
+                 FROM global_skills gs
+                 JOIN skills s ON s.id = gs.skill_id",
+            )?;
+            let rows = stmt
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .filter_map(|r| r.ok())
+                .collect();
+            rows
+        };
+
+        for (skill_id, source) in existing_globals {
+            if source != "manual" && !active_global_skill_ids.contains(&skill_id) {
+                db.remove_global_skill(skill_id)?;
             }
         }
     }
 
     Ok(count)
+}
+
+/// Scan global skills from ~/.claude/skills/ directories and register them in global_skills
+pub fn scan_global_skills(db: &Database) -> Result<usize> {
+    let paths = get_claude_paths()?;
+    scan_skills_directory(db, &paths.skills_dir, true)
+}
+
+/// Scan shared skills from ~/.agents/skills/ (optional cross-agent skills directory)
+pub fn scan_agents_skills_dir(db: &Database) -> Result<usize> {
+    let paths = get_claude_paths()?;
+    let agents_skills_dir = paths.home.join(".agents").join("skills");
+    scan_skills_directory(db, &agents_skills_dir, false)
 }
 
 /// Scan global agents from ~/.claude/agents/
@@ -1133,32 +1259,52 @@ fn get_or_create_skill(
     skill: &ParsedSkill,
     source_path: &str,
 ) -> Result<(i64, bool)> {
-    // Try to find existing skill by name
-    let existing_id: Option<i64> = db
-        .conn()
-        .query_row(
-            "SELECT id FROM skills WHERE name = ?",
-            [&skill.name],
-            |row| row.get(0),
-        )
-        .ok();
-
-    if let Some(id) = existing_id {
-        // Update source_path if not already set
-        db.conn().execute(
-            "UPDATE skills SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
-            params![source_path, id],
-        )?;
-        return Ok((id, false));
-    }
-
-    // Create new skill
     let tags_json = if skill.tags.is_empty() {
         None
     } else {
         Some(serde_json::to_string(&skill.tags).unwrap())
     };
 
+    // Try to find existing skill by name
+    let existing: Option<(i64, String)> = db
+        .conn()
+        .query_row(
+            "SELECT id, COALESCE(source, 'auto-detected') FROM skills WHERE name = ?",
+            [&skill.name],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .ok();
+
+    if let Some((id, source)) = existing {
+        if source != "manual" {
+            db.conn().execute(
+                "UPDATE skills
+                 SET description = ?, content = ?, allowed_tools = ?, model = ?,
+                     disable_model_invocation = ?, tags = ?,
+                     source_path = CASE WHEN source_path IS NULL OR source_path = '' THEN ? ELSE source_path END,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?",
+                params![
+                    skill.description,
+                    skill.content,
+                    skill.allowed_tools,
+                    skill.model,
+                    skill.disable_model_invocation,
+                    tags_json,
+                    source_path,
+                    id
+                ],
+            )?;
+        } else {
+            db.conn().execute(
+                "UPDATE skills SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
+                params![source_path, id],
+            )?;
+        }
+        return Ok((id, false));
+    }
+
+    // Create new skill
     db.conn().execute(
         "INSERT INTO skills (name, description, content, allowed_tools, model, disable_model_invocation, tags, source, source_path)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'auto-detected', ?)",
@@ -1402,6 +1548,7 @@ pub(crate) fn parse_hooks_from_settings(path: &Path) -> Vec<ParsedHook> {
     };
 
     // Parse the "hooks" object
+    let mut seen_names: HashSet<String> = HashSet::new();
     if let Some(hooks_obj) = json.get("hooks").and_then(|h| h.as_object()) {
         for (event_type, event_hooks) in hooks_obj {
             if let Some(hook_array) = event_hooks.as_array() {
@@ -1432,17 +1579,36 @@ pub(crate) fn parse_hooks_from_settings(path: &Path) -> Vec<ParsedHook> {
                                 .and_then(|t| t.as_i64())
                                 .map(|t| t as i32);
 
-                            // Generate a name from the event type and index
-                            let name = if let Some(ref m) = matcher {
-                                format!(
-                                    "{}-{}-{}",
-                                    event_type.to_lowercase(),
-                                    m.replace('|', "-"),
-                                    inner_idx
-                                )
-                            } else {
-                                format!("{}-{}-{}", event_type.to_lowercase(), idx, inner_idx)
+                            // Generate a collision-free name from event type, matcher (if non-empty), and indices
+                            let base_name = match matcher.as_deref() {
+                                Some(m) if !m.is_empty() => {
+                                    let candidate = format!(
+                                        "{}-{}-{}",
+                                        event_type.to_lowercase(),
+                                        m.replace('|', "-"),
+                                        inner_idx
+                                    );
+                                    if seen_names.contains(&candidate) {
+                                        format!(
+                                            "{}-{}-{}-{}",
+                                            event_type.to_lowercase(),
+                                            m.replace('|', "-"),
+                                            idx,
+                                            inner_idx
+                                        )
+                                    } else {
+                                        candidate
+                                    }
+                                }
+                                _ => format!("{}-{}-{}", event_type.to_lowercase(), idx, inner_idx),
                             };
+                            let mut name = base_name.clone();
+                            let mut disambig = 1usize;
+                            while seen_names.contains(&name) {
+                                name = format!("{}-{}", base_name, disambig);
+                                disambig += 1;
+                            }
+                            seen_names.insert(name.clone());
 
                             // Generate description
                             let description = Some(format!(
@@ -1450,6 +1616,7 @@ pub(crate) fn parse_hooks_from_settings(path: &Path) -> Vec<ParsedHook> {
                                 event_type,
                                 matcher
                                     .as_ref()
+                                    .filter(|m| !m.is_empty())
                                     .map(|m| format!(" for {}", m))
                                     .unwrap_or_default()
                             ));
@@ -1485,36 +1652,11 @@ pub fn scan_global_hooks(db: &Database) -> Result<usize> {
 
     let hooks = parse_hooks_from_settings(&settings_path);
     let mut count = 0;
+    let mut active_global_hook_ids: HashSet<i64> = HashSet::new();
 
     for hook in hooks {
-        // Check if already exists by name
-        let existing_id: Option<i64> = db
-            .conn()
-            .query_row("SELECT id FROM hooks WHERE name = ?", [&hook.name], |row| {
-                row.get(0)
-            })
-            .ok();
-
-        let hook_id = if let Some(id) = existing_id {
-            id
-        } else {
-            // Create new hook
-            db.conn().execute(
-                "INSERT INTO hooks (name, description, event_type, matcher, hook_type, command, prompt, timeout, source)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'auto-detected')",
-                params![
-                    hook.name,
-                    hook.description,
-                    hook.event_type,
-                    hook.matcher,
-                    hook.hook_type,
-                    hook.command,
-                    hook.prompt,
-                    hook.timeout
-                ],
-            )?;
-            db.conn().last_insert_rowid()
-        };
+        let hook_id = get_or_create_hook(db, &hook)?;
+        active_global_hook_ids.insert(hook_id);
 
         // Always ensure it's in global_hooks
         let _ = db.conn().execute(
@@ -1523,6 +1665,36 @@ pub fn scan_global_hooks(db: &Database) -> Result<usize> {
         );
         count += 1;
     }
+
+    // Remove stale auto-detected global hooks that are no longer in settings.json
+    let existing_global_hooks: Vec<(i64, String)> = {
+        let mut stmt = db.conn().prepare(
+            "SELECT gh.hook_id, COALESCE(h.source, 'auto-detected')
+             FROM global_hooks gh
+             JOIN hooks h ON h.id = gh.hook_id",
+        )?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .filter_map(|r| r.ok())
+            .collect();
+        rows
+    };
+
+    for (hook_id, source) in existing_global_hooks {
+        if source == "auto-detected" && !active_global_hook_ids.contains(&hook_id) {
+            db.conn()
+                .execute("DELETE FROM global_hooks WHERE hook_id = ?", [hook_id])?;
+        }
+    }
+
+    // Delete unreferenced auto-detected hooks
+    db.conn().execute(
+        "DELETE FROM hooks
+         WHERE source = 'auto-detected'
+           AND id NOT IN (SELECT hook_id FROM global_hooks)
+           AND id NOT IN (SELECT hook_id FROM project_hooks)",
+        [],
+    )?;
 
     Ok(count)
 }
@@ -1548,14 +1720,34 @@ fn scan_project_hooks(db: &Database, project_id: i64, settings_path: &Path) -> R
 /// Get or create a hook in the database
 fn get_or_create_hook(db: &Database, hook: &ParsedHook) -> Result<i64> {
     // Try to find existing hook by name
-    let existing_id: Option<i64> = db
+    let existing: Option<(i64, String)> = db
         .conn()
-        .query_row("SELECT id FROM hooks WHERE name = ?", [&hook.name], |row| {
-            row.get(0)
-        })
+        .query_row(
+            "SELECT id, COALESCE(source, 'auto-detected') FROM hooks WHERE name = ?",
+            [&hook.name],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
         .ok();
 
-    if let Some(id) = existing_id {
+    if let Some((id, source)) = existing {
+        if source == "auto-detected" {
+            db.conn().execute(
+                "UPDATE hooks
+                 SET description = ?, event_type = ?, matcher = ?, hook_type = ?,
+                     command = ?, prompt = ?, timeout = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?",
+                params![
+                    hook.description,
+                    hook.event_type,
+                    hook.matcher,
+                    hook.hook_type,
+                    hook.command,
+                    hook.prompt,
+                    hook.timeout,
+                    id
+                ],
+            )?;
+        }
         return Ok(id);
     }
 
@@ -2105,68 +2297,73 @@ pub fn scan_cursor_config(db: &Database) -> Result<usize> {
 // Gemini CLI Scanning Functions
 // ============================================================================
 
-/// Scan Gemini CLI settings.json for MCPs
-pub fn scan_gemini_config(db: &Database) -> Result<usize> {
-    let paths = match get_gemini_paths() {
-        Ok(p) => p,
-        Err(e) => {
-            log::debug!("Gemini paths not available: {}", e);
-            return Ok(0);
-        }
-    };
-
-    if !paths.settings_file.exists() {
-        log::debug!(
-            "Gemini settings.json not found at {:?}",
-            paths.settings_file
-        );
-        return Ok(0);
-    }
-
-    // Parse MCPs from settings.json
-    let mcps = match gemini_config::parse_gemini_mcps(&paths.settings_file) {
-        Ok(m) => m,
-        Err(e) => {
-            log::warn!("Failed to parse Gemini settings.json: {}", e);
-            return Ok(0);
-        }
-    };
-
+/// Upsert parsed Gemini / Antigravity MCPs into the database library.
+fn upsert_gemini_mcps(
+    db: &Database,
+    mcps: Vec<gemini_config::ParsedGeminiMcp>,
+    source_path: &str,
+    skip_self: bool,
+) -> Result<usize> {
     let mut count = 0;
 
     for mcp in mcps {
-        let source_path = paths.settings_file.to_string_lossy().to_string();
+        if skip_self
+            && matches!(
+                mcp.name.as_str(),
+                "claude-code-tool-manager" | "zeroone-agents-tools"
+            )
+        {
+            continue;
+        }
 
-        // Check if already exists
-        let existing_id: Option<i64> = db
+        let args_json = match &mcp.args {
+            Some(args) if !args.is_empty() => Some(serde_json::to_string(args).unwrap()),
+            _ => None,
+        };
+        let env_json = match &mcp.env {
+            Some(env) if !env.is_empty() => Some(serde_json::to_string(env).unwrap()),
+            _ => None,
+        };
+        let headers_json = match &mcp.headers {
+            Some(headers) if !headers.is_empty() => Some(serde_json::to_string(headers).unwrap()),
+            _ => None,
+        };
+
+        let existing: Option<(i64, String)> = db
             .conn()
-            .query_row("SELECT id FROM mcps WHERE name = ?", [&mcp.name], |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT id, COALESCE(source, 'gemini') FROM mcps WHERE name = ?",
+                [&mcp.name],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
             .ok();
 
-        if let Some(id) = existing_id {
-            // Update source_path if not already set
-            db.conn().execute(
-                "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
-                params![&source_path, id],
-            )?;
+        if let Some((id, source)) = existing {
+            if source != "manual" && source != "system" {
+                db.conn().execute(
+                    "UPDATE mcps
+                     SET type = ?, command = ?, args = ?, url = ?, headers = ?, env = ?,
+                         source_path = CASE WHEN source_path IS NULL OR source_path = '' THEN ? ELSE source_path END,
+                         updated_at = CURRENT_TIMESTAMP
+                     WHERE id = ?",
+                    params![
+                        mcp.mcp_type,
+                        mcp.command,
+                        args_json,
+                        mcp.url,
+                        headers_json,
+                        env_json,
+                        source_path,
+                        id
+                    ],
+                )?;
+            } else {
+                db.conn().execute(
+                    "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
+                    params![source_path, id],
+                )?;
+            }
         } else {
-            let args_json = match &mcp.args {
-                Some(args) if !args.is_empty() => Some(serde_json::to_string(args).unwrap()),
-                _ => None,
-            };
-            let env_json = match &mcp.env {
-                Some(env) if !env.is_empty() => Some(serde_json::to_string(env).unwrap()),
-                _ => None,
-            };
-            let headers_json = match &mcp.headers {
-                Some(headers) if !headers.is_empty() => {
-                    Some(serde_json::to_string(headers).unwrap())
-                }
-                _ => None,
-            };
-
             let result = db.conn().execute(
                 "INSERT INTO mcps (name, type, command, args, url, headers, env, source, source_path)
                  VALUES (?, ?, ?, ?, ?, ?, ?, 'gemini', ?)",
@@ -2189,6 +2386,166 @@ pub fn scan_gemini_config(db: &Database) -> Result<usize> {
     }
 
     Ok(count)
+}
+
+/// Scan Gemini CLI settings.json and Antigravity CLI mcp_config.json for MCPs
+pub fn scan_gemini_config(db: &Database) -> Result<usize> {
+    let paths = match get_gemini_paths() {
+        Ok(p) => p,
+        Err(e) => {
+            log::debug!("Gemini paths not available: {}", e);
+            return Ok(0);
+        }
+    };
+
+    let mut total = 0;
+
+    if paths.settings_file.exists() {
+        match gemini_config::parse_gemini_mcps(&paths.settings_file) {
+            Ok(mcps) => {
+                let source_path = paths.settings_file.to_string_lossy().to_string();
+                total += upsert_gemini_mcps(db, mcps, &source_path, false)?;
+            }
+            Err(e) => {
+                log::warn!("Failed to parse Gemini settings.json: {}", e);
+            }
+        }
+    } else {
+        log::debug!(
+            "Gemini settings.json not found at {:?}",
+            paths.settings_file
+        );
+    }
+
+    if paths.antigravity_mcp_file.exists() {
+        match gemini_config::parse_gemini_mcps(&paths.antigravity_mcp_file) {
+            Ok(mcps) => {
+                let source_path = paths.antigravity_mcp_file.to_string_lossy().to_string();
+                total += upsert_gemini_mcps(db, mcps, &source_path, true)?;
+            }
+            Err(e) => {
+                log::warn!("Failed to parse Antigravity mcp_config.json: {}", e);
+            }
+        }
+    }
+
+    Ok(total)
+}
+
+/// Reconcile database entries against disk so deleted projects and stale auto-detected assets do not linger.
+pub fn reconcile_filesystem_entries(db: &Database) -> Result<()> {
+    let home_norm = get_claude_paths()
+        .ok()
+        .map(|p| normalize_path(&p.home.to_string_lossy()));
+
+    // 1. Remove projects whose directory no longer exists or matches $HOME root
+    let projects: Vec<(i64, String)> = {
+        let mut stmt = db.conn().prepare("SELECT id, path FROM projects")?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .filter_map(|r| r.ok())
+            .collect();
+        rows
+    };
+
+    for (project_id, path) in projects {
+        let norm = normalize_path(&path);
+        let is_home_root = home_norm.as_deref() == Some(norm.as_str());
+        if is_home_root || !Path::new(&path).exists() {
+            for table in [
+                "project_mcps",
+                "project_skills",
+                "project_subagents",
+                "project_commands",
+                "project_hooks",
+                "project_rules",
+                "project_containers",
+            ] {
+                let sql = format!("DELETE FROM {} WHERE project_id = ?", table);
+                db.conn().execute(&sql, [project_id])?;
+            }
+            db.conn()
+                .execute("DELETE FROM projects WHERE id = ?", [project_id])?;
+        }
+    }
+
+    // 2. Remove stale auto-detected skills, subagents, commands, and rules missing from disk
+    let asset_specs = [
+        (
+            "skills",
+            "skill_id",
+            "global_skills",
+            "project_skills",
+            Some("skill"),
+            true,
+        ),
+        (
+            "subagents",
+            "subagent_id",
+            "global_subagents",
+            "project_subagents",
+            Some("subagent"),
+            false,
+        ),
+        (
+            "commands",
+            "command_id",
+            "global_commands",
+            "project_commands",
+            Some("command"),
+            false,
+        ),
+        (
+            "rules",
+            "rule_id",
+            "global_rules",
+            "project_rules",
+            None,
+            false,
+        ),
+    ];
+
+    for (table, fk_col, global_tbl, project_tbl, profile_type, has_skill_files) in asset_specs {
+        let select_sql = format!(
+            "SELECT id, source_path FROM {} WHERE source = 'auto-detected' AND source_path IS NOT NULL AND source_path != ''",
+            table
+        );
+        let rows: Vec<(i64, String)> = {
+            let mut stmt = db.conn().prepare(&select_sql)?;
+            let mapped = stmt
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .filter_map(|r| r.ok())
+                .collect();
+            mapped
+        };
+
+        for (id, source_path) in rows {
+            if !Path::new(&source_path).exists() {
+                db.conn().execute(
+                    &format!("DELETE FROM {} WHERE {} = ?", global_tbl, fk_col),
+                    [id],
+                )?;
+                db.conn().execute(
+                    &format!("DELETE FROM {} WHERE {} = ?", project_tbl, fk_col),
+                    [id],
+                )?;
+                if has_skill_files {
+                    db.conn()
+                        .execute("DELETE FROM skill_files WHERE skill_id = ?", [id])?;
+                }
+                if let Some(ptype) = profile_type {
+                    db.conn().execute(
+                        "DELETE FROM profile_items WHERE item_type = ? AND item_id = ?",
+                        params![ptype, id],
+                    )?;
+                }
+                db.conn()
+                    .execute(&format!("DELETE FROM {} WHERE id = ?", table), [id])?;
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -4508,5 +4865,153 @@ Body"#,
             )
             .unwrap();
         assert_eq!(assigned2, 1);
+    }
+
+    #[test]
+    fn test_parse_hooks_no_collision_on_empty_and_duplicate_matchers() {
+        let temp_dir = TempDir::new().unwrap();
+        let settings_path = temp_dir.path().join("settings.json");
+        fs::write(
+            &settings_path,
+            r#"{
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "",
+                            "hooks": [{ "type": "command", "command": "echo first" }]
+                        },
+                        {
+                            "matcher": "",
+                            "hooks": [{ "type": "command", "command": "echo second" }]
+                        },
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{ "type": "command", "command": "echo bash-1" }]
+                        },
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{ "type": "command", "command": "echo bash-2" }]
+                        }
+                    ]
+                }
+            }"#,
+        )
+        .unwrap();
+
+        let hooks = parse_hooks_from_settings(&settings_path);
+        assert_eq!(hooks.len(), 4);
+        let names: HashSet<String> = hooks.iter().map(|h| h.name.clone()).collect();
+        assert_eq!(names.len(), 4);
+        assert_eq!(hooks[0].name, "posttooluse-0-0");
+        assert_eq!(hooks[1].name, "posttooluse-1-0");
+        assert_eq!(hooks[2].name, "posttooluse-Bash-0");
+        assert_eq!(hooks[3].name, "posttooluse-Bash-3-0");
+    }
+
+    #[test]
+    fn test_scan_skills_directory_populates_and_reconciles_global_skills() {
+        let db = setup_test_db();
+        let temp_dir = TempDir::new().unwrap();
+
+        let skill_a = temp_dir.path().join("skill-a");
+        fs::create_dir_all(&skill_a).unwrap();
+        fs::write(
+            skill_a.join("SKILL.md"),
+            "---\nname: skill-a\ndescription: Skill A\n---\nBody A",
+        )
+        .unwrap();
+
+        let skill_b = temp_dir.path().join("skill-b");
+        fs::create_dir_all(&skill_b).unwrap();
+        fs::write(
+            skill_b.join("SKILL.md"),
+            "---\nname: skill-b\ndescription: Skill B\n---\nBody B",
+        )
+        .unwrap();
+
+        let count = scan_skills_directory(&db, temp_dir.path(), true).unwrap();
+        assert_eq!(count, 2);
+
+        let global_count: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM global_skills", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(global_count, 2);
+
+        // Remove skill-b from disk and rescan: global_skills must shrink to 1
+        fs::remove_dir_all(&skill_b).unwrap();
+        scan_skills_directory(&db, temp_dir.path(), true).unwrap();
+
+        let remaining: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM global_skills", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(remaining, 1);
+    }
+
+    #[test]
+    fn test_reconcile_filesystem_entries_preserves_manual_and_drops_stale() {
+        let db = setup_test_db();
+        let temp_dir = TempDir::new().unwrap();
+        let existing_proj_dir = temp_dir.path().join("real-proj");
+        fs::create_dir_all(&existing_proj_dir).unwrap();
+        let missing_proj_dir = temp_dir.path().join("deleted-proj");
+
+        let _real_id =
+            get_or_create_project(&db, "real-proj", &existing_proj_dir.to_string_lossy()).unwrap();
+        let _gone_id =
+            get_or_create_project(&db, "deleted-proj", &missing_proj_dir.to_string_lossy())
+                .unwrap();
+
+        let auto_skill = ParsedSkill {
+            name: "stale-auto-skill".to_string(),
+            description: None,
+            content: "x".to_string(),
+            skill_type: "skill".to_string(),
+            allowed_tools: None,
+            argument_hint: None,
+            model: None,
+            disable_model_invocation: false,
+            tags: vec![],
+        };
+        let (stale_skill_id, _) =
+            get_or_create_skill(&db, &auto_skill, "/nonexistent/path/stale-auto-skill").unwrap();
+        db.add_global_skill(stale_skill_id).unwrap();
+
+        // Manual skill should never be deleted even without a disk path
+        db.conn()
+            .execute(
+                "INSERT INTO skills (name, content, source) VALUES ('manual-skill', 'keep', 'manual')",
+                [],
+            )
+            .unwrap();
+
+        reconcile_filesystem_entries(&db).unwrap();
+
+        let proj_count: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM projects", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(proj_count, 1);
+
+        let stale_exists: i64 = db
+            .conn()
+            .query_row(
+                "SELECT COUNT(*) FROM skills WHERE name = 'stale-auto-skill'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(stale_exists, 0);
+
+        let manual_exists: i64 = db
+            .conn()
+            .query_row(
+                "SELECT COUNT(*) FROM skills WHERE name = 'manual-skill'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(manual_exists, 1);
     }
 }

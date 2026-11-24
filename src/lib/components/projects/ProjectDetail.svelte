@@ -40,10 +40,16 @@
 
 	// Get assigned MCP IDs for this project
 	let assignedMcpIds = $derived(project.assignedMcps.map((a) => a.mcpId));
+	let enabledGlobalMcpIds = $derived(
+		(projectsStore.globalMcps ?? []).filter((g) => g.isEnabled).map((g) => g.mcpId)
+	);
+	let inheritedGlobalMcps = $derived(
+		(projectsStore.globalMcps ?? []).filter((g) => g.isEnabled && !assignedMcpIds.includes(g.mcpId))
+	);
 
-	// Available MCPs (in library but not assigned to this project)
+	// Available MCPs (in library but not assigned to this project or inherited globally)
 	let availableMcps = $derived(
-		mcpLibrary.mcps.filter((mcp) => !assignedMcpIds.includes(mcp.id))
+		mcpLibrary.mcps.filter((mcp) => !assignedMcpIds.includes(mcp.id) && !enabledGlobalMcpIds.includes(mcp.id))
 	);
 
 	// Filtered available MCPs based on search
@@ -59,8 +65,14 @@
 	// Skills state
 	let projectSkills = $state<ProjectSkill[]>([]);
 	let assignedSkillIds = $derived(projectSkills.map((ps) => ps.skillId));
+	let enabledGlobalSkillIds = $derived(
+		(skillLibrary.globalSkills ?? []).filter((g) => g.isEnabled).map((g) => g.skillId)
+	);
+	let inheritedGlobalSkills = $derived(
+		(skillLibrary.globalSkills ?? []).filter((g) => g.isEnabled && !assignedSkillIds.includes(g.skillId))
+	);
 	let availableSkills = $derived(
-		skillLibrary.skills.filter((skill) => !assignedSkillIds.includes(skill.id))
+		skillLibrary.skills.filter((skill) => !assignedSkillIds.includes(skill.id) && !enabledGlobalSkillIds.includes(skill.id))
 	);
 
 	// Filtered available Skills based on search
@@ -76,8 +88,14 @@
 	// SubAgents state
 	let projectSubAgents = $state<ProjectSubAgent[]>([]);
 	let assignedSubAgentIds = $derived(projectSubAgents.map((pa) => pa.subagentId));
+	let enabledGlobalSubAgentIds = $derived(
+		(subagentLibrary.globalSubAgents ?? []).filter((g) => g.isEnabled).map((g) => g.subagentId)
+	);
+	let inheritedGlobalSubAgents = $derived(
+		(subagentLibrary.globalSubAgents ?? []).filter((g) => g.isEnabled && !assignedSubAgentIds.includes(g.subagentId))
+	);
 	let availableSubAgents = $derived(
-		subagentLibrary.subagents.filter((agent) => !assignedSubAgentIds.includes(agent.id))
+		subagentLibrary.subagents.filter((agent) => !assignedSubAgentIds.includes(agent.id) && !enabledGlobalSubAgentIds.includes(agent.id))
 	);
 
 	// Filtered available SubAgents based on search
@@ -93,8 +111,14 @@
 	// Commands state
 	let projectCommands = $state<ProjectCommand[]>([]);
 	let assignedCommandIds = $derived(projectCommands.map((pc) => pc.commandId));
+	let enabledGlobalCommandIds = $derived(
+		(commandLibrary.globalCommands ?? []).filter((g) => g.isEnabled).map((g) => g.commandId)
+	);
+	let inheritedGlobalCommands = $derived(
+		(commandLibrary.globalCommands ?? []).filter((g) => g.isEnabled && !assignedCommandIds.includes(g.commandId))
+	);
 	let availableCommands = $derived(
-		commandLibrary.commands.filter((cmd) => !assignedCommandIds.includes(cmd.id))
+		commandLibrary.commands.filter((cmd) => !assignedCommandIds.includes(cmd.id) && !enabledGlobalCommandIds.includes(cmd.id))
 	);
 
 	// Filtered available Commands based on search
@@ -386,34 +410,65 @@
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'mcps' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Plug class="w-4 h-4" />
-				MCPs ({project.assignedMcps.length})
+				MCPs ({project.assignedMcps.length}{inheritedGlobalMcps.length > 0 ? ` + ${inheritedGlobalMcps.length} global` : ''})
 			</button>
 			<button
 				onclick={() => handleTabChange('skills')}
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'skills' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Sparkles class="w-4 h-4" />
-				Skills ({projectSkills.length})
+				Skills ({projectSkills.length}{inheritedGlobalSkills.length > 0 ? ` + ${inheritedGlobalSkills.length} global` : ''})
 			</button>
 			<button
 				onclick={() => handleTabChange('agents')}
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'agents' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Bot class="w-4 h-4" />
-				Agents ({projectSubAgents.length})
+				Agents ({projectSubAgents.length}{inheritedGlobalSubAgents.length > 0 ? ` + ${inheritedGlobalSubAgents.length} global` : ''})
 			</button>
 			<button
 				onclick={() => handleTabChange('commands')}
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'commands' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Terminal class="w-4 h-4" />
-				Commands ({projectCommands.length})
+				Commands ({projectCommands.length}{inheritedGlobalCommands.length > 0 ? ` + ${inheritedGlobalCommands.length} global` : ''})
 			</button>
 		</div>
 
 		<!-- Content -->
 		<div class="flex-1 overflow-auto p-6 space-y-6">
 			{#if activeTab === 'mcps'}
+				{#if inheritedGlobalMcps.length > 0}
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+								<Globe class="w-4 h-4 text-primary-500" />
+								Global (Inherited) ({inheritedGlobalMcps.length})
+							</h3>
+							<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+						</div>
+						<div class="space-y-2">
+							{#each inheritedGlobalMcps as globalItem (globalItem.id)}
+								{@const mcp = mcpLibrary.getMcpById(globalItem.mcpId) ?? globalItem.mcp}
+								<div class="flex items-center justify-between p-3 bg-primary-50/50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/40 rounded-lg">
+									<div class="flex items-center gap-3">
+										<div class="w-8 h-8 rounded-lg {typeColors[mcp.type]} flex items-center justify-center">
+											<svelte:component this={typeIcons[mcp.type]} class="w-4 h-4" />
+										</div>
+										<div>
+											<span class="font-medium text-gray-900 dark:text-white">{mcp.name}</span>
+											<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({mcp.type})</span>
+										</div>
+									</div>
+									<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+										Global
+									</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<!-- Assigned MCPs -->
 				<div>
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -522,6 +577,39 @@
 					{/if}
 				</div>
 			{:else if activeTab === 'skills'}
+				{#if inheritedGlobalSkills.length > 0}
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+								<Globe class="w-4 h-4 text-primary-500" />
+								Global (Inherited) ({inheritedGlobalSkills.length})
+							</h3>
+							<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+						</div>
+						<div class="space-y-2">
+							{#each inheritedGlobalSkills as globalItem (globalItem.id)}
+								{@const skill = skillLibrary.getSkillById(globalItem.skillId) ?? globalItem.skill}
+								<div class="flex items-center justify-between gap-3 p-3 bg-primary-50/50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/40 rounded-lg">
+									<div class="flex items-center gap-3 min-w-0 flex-1">
+										<div class="w-8 h-8 rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/50 dark:text-yellow-400 flex items-center justify-center flex-shrink-0">
+											<Sparkles class="w-4 h-4" />
+										</div>
+										<div class="min-w-0">
+											<p class="font-medium text-gray-900 dark:text-white truncate">{skill.name}</p>
+											{#if skill.description}
+												<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{skill.description}</p>
+											{/if}
+										</div>
+									</div>
+									<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
+										Global
+									</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<!-- Assigned Skills -->
 				<div>
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -634,6 +722,39 @@
 					{/if}
 				</div>
 			{:else if activeTab === 'agents'}
+				{#if inheritedGlobalSubAgents.length > 0}
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+								<Globe class="w-4 h-4 text-primary-500" />
+								Global (Inherited) ({inheritedGlobalSubAgents.length})
+							</h3>
+							<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+						</div>
+						<div class="space-y-2">
+							{#each inheritedGlobalSubAgents as globalItem (globalItem.id)}
+								{@const agent = subagentLibrary.getSubAgentById(globalItem.subagentId) ?? globalItem.subagent}
+								<div class="flex items-center justify-between gap-3 p-3 bg-primary-50/50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/40 rounded-lg">
+									<div class="flex items-center gap-3 min-w-0 flex-1">
+										<div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-400 flex items-center justify-center flex-shrink-0">
+											<Bot class="w-4 h-4" />
+										</div>
+										<div class="min-w-0">
+											<p class="font-medium text-gray-900 dark:text-white truncate">{agent.name}</p>
+											{#if agent.description}
+												<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{agent.description}</p>
+											{/if}
+										</div>
+									</div>
+									<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
+										Global
+									</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<!-- Assigned SubAgents -->
 				<div>
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -746,6 +867,39 @@
 					{/if}
 				</div>
 			{:else if activeTab === 'commands'}
+				{#if inheritedGlobalCommands.length > 0}
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+								<Globe class="w-4 h-4 text-primary-500" />
+								Global (Inherited) ({inheritedGlobalCommands.length})
+							</h3>
+							<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+						</div>
+						<div class="space-y-2">
+							{#each inheritedGlobalCommands as globalItem (globalItem.id)}
+								{@const command = commandLibrary.getCommandById(globalItem.commandId) ?? globalItem.command}
+								<div class="flex items-center justify-between gap-3 p-3 bg-primary-50/50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/40 rounded-lg">
+									<div class="flex items-center gap-3 min-w-0 flex-1">
+										<div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+											<Terminal class="w-4 h-4" />
+										</div>
+										<div class="min-w-0">
+											<p class="font-medium text-gray-900 dark:text-white truncate">/{command.name}</p>
+											{#if command.description}
+												<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{command.description}</p>
+											{/if}
+										</div>
+									</div>
+									<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
+										Global
+									</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<!-- Assigned Commands -->
 				<div>
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">

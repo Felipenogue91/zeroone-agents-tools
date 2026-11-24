@@ -1352,6 +1352,67 @@ impl Database {
     // Project Methods
     // ========================================================================
 
+    fn load_assigned_mcps_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<crate::db::models::ProjectMcp>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT pm.id, pm.mcp_id, pm.is_enabled, pm.env_overrides, pm.display_order,
+                    m.id, m.name, m.description, m.type, m.command, m.args, m.url, m.headers, m.env,
+                    m.icon, m.tags, m.source, m.source_path, m.is_enabled_global, m.is_favorite, m.created_at, m.updated_at
+             FROM project_mcps pm
+             JOIN mcps m ON pm.mcp_id = m.id
+             WHERE pm.project_id = ?
+             ORDER BY pm.display_order",
+        )?;
+
+        let assigned = stmt
+            .query_map([project_id], |row| {
+                let mcp = crate::db::models::Mcp {
+                    id: row.get(5)?,
+                    name: row.get(6)?,
+                    description: row.get(7)?,
+                    mcp_type: row.get(8)?,
+                    command: row.get(9)?,
+                    args: row
+                        .get::<_, Option<String>>(10)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    url: row.get(11)?,
+                    headers: row
+                        .get::<_, Option<String>>(12)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    env: row
+                        .get::<_, Option<String>>(13)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    icon: row.get(14)?,
+                    tags: row
+                        .get::<_, Option<String>>(15)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    source: row.get(16)?,
+                    source_path: row.get(17)?,
+                    is_enabled_global: row.get::<_, i32>(18)? != 0,
+                    is_favorite: row.get::<_, i32>(19)? != 0,
+                    created_at: row.get(20)?,
+                    updated_at: row.get(21)?,
+                };
+
+                Ok(crate::db::models::ProjectMcp {
+                    id: row.get(0)?,
+                    mcp_id: row.get(1)?,
+                    is_enabled: row.get::<_, i32>(2)? != 0,
+                    env_overrides: row
+                        .get::<_, Option<String>>(3)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    display_order: row.get(4)?,
+                    mcp,
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(assigned)
+    }
+
     pub fn get_all_projects(&self) -> Result<Vec<crate::db::models::Project>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, path, has_mcp_file, has_settings_file, last_scanned_at,
@@ -1359,7 +1420,7 @@ impl Database {
              FROM projects ORDER BY name",
         )?;
 
-        let projects: Vec<crate::db::models::Project> = stmt
+        let mut projects: Vec<crate::db::models::Project> = stmt
             .query_map([], |row| {
                 Ok(crate::db::models::Project {
                     id: row.get(0)?,
@@ -1379,6 +1440,10 @@ impl Database {
             })?
             .filter_map(|r| r.ok())
             .collect();
+
+        for project in &mut projects {
+            project.assigned_mcps = self.load_assigned_mcps_for_project(project.id)?;
+        }
 
         Ok(projects)
     }
@@ -1409,7 +1474,10 @@ impl Database {
         );
 
         match result {
-            Ok(project) => Ok(Some(project)),
+            Ok(mut project) => {
+                project.assigned_mcps = self.load_assigned_mcps_for_project(project.id)?;
+                Ok(Some(project))
+            }
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e.into()),
         }
@@ -2564,6 +2632,7 @@ mod tests {
                 [],
             )
             .unwrap();
+        let proj1_id = db.conn().last_insert_rowid();
         db.conn()
             .execute(
                 "INSERT INTO projects (name, path) VALUES ('proj2', '/tmp/proj2')",
@@ -2571,8 +2640,18 @@ mod tests {
             )
             .unwrap();
 
+        let mcp = db.create_mcp(&create_test_mcp_request("proj-mcp")).unwrap();
+        db.assign_mcp_to_project(proj1_id, mcp.id).unwrap();
+
         let projects = db.get_all_projects().unwrap();
         assert_eq!(projects.len(), 2);
+        let p1 = projects.iter().find(|p| p.id == proj1_id).unwrap();
+        assert_eq!(p1.assigned_mcps.len(), 1);
+        assert_eq!(p1.assigned_mcps[0].mcp.name, "proj-mcp");
+
+        let p1_by_id = db.get_project_by_id(proj1_id).unwrap().unwrap();
+        assert_eq!(p1_by_id.assigned_mcps.len(), 1);
+        assert_eq!(p1_by_id.assigned_mcps[0].mcp.name, "proj-mcp");
     }
 
     #[test]

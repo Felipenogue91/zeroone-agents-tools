@@ -506,6 +506,41 @@ describe('ProjectToolsPanel Component', () => {
 		await fireEvent.click(hooksTab);
 		expect(screen.getByText('All hooks are assigned')).toBeInTheDocument();
 	});
+
+	it('should show enabled global MCPs under Global (Inherited) and exclude from Available MCPs', async () => {
+		const { projectsStore, mcpLibrary } = await import('$lib/stores');
+		const globalMcp = {
+			id: 99,
+			name: 'ai-memory',
+			description: null,
+			type: 'http' as const,
+			command: null,
+			args: null,
+			url: 'http://127.0.0.1:49374/mcp',
+			headers: null,
+			env: null,
+			icon: null,
+			tags: null,
+			source: 'auto-detected' as const,
+			sourcePath: null,
+			isEnabledGlobal: true,
+			isFavorite: false,
+			createdAt: '',
+			updatedAt: ''
+		};
+		mcpLibrary.mcps = [globalMcp];
+		projectsStore.globalMcps = [{ id: 1, mcpId: 99, mcp: globalMcp, isEnabled: true, envOverrides: null }];
+		try {
+			render(ProjectToolsPanel, { props: { project: mockProject } });
+			expect(screen.getByText('Global (Inherited) (1)')).toBeInTheDocument();
+			expect(screen.getByText('ai-memory')).toBeInTheDocument();
+			expect(screen.getByText('Global')).toBeInTheDocument();
+			expect(screen.getByText('Available MCPs (0)')).toBeInTheDocument();
+		} finally {
+			mcpLibrary.mcps = [];
+			projectsStore.globalMcps = [];
+		}
+	});
 });
 
 describe('ProjectDashboard Component', () => {
