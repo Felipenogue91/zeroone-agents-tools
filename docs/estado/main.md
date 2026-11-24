@@ -1,29 +1,26 @@
-# Estado (atualizado em 2026-11-23 23:20 por antigravity-cli)
+# Estado (atualizado em 2026-11-23 23:25 por antigravity-cli)
 
 ## Fazendo agora
 
-Unidade 3 concluída e verificada; pronto para iniciar a **Unidade 4** (Chaves do Updater, Workflows Windows + Linux, README público, build `.deb` local e publicação `v1.0.0` em `Felipenogue91/zeroone-agents-tools`).
+Unidades 1 a 4 concluídas: rebrand ZeroOne, reconciliação do scanner, `.deb` local gerado e pipeline multi-plataforma (`Windows` + `Linux` + `macOS`) pronto no GitHub Actions (`v1.0.0`).
 
 ## Próximo passo exato
 
-Executar **Unidade 4**:
-1. Gerar par de chaves do Tauri Updater em `~/.tauri/zeroone-agents-tools.key` e atualizar `pubkey` + `endpoints` em `src-tauri/tauri.conf.json`.
-2. Atualizar `.github/workflows/release.yml`, `build.yml` e `rust-tests.yml` para `ubuntu-24.04` + `windows-latest` + `macos-latest` (sem depender de certificado Apple) e remover `update-homebrew.yml`.
-3. Reescrever `README.md` com instruções de download/instalação para Windows (`.exe`/`.msi`), Linux (`.deb`/`.AppImage`/`.rpm`) e macOS (`.dmg`), além de créditos MIT ao upstream.
-4. Gerar o `.deb` local via `npx tauri build --bundles deb`, atualizar este estado e fazer commit da Unidade 4.
-5. Criar o repo público `Felipenogue91/zeroone-agents-tools`, configurar `TAURI_SIGNING_PRIVATE_KEY` e dar push em `main` + tag `v1.0.0`.
+- Acompanhar a primeira run da tag `v1.0.0` em `https://github.com/Felipenogue91/zeroone-agents-tools/actions` para confirmar geração dos instaladores Windows (`.exe`, `.msi`) e Linux (`.deb`, `.AppImage`, `.rpm`) na página de Releases.
+- Se o Felipe aprovar localmente: parar o processo antigo (`claude-code-tool-manager` na porta `23847`), remover o pacote antigo e instalar `src-tauri/target/release/bundle/deb/ZeroOne Agents Tools_1.0.0_amd64.deb`.
 
 ## Decisões em aberto
 
-- Instalação local do novo `.deb` e remoção do pacote antigo `claude-code-tool-manager` aguardam confirmação do Felipe após a Unidade 4 gerar o `.deb`.
+- Aguardando confirmação do Felipe para instalar o `.deb` novo localmente e remover o pacote antigo `claude-code-tool-manager`.
 
 ## Feito e verificado
 
 - **Unidade 1:** Fork clonado em `zeroone-agents-tools`, `upstream` configurado, `LICENSE` (MIT), `AGENTS.md` e `docs/estado/main.md`.
 - **Unidade 2:** Reconciliação no scanner, herança `Global (Inherited)` por projeto, suporte a `~/.agents/skills` e Antigravity CLI `mcp_config.json`, `list_projects` com `assignedMcps` reais.
-- **Unidade 3:**
-  - Assets oficiais da ZeroOne copiados para `static/brand/` (`zeroone-icone-app.svg`, `zeroone-horizontal-fundo-escuro.svg`, `zeroone-horizontal-fundo-claro.svg`) e ícones nativos (`.ico`, `.icns`, `.png`, `Square*Logo.png`, `static/favicon.png`) gerados com `npx tauri icon`.
-  - Identidade atualizada para `ZeroOne Agents Tools` (`com.zeroone.agents-tools`, versão `1.0.0`) em `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (com `[lib] name = "claude_code_tool_manager"`), `mcp_server/{tools,server}.rs` e `whatsNew.svelte.ts`.
-  - Design system `ZEROONE.GG` aplicado em `src/app.css`, `src/app.html`, `Sidebar.svelte`, `+page.svelte`, `WelcomeHero.svelte` e `SettingsEditorSyncTab.svelte`.
-  - Adicionado suporte completo ao idioma `pt-BR` (`PT`) e atualizado i18n/testes (`layout.test.ts`, `e2e/navigation.spec.ts`, `playwright.config.ts`).
-  - **Verificação:** `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test` (**2028 passed; 0 failed**), `npm run test:run` (84/84 arquivos), `npm run build` ok, `svelte-check` manteve 11 erros pré-existentes (0 novos).
+- **Unidade 3:** Rebrand visual `ZEROONE.GG`, logo/ícones nativos, `pt-BR`, `package.json`/`Cargo.toml`/`tauri.conf.json` em `1.0.0`, `cargo test` (2028/2028) e Vitest (84/84 arquivos, 1568/1568 testes) passando.
+- **Unidade 4:**
+  - Par de chaves do Tauri Updater gerado em `~/.tauri/zeroone-agents-tools.key` (fora do repositório) e `pubkey` + `endpoints` configurados em `src-tauri/tauri.conf.json`.
+  - Workflows atualizados para `ubuntu-24.04`, `windows-latest` e `macos-latest` (`releaseDraft: false`, sem dependência de certificado Apple; `update-homebrew.yml` removido).
+  - `README.md` reescrito com instruções de download e instalação para Windows (`.exe`/`.msi`), Linux (`.deb`/`.AppImage`/`.rpm`) e macOS (`.dmg`) + atribuição MIT ao upstream.
+  - Build local `.deb` concluído e assinado: `src-tauri/target/release/bundle/deb/ZeroOne Agents Tools_1.0.0_amd64.deb` (15 MB) + `.sig`.
+  - Repositório público `Felipenogue91/zeroone-agents-tools` criado, secret `TAURI_SIGNING_PRIVATE_KEY` configurado e tag `v1.0.0` disparada.

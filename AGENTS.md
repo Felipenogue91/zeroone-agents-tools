@@ -4,16 +4,16 @@ Fork aberto (licença MIT) do `tylergraydev/claude-code-tool-manager` mantido pe
 
 ## Regras para multi-usuário e cross-platform
 
-- **Nunca hardcodar caminhos pessoais** (como `/home/felipe-nogueira/...` ou caminhos Windows fixos), tokens, credenciais ou dados de máquina específica no código ou em arquivos versionados.
+- **Nunca hardcodar caminhos pessoais** (como `/home/<usuario>/...` ou caminhos Windows fixos), tokens, credenciais ou dados de máquina específica no código ou em arquivos versionados.
 - Resolver todos os diretórios de usuário e configuração de forma cross-platform (`dirs::home_dir()`, `std::path::PathBuf`, variáveis de ambiente padrão) compatível com Linux e Windows.
 - Recursos opcionais (como `.agents/skills` e Antigravity CLI) devem ser detectados apenas se existirem na máquina do usuário, sem erro nem ruído quando ausentes.
 
 ## Identidade visual (somente leitura)
 
 - Referência oficial da marca (não fundir repositórios):
-  - `/home/felipe-nogueira/Workspace/projects/site-zeroone-linux/zeroone-brand-kit/`
-  - `/home/felipe-nogueira/Workspace/projects/site-zeroone-linux/src/styles/global.css`
-- Copiar apenas os assets necessários para dentro deste repositório ao aplicar o rebrand (Unidade 3).
+  - `site-zeroone-linux/zeroone-brand-kit/`
+  - `site-zeroone-linux/src/styles/global.css`
+- Os assets aprovados já estão copiados dentro deste repositório (`static/brand/`, `static/favicon.png`, `src-tauri/icons/`).
 
 ## Stack e comandos de verificação
 

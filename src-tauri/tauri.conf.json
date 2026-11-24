@@ -43,9 +43,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbWVlbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDOTkyM0Y4NDA3RDdCREUKUldUZWUzMUErQ09aM0RtenVWdnNmRTl1TTNvcmlzU0luM2xZUWpBRkFUbGZuVXV1Z0JHc0tQV3AK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRGNzhENjAyM0ZDREIzRDEKUldUUnM4MC9BdFo0VDFJbDBtbzZhMVBUOEpmME1Nbk5nUy9QVUx6RUlmaVpOVDFpZVFMRUd5L2IK",
       "endpoints": [
-        "https://github.com/tylergraydev/claude-code-tool-manager/releases/latest/download/latest.json"
+        "https://github.com/Felipenogue91/zeroone-agents-tools/releases/latest/download/latest.json"
       ]
     }
   }
