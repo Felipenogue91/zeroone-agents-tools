@@ -5,12 +5,18 @@
 	import { Toast } from '$lib/components/shared';
 	import UpdateNotification from '$lib/components/shared/UpdateNotification.svelte';
 	import WhatsNewModal from '$lib/components/shared/WhatsNewModal.svelte';
-	import { mcpLibrary, projectsStore, skillLibrary, subagentLibrary, hookLibrary, commandLibrary, containerLibrary, statuslineLibrary, spinnerVerbLibrary, ruleLibrary, whatsNew, debugStore } from '$lib/stores';
+	import { mcpLibrary, projectsStore, skillLibrary, subagentLibrary, hookLibrary, commandLibrary, containerLibrary, statuslineLibrary, spinnerVerbLibrary, ruleLibrary, whatsNew, debugStore, i18n } from '$lib/stores';
 	import { installDebugInterceptor } from '$lib/utils/debugLogger';
+	import { syncStore } from '$lib/stores/syncStore.svelte';
+	import CommandPalette from '$lib/components/sync/CommandPalette.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
+		// Multi-CLI sync: health badge + live refresh from the config watcher
+		syncStore.listen();
+		syncStore.loadHealth();
+
 		// Priority 1: Load stores needed for dashboard immediately
 		Promise.all([
 			mcpLibrary.load(),
@@ -60,7 +66,7 @@
 	});
 </script>
 
-<a href="#main-content" class="skip-to-content">Skip to main content</a>
+<a href="#main-content" class="skip-to-content">{i18n.t('a11y.skipToContent')}</a>
 
 <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
 	<Sidebar />
@@ -70,6 +76,7 @@
 	</main>
 </div>
 
+<CommandPalette />
 <Toast />
 <UpdateNotification />
 <WhatsNewModal />

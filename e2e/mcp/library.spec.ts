@@ -3,8 +3,8 @@ import { test, expect, helpers } from '../fixtures/app';
 test.describe('MCP Library', () => {
 	test.beforeEach(async ({ page }) => {
 		// Navigate to library page via full page navigation
-		await page.goto('/library', { waitUntil: 'networkidle' });
-		await expect(page).toHaveURL('/library');
+		await page.goto('/library/catalog', { waitUntil: 'networkidle' });
+		await expect(page).toHaveURL('/library/catalog');
 		// Wait for content to load
 		await expect(page.locator('main header h1')).toContainText(/MCP Library/i);
 	});
@@ -142,8 +142,8 @@ test.describe('MCP Library', () => {
 
 test.describe('MCP Library - Empty State', () => {
 	test('should show empty message when no MCPs match search', async ({ page }) => {
-		await page.goto('/library', { waitUntil: 'networkidle' });
-		await expect(page).toHaveURL('/library');
+		await page.goto('/library/catalog', { waitUntil: 'networkidle' });
+		await expect(page).toHaveURL('/library/catalog');
 		await expect(page.locator('main header h1')).toContainText(/MCP Library/i);
 
 		// Wait for MCPs to load

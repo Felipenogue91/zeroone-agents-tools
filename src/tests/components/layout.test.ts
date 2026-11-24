@@ -39,6 +39,12 @@ vi.mock('$lib/stores', () => ({
 				'nav.comparison': 'Comparison',
 				'nav.sessions': 'Sessions',
 				'nav.settings': 'Settings',
+				'nav.home': 'Home',
+				'nav.library': 'Library',
+				'nav.clis': 'CLIs',
+				'nav.advanced': 'Claude Code advanced',
+				'header.search': 'Search…',
+				'header.searchTitle': 'Search pages, MCPs, skills and projects (Ctrl+K)',
 				'sidebar.collapse': 'Collapse',
 				'sidebar.collapseTitle': 'Collapse sidebar',
 				'sidebar.expandTitle': 'Expand sidebar',
@@ -99,13 +105,22 @@ describe('Header Component', () => {
 
 	it('should have refresh button', () => {
 		render(Header, { props: { title: 'Page' } });
-		expect(screen.getByLabelText('Refresh data')).toBeInTheDocument();
+		expect(screen.getByLabelText('Refresh')).toBeInTheDocument();
 	});
 
 	it('should have theme toggle button', () => {
 		render(Header, { props: { title: 'Page' } });
-		const themeBtn = screen.getByLabelText(/Switch to/);
+		const themeBtn = screen.getByLabelText('Toggle theme');
 		expect(themeBtn).toBeInTheDocument();
+	});
+
+	it('should have a search button that opens the command palette', async () => {
+		render(Header, { props: { title: 'Page' } });
+		const opened = vi.fn();
+		window.addEventListener('open-command-palette', opened);
+		await fireEvent.click(screen.getByLabelText('Search pages, MCPs, skills and projects (Ctrl+K)'));
+		expect(opened).toHaveBeenCalled();
+		window.removeEventListener('open-command-palette', opened);
 	});
 });
 
@@ -167,27 +182,30 @@ describe('Sidebar Component', () => {
 		expect(screen.getByText('Agents Tools')).toBeInTheDocument();
 	});
 
-	it('should render navigation groups', () => {
+	it('should render the task-based main navigation', () => {
 		render(Sidebar);
-		expect(screen.getByText('Core')).toBeInTheDocument();
-		expect(screen.getByText('Tools')).toBeInTheDocument();
-		expect(screen.getByText('Configure')).toBeInTheDocument();
-		expect(screen.getAllByText('Insights').length).toBeGreaterThan(0);
+		expect(screen.getByText('Home')).toBeInTheDocument();
+		expect(screen.getByText('Projects')).toBeInTheDocument();
+		expect(screen.getByText('Library')).toBeInTheDocument();
+		expect(screen.getByText('CLIs')).toBeInTheDocument();
 	});
 
-	it('should render nav items', () => {
+	it('should keep Claude Code advanced pages in a collapsible group', async () => {
+		try {
+			localStorage.removeItem('nav.advancedOpen');
+		} catch {
+			// ignore
+		}
 		render(Sidebar);
-		expect(screen.getByText('Dashboard')).toBeInTheDocument();
-		expect(screen.getByText('Projects')).toBeInTheDocument();
-		expect(screen.getByText('MCPs')).toBeInTheDocument();
-		expect(screen.getByText('Skills')).toBeInTheDocument();
-		expect(screen.getByText('Commands')).toBeInTheDocument();
-		expect(screen.getByText('Hooks')).toBeInTheDocument();
+		const toggle = screen.getByText('Claude Code advanced');
+		expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+		await fireEvent.click(toggle);
 		expect(screen.getByText('Profiles')).toBeInTheDocument();
 		expect(screen.getByText('Permissions')).toBeInTheDocument();
 		expect(screen.getByText('Memory')).toBeInTheDocument();
 		expect(screen.getByText('Analytics')).toBeInTheDocument();
 		expect(screen.getByText('Sessions')).toBeInTheDocument();
+		expect(screen.getByText('Containers')).toBeInTheDocument();
 	});
 
 	it('should render Settings link', () => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { syncStore } from '$lib/stores/syncStore.svelte';
 	import type { Project, ProjectSkill, ProjectSubAgent } from '$lib/types';
 	import { projectsStore, notifications, skillLibrary, subagentLibrary } from '$lib/stores';
 	import { i18n } from '$lib/i18n';
@@ -114,14 +115,10 @@
 				/>
 			{/if}
 			<ActionMenu bind:this={actionMenu} label={i18n.t('projComp.actionsFor', { name: project.name })}>
-				<ActionMenuItem icon={RefreshCw} label={i18n.t('projComp.syncConfig')} onclick={async () => {
-					try {
-						await projectsStore.syncProjectConfig(project.id);
-						notifications.success(i18n.t('projComp.configSynced'));
-					} catch {
-						notifications.error(i18n.t('global.syncFailed'));
-					}
+				<ActionMenuItem icon={RefreshCw} label={i18n.t('sync.project.applyNow')} onclick={async () => {
 					actionMenu.close();
+					// engine sync for this project (source of truth: ~/.agents); toast offers undo
+					await syncStore.applyAll(project.path);
 				}} />
 				<ActionMenuItem icon={ExternalLink} label={i18n.t('global.openFolder')} onclick={async () => {
 					try {

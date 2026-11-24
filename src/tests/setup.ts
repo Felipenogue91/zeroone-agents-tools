@@ -2,6 +2,13 @@ import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/svelte/pure';
 
+// The app defaults to pt-BR; the component suites assert the English copy.
+try {
+	localStorage.setItem('locale', 'en');
+} catch {
+	// storage unavailable
+}
+
 // Cleanup DOM after each test (using pure import to avoid auto-cleanup's
 // async act() which can hang with Svelte 5 $effect / legacy components)
 afterEach(() => {

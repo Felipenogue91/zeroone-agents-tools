@@ -3,8 +3,8 @@ import { test, expect } from '../fixtures/app';
 test.describe('MCP Form', () => {
 	test.beforeEach(async ({ page }) => {
 		// Navigate to library via full page navigation
-		await page.goto('/library', { waitUntil: 'networkidle' });
-		await expect(page).toHaveURL('/library');
+		await page.goto('/library/catalog', { waitUntil: 'networkidle' });
+		await expect(page).toHaveURL('/library/catalog');
 		await expect(page.locator('main header h1')).toContainText(/MCP Library/i);
 
 		// Open Add MCP modal
@@ -176,8 +176,8 @@ test.describe('MCP Form', () => {
 test.describe('MCP Form - Edit Mode', () => {
 	test('should open edit modal when clicking edit on MCP card', async ({ page }) => {
 		// Navigate to library
-		await page.goto('/library', { waitUntil: 'networkidle' });
-		await expect(page).toHaveURL('/library');
+		await page.goto('/library/catalog', { waitUntil: 'networkidle' });
+		await expect(page).toHaveURL('/library/catalog');
 		await expect(page.locator('main header h1')).toContainText(/MCP Library/i);
 
 		// Wait for MCPs to load

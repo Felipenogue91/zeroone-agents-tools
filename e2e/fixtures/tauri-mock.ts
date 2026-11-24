@@ -179,6 +179,14 @@ export const mockData = {
  */
 export async function mockTauriApi(page: Page) {
 	await page.addInitScript(() => {
+		// The app defaults to pt-BR; the specs assert the English copy
+		// (a later init script may set another locale).
+		try {
+			localStorage.setItem('locale', 'en');
+		} catch {
+			// storage unavailable
+		}
+
 		// Mock data (will be available as window.__MOCK_DATA__)
 		const mockData = {
 			mcps: [
@@ -536,6 +544,89 @@ export async function mockTauriApi(page: Page) {
 				case 'mark_whats_new_seen':
 				case 'get_last_seen_version':
 					return null;
+
+				// Multi-CLI sync (src-tauri/src/commands/sync.rs)
+				case 'get_mcp_management_status':
+					return { externallyManaged: true, agentsDir: '/home/test/.agents', globalSource: '/home/test/.agents/mcp/global.json', syncToolAvailable: true, message: null };
+				case 'get_sync_health': {
+					const on = { state: 'on' };
+					return {
+						inSync: false,
+						resources: 14,
+						checkedAt: new Date().toISOString(),
+						missingSecrets: ['AGY_FIGMA_TOKEN'],
+						secretsPermissionsOk: true,
+						cliVersions: [
+							{ cli: 'claude', installed: '2.1.331', tested: '2.x', known: true, message: null },
+							{ cli: 'codex', installed: '0.171.0', tested: '0.160 a 0.179', known: true, message: null },
+							{ cli: 'agy', installed: '1.5.16', tested: '1.5.x', known: true, message: null }
+						],
+						report: [
+							{ check: 'global', status: 'warn', summary: 'global: 8 MCPs; fora de sincronia: agy:figma, claude:icecat', detail: null },
+							{ check: 'projeto.site', status: 'ok', summary: 'site: Claude, Codex e agy iguais', detail: null }
+						],
+						divergences: [
+							{ kind: 'drift', cli: 'agy', scope: { type: 'global' }, name: 'comfyui', filePath: '/home/test/.gemini/config/mcp_config.json', message: 'comfyui: o Antigravity CLI (global) está diferente da fonte', actions: ['reapply'] },
+							{ kind: 'missingInCli', cli: 'claude', scope: { type: 'global' }, name: 'icecat', filePath: '/home/test/.claude.json', message: 'icecat: está na fonte mas falta no Claude Code (global)', actions: ['reapply'] },
+							{ kind: 'onlyInCli', cli: 'agy', scope: { type: 'global' }, name: 'figma', filePath: '/home/test/.gemini/config/mcp_config.json', message: 'figma: está no Antigravity CLI (global) mas não na fonte', actions: ['import', 'reapply'] },
+							{ kind: 'claudeLocalScope', cli: 'claude', scope: { type: 'project', path: '/home/test/w/site' }, name: 'hostinger', filePath: '/home/test/.claude.json', message: 'hostinger: cópia antiga no escopo local do Claude vence a do projeto (site)', actions: ['removeLocalCopy'] }
+						]
+					};
+				}
+				case 'get_sync_resources': {
+					const t = (c: string, x: string, a: string) => ({ claude: { state: c }, codex: { state: x }, agy: { state: a } });
+					const r = (name: string, extra: any) => ({ uid: `mcp:global:${name}`, kind: 'mcp', name, scope: { type: 'global' }, canonical: '/home/test/.agents/mcp/global.json', config: { type: 'stdio', command: 'npx', args: ['-y', name] }, transport: 'stdio', description: null, targets: t('on', 'on', 'on'), overrides: {}, secretRefs: [], literalSecretKeys: [], isFavorite: false, tags: [], occurrences: [], ...extra });
+					return [
+						r('ai-memory', { description: 'Memória entre sessões', transport: 'http', config: { type: 'http', url: 'http://127.0.0.1:7700/mcp' }, isFavorite: true, occurrences: [{ uid: 'mcp:global:ai-memory', kind: 'mcp', name: 'ai-memory', cli: 'codex', scope: { type: 'global' }, filePath: '/home/test/.codex/config.toml' }] }),
+						r('chrome-devtools', { description: 'Controle do Chrome', overrides: { codex: { args: [] }, agy: { args: [] } } }),
+						r('icecat', { transport: 'http', description: 'Catálogo de produtos', secretRefs: ['ICECAT_API_TOKEN'], config: { type: 'http', url: 'https://icecat.example/mcp', headers: { 'Api-Token': '${ICECAT_API_TOKEN}' } } }),
+						r('Neon', { transport: 'http', description: 'Postgres serverless', targets: t('providedByPlugin', 'providedByPlugin', 'on') }),
+						r('events', { transport: 'sse', description: 'Eventos via SSE', targets: { claude: { state: 'on' }, codex: { state: 'unsupported', reason: 'Codex não fala SSE' }, agy: { state: 'on' } } }),
+						r('supabase', { uid: 'mcp:project:/home/test/w/site:supabase', scope: { type: 'project', path: '/home/test/w/site' }, canonical: '/home/test/w/site/.mcp.json', transport: 'http', description: 'Banco do site', targets: t('on', 'on', 'off') }),
+						r('brevo', { uid: 'mcp:project:/home/test/w/site:brevo', scope: { type: 'project', path: '/home/test/w/site' }, canonical: '/home/test/w/site/.mcp.json', transport: 'http', description: 'E-mail marketing', targets: t('off', 'off', 'off') }),
+						{ uid: 'skill:global:frontend-design', kind: 'skill', name: 'frontend-design', scope: { type: 'global' }, canonical: '/home/test/.agents/skills/frontend-design', config: null, transport: null, description: 'Direção visual para UI nova', targets: t('on', 'native', 'native'), overrides: {}, secretRefs: [], literalSecretKeys: [], isFavorite: false, tags: [], occurrences: [] },
+						{ uid: 'skill:global:debito-tecnico', kind: 'skill', name: 'debito-tecnico', scope: { type: 'global' }, canonical: '/home/test/.agents/skills/debito-tecnico', config: null, transport: null, description: 'Anotar débito técnico no TickTick', targets: t('off', 'native', 'native'), overrides: {}, secretRefs: [], literalSecretKeys: [], isFavorite: false, tags: [], occurrences: [] },
+						{ uid: 'agent:global:reviewer', kind: 'agent', name: 'reviewer', scope: { type: 'global' }, canonical: '/home/test/.claude/agents/reviewer.md', config: null, transport: null, description: null, targets: { claude: { state: 'on' }, codex: { state: 'unsupported', reason: 'sem equivalente' }, agy: { state: 'unsupported', reason: 'sem equivalente' } }, overrides: {}, secretRefs: [], literalSecretKeys: [], isFavorite: false, tags: [], occurrences: [] }
+					];
+				}
+				case 'get_project_sync':
+					return {
+						path: args?.project ?? '/home/test/w/site',
+						name: 'site',
+						managed: true,
+						pending: ['agy'],
+						servers: [
+							{ name: 'supabase', inherited: false, overridesGlobal: false, transport: 'http', targets: { claude: { state: 'on' }, codex: { state: 'on' }, agy: { state: 'off' } }, secretRefs: [] },
+							{ name: 'brevo', inherited: false, overridesGlobal: false, transport: 'http', targets: { claude: { state: 'off' }, codex: { state: 'off' }, agy: { state: 'off' } }, secretRefs: ['BREVO_MCP_TOKEN'] },
+							{ name: 'ai-memory', inherited: true, overridesGlobal: false, transport: 'http', targets: { claude: { state: 'on' }, codex: { state: 'on' }, agy: { state: 'on' } }, secretRefs: [] },
+							{ name: 'chrome-devtools', inherited: true, overridesGlobal: false, transport: 'stdio', targets: { claude: { state: 'on' }, codex: { state: 'on' }, agy: { state: 'on' } }, secretRefs: [] }
+						],
+						worktrees: [
+							{ path: '/home/test/w/site', label: 'main', agyInSync: false },
+							{ path: '/home/test/w/site-feature', label: 'site-feature', agyInSync: true }
+						],
+						report: []
+					};
+				case 'health_action_preview':
+				case 'sync_preview': {
+					const changes = [{ cli: 'agy', scope: { type: 'global' }, label: 'agy', path: '/home/test/.gemini/config/mcp_config.json', action: 'update', servers: ['comfyui'], diff: '--- a/home/test/.gemini/config/mcp_config.json\n+++ b/home/test/.gemini/config/mcp_config.json\n@@ -3,4 +3,4 @@\n     "comfyui": {\n-      "command": "old-node",\n+      "command": "node",\n       "env": { "TOKEN": "••••••" }\n' }];
+					return cmd === 'sync_preview' ? { changes, report: [], inSync: false } : changes;
+				}
+				case 'sync_set_target':
+				case 'sync_set_enabled':
+				case 'sync_set_server':
+				case 'sync_manage_project':
+				case 'health_action_apply':
+				case 'sync_apply':
+				case 'set_skill_target':
+					return { backupId: '20261124-120000-001', applied: ['/home/test/.codex/config.toml'], skipped: [], clis: ['codex'], unmanagedProject: false };
+				case 'sync_undo':
+					return [];
+				case 'set_resource_favorite':
+				case 'fix_secrets_permissions':
+					return null;
+				case 'get_cli_versions':
+					return [];
 
 				default:
 					console.warn(`[Tauri Mock] Unhandled command: ${cmd}`);

@@ -1,17 +1,19 @@
-# Estado (atualizado em 2026-11-24 22:30 por claude-code)
+# Estado (atualizado em 2026-11-24 23:30 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 6 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`) concluída: fases 0 a 7 commitadas na `main` (sem push, sem empacotar). Aguardando o Felipe conferir para empacotar Linux + Windows juntos.
 
 ## Próximo passo exato
 
-- Fase 7 (UI): navegação por tarefa (Início=Saúde · Projetos · Biblioteca · CLIs · Configurações, resto em "Claude Code avançado"), chips por CLI togláveis, lista densa, painel de detalhe com diff, Ctrl+K, copy pt-BR, design system.
-- Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
-- Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
+- Felipe confere o app (`npm run tauri dev`) e decide os pontos em aberto abaixo.
+- Depois: empacotar Linux + Windows juntos (só com o ok dele), push da `main`.
+- Pendente de antes: run da tag `v1.0.0` e troca do pacote antigo `claude-code-tool-manager` (porta `23847`).
 
 ## Decisões em aberto
 
+- **Aplicar na máquina real:** nada foi aplicado nas configs do Felipe. `zeroone-agents-tools --sync-health` mostra 34 divergências reais (inclui `claude-code-tool-manager` no agy e cópias antigas no escopo local do Claude); revisar e aplicar pela tela Início só com aprovação.
+- **Hook de sessão:** trocar `mcp-sync --here` por `zeroone-agents-tools --sync-here` (mesma saída, entende `cliOff`) ou manter o script — ver `docs/sync-cliOff.md`.
 - **Incidente (2026-11-24 ~15:42):** um subcomando ainda não registrado (`--secrets-status`) abriu a janela do build de dev por ~10 min contra a pasta de dados real. Efeito só no banco (cache): migrations 25/26 e scan de início (saíram as 14 entradas do catálogo do marketplace, 41 → 27 MCPs; atribuições intactas; 5 MCPs passaram a `${VAR}`). Nenhum arquivo de config das CLIs mudou (conferido por mtime). Corrigido: argumento `--sync-*`/`--secrets-*` desconhecido agora mostra ajuda e sai com código 2.
 - Keyring do SO não entrou: o cofre é o `secrets.env` 0600 (o crate de keyring puxa dbus/secret-service no Linux; avaliar se valer a pena).
 - **`cliOff` vs `mcp-sync`:** o app grava `cliOff` no `sync.json` para desligar MCP numa CLI só; o script atual não conhece essa chave. Opções em `docs/sync-cliOff.md` (trocar o hook por `zeroone-agents-tools --sync-here` ou aplicar o patch sugerido no script).
@@ -21,6 +23,16 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases 
 
 ## Feito e verificado
 
+- **Fase 7 sync multi-CLI — UI (2026-11-24, Claude Code):**
+  - Navegação por tarefa: Início · Projetos · Biblioteca · CLIs (+ Configurações no rodapé); Perfis, Permissões, Memória, Status Line, Analytics, Insights, Sessões, Comparação, Containers e Marketplace no grupo recolhível "Claude Code avançado". Selo de divergências no Início.
+  - Início = Saúde (`src/lib/components/sync/HealthHome.svelte`): "Tudo sincronizado" / "N diferenças para revisar", situação por CLI com versão, segredos faltando, divergências agrupadas com ações; toda ação abre painel lateral com diff mascarado antes de aplicar.
+  - Biblioteca (`/library`): lista densa sobre a fonte (`ResourceList`), chips por CLI togláveis com ícone + texto + `aria-pressed`, filtros por significado (ligado em, origem, com problema), painel de detalhe (config mascarada, fonte, ajustes por CLI, onde aparece, editar/remover), adicionar MCP. Abas da biblioteca sob o cabeçalho; página antiga virou `/library/catalog`.
+  - CLIs (`/clis`): versão vs testada, arquivos de cada CLI, pendências e "Reaplicar" com prévia.
+  - Projeto: uma barra de abas só (MCPs · Skills · Agentes · Comandos · Hooks · Configurações), sem CLI única e sem botão Sync; `ProjectSyncPanel` com próprios + herdados esmaecidos, chips por CLI, desligar nas 3, worktrees, ativar/parar sincronização. Toda gravação mostra toast "Salvo em N CLIs · Desfazer".
+  - Ctrl+K (`CommandPalette`): páginas, ações, recursos e projetos, só teclado. Botão "Buscar… Ctrl K" no cabeçalho.
+  - Copy: pt-BR por padrão (WebKitGTK reporta `en-US`; inglês só se escolhido), `aria-label` do cabeçalho traduzidos, "Gateway" → "Agregador", sem "Unified control plane", onboarding sem "onde você usa Claude Code". 182 chaves novas em `en`/`pt-BR`.
+  - Design system em `src/app.css`: tokens de texto `text-title/body/meta` (20/14/12), grade 8pt, `skeleton`, `chip`, `row-dense`, `kbd`, um acento (violeta da marca). Contraste AA medido: texto secundário do modo escuro subiu de 3,9:1/2,4:1 para 6,2:1/5,0:1 (`gray-400`/`gray-500` só no `.dark`). Animações só de cor/hover.
+  - Verificação: `cargo test` 2128/2128, Vitest 85/85 arquivos e 1582/1582 (novo `src/tests/components/sync.test.ts`), `npm run check` só com os 11 erros pré-existentes (276 avisos, igual ao baseline), `npm run build` ok, e2e Playwright com mock 46/46 (specs do catálogo apontam para `/library/catalog`; mock força `locale=en`). Screenshots conferidos em escuro, claro e 900px.
 - **Fase 6 sync multi-CLI (2026-11-24, Claude Code):**
   - Fixtures sanitizadas em `src-tauri/src/sync/fixtures/` (estrutura real de `~/.claude.json` 2.1, `~/.codex/config.toml` 0.171 com `[tools]`, `[hooks.state]`, subtabela `.env`; agy com chaves extras; `global.json`/`sync.json` híbridos; `.mcp.json` pretty; cofre falso).
   - `src-tauri/src/sync/fixture_tests.rs`: Codex preserva toda tabela/chave/comentário fora do que gera; `~/.claude.json` mantém as outras chaves e a ordem; agy mantém chaves desconhecidas e solta o `claude-code-tool-manager`; arquivos versionados só com `${VAR}`; segunda execução não muda nada; edição de fonte ida e volta byte a byte; saúde nas fixtures; `mcp-sync --check` concorda nas fixtures.

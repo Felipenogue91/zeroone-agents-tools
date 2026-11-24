@@ -576,30 +576,19 @@ describe('ProjectDashboard Component', () => {
 		expect(screen.getByText('/home/user/dashboard')).toBeInTheDocument();
 	});
 
-	it('should show Claude Code editor type display', () => {
-		render(ProjectDashboard, { props: { project: mockProject } });
-		expect(screen.getByText('Claude Code')).toBeInTheDocument();
-	});
-
-	it('should show OpenCode editor type display for opencode projects', () => {
+	it('should not offer a single-editor selector (every project targets all CLIs)', () => {
 		render(ProjectDashboard, {
 			props: { project: { ...mockProject, editorType: 'opencode' } }
 		});
-		// The dropdown button shows OpenCode
-		expect(screen.getAllByText('OpenCode').length).toBeGreaterThan(0);
+		expect(screen.queryByText('OpenCode')).not.toBeInTheDocument();
 	});
 
-	it('should show Tools and Settings tabs', () => {
+	it('should show one tab bar with every project section', () => {
 		render(ProjectDashboard, { props: { project: mockProject } });
-		expect(screen.getByText('Tools')).toBeInTheDocument();
-		expect(screen.getByText('Settings')).toBeInTheDocument();
-	});
-
-	it('should show tools count badge when project has MCPs', () => {
-		render(ProjectDashboard, { props: { project: mockProject } });
-		// The badge shows the count (1 for 1 MCP)
-		const badges = screen.getAllByText('1');
-		expect(badges.length).toBeGreaterThan(0);
+		const tabs = screen.getAllByRole('tab').map((t) => t.textContent?.trim());
+		expect(tabs).toEqual(['MCPs', 'Skills', 'Agents', 'Commands', 'Hooks', 'Settings']);
+		// the mocked URL is an old `?tab=tools` link, which now opens Skills
+		expect(screen.getByRole('tab', { name: 'Skills' })).toHaveAttribute('aria-selected', 'true');
 	});
 
 	it('should not show tools count badge when project has no MCPs', () => {
@@ -620,9 +609,9 @@ describe('ProjectDashboard Component', () => {
 		expect(screen.getByTitle('Open project folder')).toBeInTheDocument();
 	});
 
-	it('should show Sync Config button', () => {
+	it('should not need a Sync button (changes are saved right away)', () => {
 		render(ProjectDashboard, { props: { project: mockProject } });
-		expect(screen.getByTitle('Sync config files')).toBeInTheDocument();
+		expect(screen.queryByTitle('Sync config files')).not.toBeInTheDocument();
 	});
 });
 

@@ -26,7 +26,7 @@ test.describe('Navigation', () => {
 	});
 
 	test('should navigate to MCP Library', async ({ page }) => {
-		await navigateToRoute(page, '/library', /MCP Library/i);
+		await navigateToRoute(page, '/library', /Library/i);
 	});
 
 	test('should navigate to Skills Library', async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe('Navigation', () => {
 
 	test('should highlight active navigation item', async ({ page }) => {
 		// Go to library and wait for content
-		await navigateToRoute(page, '/library', /MCP Library/i);
+		await navigateToRoute(page, '/library', /Library/i);
 
 		// Library link should have active class (bg-primary-50 in dark mode becomes bg-primary-900)
 		const libraryLink = page.locator('aside a[href="/library"]');

@@ -134,3 +134,14 @@ export const XCircle = StubIcon;
 export const Zap = StubIcon;
 
 export default StubIcon;
+export const Asterisk = StubIcon;
+export const SquareTerminal = StubIcon;
+export const Orbit = StubIcon;
+export const Link2 = StubIcon;
+export const Ban = StubIcon;
+export const Webhook = StubIcon;
+export const CircleCheck = StubIcon;
+export const FileCode2 = StubIcon;
+export const House = StubIcon;
+export const TerminalSquare = StubIcon;
+export const Power = StubIcon;

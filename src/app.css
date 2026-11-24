@@ -40,6 +40,14 @@
 	.dark {
 		--background: 9 9 11;
 		--foreground: 250 250 250;
+		/*
+		 * Secondary text must pass WCAG AA on dark surfaces. The brand grays
+		 * #71717a / #52525b measured 3.9:1 and 2.4:1 on gray-800 cards, so
+		 * the dark theme lifts them (6.2:1 and 5.0:1). Light mode keeps the
+		 * originals (4.8:1 and 7.7:1 on white).
+		 */
+		--color-gray-400: #93939e;
+		--color-gray-500: #83838e;
 	}
 
 	body {
@@ -64,6 +72,42 @@
 }
 
 @layer components {
+	/*
+	 * Design tokens (ZeroOne Agents Tools)
+	 * - spacing: 8pt grid (Tailwind 2 = 8px, 4 = 16px, 6 = 24px)
+	 * - type scale: title 20 / body 14 / meta 12
+	 * - one accent: primary (violet ZEROONE.GG); status colors only for status
+	 * - motion: hover/focus color transitions only, no decorative animation
+	 */
+	.text-title {
+		@apply text-xl font-semibold leading-7 text-gray-900 dark:text-white;
+		font-family: var(--font-heading);
+	}
+
+	.text-body {
+		@apply text-sm leading-5 text-gray-700 dark:text-gray-200;
+	}
+
+	.text-meta {
+		@apply text-xs leading-4 text-gray-500 dark:text-gray-400;
+	}
+
+	.skeleton {
+		@apply rounded-md bg-gray-200 dark:bg-gray-700/60 animate-pulse;
+	}
+
+	.chip {
+		@apply inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium leading-4 transition-colors;
+	}
+
+	.row-dense {
+		@apply flex items-center gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800/60;
+	}
+
+	kbd {
+		@apply inline-flex items-center whitespace-nowrap rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300;
+	}
+
 	.btn {
 		@apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none;
 	}

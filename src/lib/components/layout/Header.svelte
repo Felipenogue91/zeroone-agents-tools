@@ -1,8 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { RefreshCw, Moon, Sun, Languages } from 'lucide-svelte';
+	import { RefreshCw, Moon, Sun, Languages, Search } from 'lucide-svelte';
 	import { mcpLibrary, projectsStore, notifications, i18n } from '$lib/stores';
 	import type { Snippet } from 'svelte';
+	import { syncStore } from '$lib/stores/syncStore.svelte';
+	import { page } from '$app/stores';
+	import LibraryTabs from '$lib/components/sync/LibraryTabs.svelte';
+
+	const libraryPaths = ['/library', '/skills', '/subagents', '/hooks', '/commands', '/rules'];
+	let showLibraryTabs = $derived(libraryPaths.some((p) => $page.url.pathname === p || $page.url.pathname.startsWith(p + '/')));
 
 	type Props = {
 		title: string;
@@ -25,10 +31,11 @@
 			await Promise.all([
 				mcpLibrary.load(),
 				projectsStore.loadProjects(),
-				projectsStore.loadGlobalMcps()
+				projectsStore.loadGlobalMcps(),
+				syncStore.refresh()
 			]);
 		} catch (e) {
-			notifications.error('Failed to refresh data');
+			notifications.error(i18n.t('header.refreshFailed'));
 			console.error('[Header] Refresh failed:', e);
 		} finally {
 			isRefreshing = false;
@@ -58,9 +65,21 @@
 		{/if}
 
 		<button
+			onclick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+			class="btn btn-ghost text-xs gap-2 border border-gray-200 dark:border-gray-700"
+			title={i18n.t('header.searchTitle')}
+			aria-label={i18n.t('header.searchTitle')}
+		>
+			<Search class="w-4 h-4" aria-hidden="true" />
+			<span class="hidden md:inline text-gray-500 dark:text-gray-400">{i18n.t('header.search')}</span>
+			<kbd class="hidden md:inline-flex">Ctrl K</kbd>
+		</button>
+
+		<button
 			onclick={() => i18n.setLocale(i18n.nextLocale)}
 			class="btn btn-ghost text-xs font-medium"
 			title={i18n.t('header.switchLanguage')}
+			aria-label={i18n.t('header.switchLanguage')}
 		>
 			<Languages class="w-4 h-4" />
 			{i18n.currentLabel}
@@ -69,7 +88,7 @@
 		<button
 			onclick={handleRefresh}
 			class="btn btn-ghost"
-			aria-label={isRefreshing ? 'Refreshing data' : 'Refresh data'}
+			aria-label={i18n.t('header.refresh')}
 			title={i18n.t('header.refresh')}
 			disabled={isRefreshing}
 		>
@@ -79,7 +98,7 @@
 		<button
 			onclick={toggleTheme}
 			class="btn btn-ghost"
-			aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+			aria-label={i18n.t('header.toggleTheme')}
 			title={i18n.t('header.toggleTheme')}
 			data-testid="theme-toggle"
 		>
@@ -91,3 +110,8 @@
 		</button>
 	</div>
 </header>
+
+{#if showLibraryTabs}
+	<LibraryTabs />
+{/if}
+

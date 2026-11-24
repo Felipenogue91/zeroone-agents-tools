@@ -4,15 +4,22 @@
 	import { i18n } from '$lib/i18n';
 	import { Plus, Minus, Plug, Globe, Server, Radio, Sparkles, Bot, Terminal, Search, Zap, SquareCheck, Square, Power, PowerOff, Trash2 } from 'lucide-svelte';
 
+	type Tab = 'mcps' | 'skills' | 'agents' | 'commands' | 'hooks';
+
 	type Props = {
 		project: Project;
+		/** Controlled tab (the project screen has a single tab bar). */
+		tab?: Tab;
+		hideTabs?: boolean;
 	};
 
-	let { project: projectProp }: Props = $props();
+	let { project: projectProp, tab, hideTabs = false }: Props = $props();
 
 	// Tab state
-	type Tab = 'mcps' | 'skills' | 'agents' | 'commands' | 'hooks';
 	let activeTab = $state<Tab>('mcps');
+	$effect(() => {
+		if (tab && tab !== activeTab) handleTabChange(tab);
+	});
 
 	// Search state
 	let searchQuery = $state('');
@@ -478,6 +485,7 @@
 </script>
 
 <!-- Sub-tabs -->
+{#if !hideTabs}
 <div class="flex border-b border-gray-200 dark:border-gray-700 px-4 mt-1">
 	<button
 		onclick={() => handleTabChange('mcps')}
@@ -515,6 +523,7 @@
 		{i18n.t('dashboard.hooks')} ({projectHooks.length}{inheritedGlobalHooks.length > 0 ? ` + ${inheritedGlobalHooks.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 </div>
+{/if}
 
 <!-- Bulk Action Bar -->
 {#if selectedCount > 0}

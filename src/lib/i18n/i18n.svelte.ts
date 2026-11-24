@@ -18,16 +18,19 @@ const localeInfos: LocaleInfo[] = [
 	{ code: 'zh-TW', label: '繁' }
 ];
 
-function detectLocale(): Locale {
-	if (typeof navigator === 'undefined') return 'en';
-	for (const lang of navigator.languages ?? [navigator.language]) {
-		if (lang in locales) return lang as Locale;
-		const prefix = lang.split('-')[0];
-		for (const code of Object.keys(locales)) {
-			if (code.split('-')[0] === prefix) return code as Locale;
-		}
+/**
+ * pt-BR is the default. The Linux webview (WebKitGTK) reports `en-US` no
+ * matter the system language, so English is only used when the user picks it
+ * (stored in localStorage). Chinese system languages keep their locale.
+ */
+export function detectLocale(languages?: readonly string[]): Locale {
+	const langs = languages ?? (typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]));
+	for (const lang of langs) {
+		const l = lang.toLowerCase();
+		if (l === 'zh-tw' || l === 'zh-hk' || l.startsWith('zh-hant')) return 'zh-TW';
+		if (l.startsWith('zh')) return 'zh-CN';
 	}
-	return 'en';
+	return 'pt-BR';
 }
 
 function getInitialLocale(): Locale {

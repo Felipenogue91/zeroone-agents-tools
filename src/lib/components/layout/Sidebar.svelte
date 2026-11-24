@@ -1,28 +1,44 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { Library, FolderOpen, Settings, Bot, Store, Zap, Terminal, Sparkles, Layers, PanelBottom, Shield, FileText, Plug, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Container, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-svelte';
+	import { House, FolderOpen, Library, TerminalSquare, Settings, ChevronRight, Container, PanelBottom, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Layers, FileText, Shield, Store, PanelLeftClose, PanelLeftOpen, Plug } from 'lucide-svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { getVersion } from '@tauri-apps/api/app';
 	import TodayUsageWidget from './TodayUsageWidget.svelte';
 	import { sessionStore, i18n } from '$lib/stores';
+	import { syncStore } from '$lib/stores/syncStore.svelte';
 
 	let appVersion = $state('');
 	let collapsed = $state(false);
 	let manualOverride = $state(false);
 	let windowWidth = $state(window.innerWidth);
+	let advancedOpen = $state(readAdvanced());
 
 	const AUTO_COLLAPSE_WIDTH = 860;
-
 	let resizeRaf: number | null = null;
+
+	function readAdvanced(): boolean {
+		try {
+			return localStorage.getItem('nav.advancedOpen') === '1';
+		} catch {
+			return false;
+		}
+	}
+
+	function toggleAdvanced() {
+		advancedOpen = !advancedOpen;
+		try {
+			localStorage.setItem('nav.advancedOpen', advancedOpen ? '1' : '0');
+		} catch {
+			// storage unavailable
+		}
+	}
 
 	function handleResize() {
 		if (resizeRaf) return;
 		resizeRaf = requestAnimationFrame(() => {
 			resizeRaf = null;
 			windowWidth = window.innerWidth;
-			if (!manualOverride) {
-				collapsed = windowWidth < AUTO_COLLAPSE_WIDTH;
-			}
+			if (!manualOverride) collapsed = windowWidth < AUTO_COLLAPSE_WIDTH;
 		});
 	}
 
@@ -34,15 +50,12 @@
 	onMount(async () => {
 		window.addEventListener('resize', handleResize);
 		handleResize();
-
 		try {
 			appVersion = await getVersion();
 		} catch {
 			appVersion = '1.0.0';
 		}
-		if (sessionStore.projects.length === 0) {
-			sessionStore.loadProjects();
-		}
+		if (sessionStore.projects.length === 0) sessionStore.loadProjects();
 	});
 
 	onDestroy(() => {
@@ -54,61 +67,45 @@
 		href: string;
 		label: string;
 		icon: typeof Plug;
+		/** Extra paths that also mark the item as active. */
+		match?: string[];
+		badge?: number;
 	}
 
-	interface NavGroup {
-		label: string;
-		items: NavItem[];
-	}
+	const libraryPaths = ['/library', '/skills', '/subagents', '/hooks', '/commands', '/rules'];
 
-	const isSettingsActive = $derived($page.url.pathname === '/settings' || $page.url.pathname.startsWith('/settings'));
-
-	const navGroups: NavGroup[] = $derived([
-		{
-			label: i18n.t('nav.core'),
-			items: [
-				{ href: '/', label: i18n.t('nav.dashboard'), icon: Plug },
-				{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen }
-			]
-		},
-		{
-			label: i18n.t('nav.tools'),
-			items: [
-				{ href: '/library', label: i18n.t('nav.mcps'), icon: Library },
-				{ href: '/subagents', label: i18n.t('nav.agents'), icon: Bot },
-				{ href: '/skills', label: i18n.t('nav.skills'), icon: Sparkles },
-				{ href: '/commands', label: i18n.t('nav.commands'), icon: Terminal },
-				{ href: '/hooks', label: i18n.t('nav.hooks'), icon: Zap },
-				{ href: '/rules', label: i18n.t('nav.rules'), icon: BookOpen },
-				{ href: '/containers', label: i18n.t('nav.containers'), icon: Container }
-			]
-		},
-		{
-			label: i18n.t('nav.configure'),
-			items: [
-				{ href: '/profiles', label: i18n.t('nav.profiles'), icon: Layers },
-				{ href: '/statusline', label: i18n.t('nav.statusLine'), icon: PanelBottom },
-				{ href: '/permissions', label: i18n.t('nav.permissions'), icon: Shield },
-				{ href: '/memory', label: i18n.t('nav.memory'), icon: FileText },
-				{ href: '/marketplace', label: i18n.t('nav.marketplace'), icon: Store }
-			]
-		},
-		{
-			label: i18n.t('nav.insights'),
-			items: [
-				{ href: '/analytics', label: i18n.t('nav.analytics'), icon: BarChart3 },
-				{ href: '/insights', label: i18n.t('nav.insights'), icon: TrendingUp },
-				{ href: '/sessions', label: i18n.t('nav.sessions'), icon: FolderSearch },
-				{ href: '/comparison', label: i18n.t('nav.comparison'), icon: GitCompareArrows }
-			]
-		}
+	let mainItems: NavItem[] = $derived([
+		{ href: '/', label: i18n.t('nav.home'), icon: House, badge: syncStore.divergenceCount },
+		{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen },
+		{ href: '/library', label: i18n.t('nav.library'), icon: Library, match: libraryPaths },
+		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare }
 	]);
+
+	let advancedItems: NavItem[] = $derived([
+		{ href: '/profiles', label: i18n.t('nav.profiles'), icon: Layers },
+		{ href: '/permissions', label: i18n.t('nav.permissions'), icon: Shield },
+		{ href: '/memory', label: i18n.t('nav.memory'), icon: FileText },
+		{ href: '/statusline', label: i18n.t('nav.statusLine'), icon: PanelBottom },
+		{ href: '/analytics', label: i18n.t('nav.analytics'), icon: BarChart3 },
+		{ href: '/insights', label: i18n.t('nav.insights'), icon: TrendingUp },
+		{ href: '/sessions', label: i18n.t('nav.sessions'), icon: FolderSearch },
+		{ href: '/comparison', label: i18n.t('nav.comparison'), icon: GitCompareArrows },
+		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container },
+		{ href: '/marketplace', label: i18n.t('nav.marketplace'), icon: Store }
+	]);
+
+	function isActive(item: NavItem): boolean {
+		const p = $page.url.pathname;
+		if (item.href === '/') return p === '/';
+		const paths = item.match ?? [item.href];
+		return paths.some((h) => p === h || p.startsWith(h + '/'));
+	}
+
+	let advancedActive = $derived(advancedItems.some((i) => isActive(i)));
+	let isSettingsActive = $derived($page.url.pathname.startsWith('/settings'));
 </script>
 
-<aside
-	class="border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col transition-[width] duration-200 ease-in-out {collapsed ? 'w-16' : 'w-56'}"
->
-	<!-- Header -->
+<aside class="border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col transition-[width] duration-150 {collapsed ? 'w-16' : 'w-56'}">
 	<div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center {collapsed ? 'justify-center' : 'gap-3'}">
 		<img src="/brand/zeroone-icone-app.svg" alt="" aria-hidden="true" class="w-9 h-9 shrink-0 select-none" draggable="false" />
 		{#if !collapsed}
@@ -119,82 +116,66 @@
 		{/if}
 	</div>
 
-	<!-- Navigation -->
 	<nav aria-label={i18n.t('sidebar.navLabel')} class="flex-1 overflow-y-auto p-3 {collapsed ? 'px-2' : ''}">
-		{#each navGroups as group, groupIndex}
-			{#if groupIndex > 0}
-				<div class="mt-3"></div>
-			{/if}
-			{#if !collapsed}
-				<p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 px-3 mb-1.5">
-					{group.label}
-				</p>
-			{:else}
+		<div class="space-y-0.5">
+			{#each mainItems as item (item.href)}
+				{@render navLink(item)}
+			{/each}
+		</div>
+
+		<div class="mt-4">
+			{#if collapsed}
 				<div class="h-px bg-gray-200 dark:bg-gray-700 mx-2 mb-2"></div>
+			{:else}
+				<button onclick={toggleAdvanced} aria-expanded={advancedOpen || advancedActive}
+					class="w-full flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded">
+					<ChevronRight class="w-3 h-3 transition-transform {advancedOpen || advancedActive ? 'rotate-90' : ''}" aria-hidden="true" />
+					{i18n.t('nav.advanced')}
+				</button>
 			{/if}
-			<div class="space-y-0.5">
-				{#each group.items as item}
-					{@const isActive = $page.url.pathname === item.href ||
-						(item.href !== '/' && $page.url.pathname.startsWith(item.href))}
-					<a
-						href={item.href}
-						title={collapsed ? item.label : undefined}
-						class="flex items-center rounded-lg text-sm font-medium transition-colors
-							{collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'}
-							{isActive
-								? 'bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300'
-								: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'}"
-					>
-						<item.icon class="w-5 h-5 shrink-0" />
-						{#if !collapsed}
-							<span class="whitespace-nowrap overflow-hidden">{item.label}</span>
-						{/if}
-					</a>
-				{/each}
-			</div>
-		{/each}
+			{#if advancedOpen || advancedActive || collapsed}
+				<div class="space-y-0.5 mt-1">
+					{#each advancedItems as item (item.href)}
+						{@render navLink(item)}
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</nav>
 
-	<!-- Footer -->
 	<div class="border-t border-gray-200 dark:border-gray-700 p-3 {collapsed ? 'px-2' : ''}">
 		{#if !collapsed}
 			<TodayUsageWidget />
 		{/if}
-		<a
-			href="/settings"
-			title={collapsed ? i18n.t('nav.settings') : undefined}
-			class="flex items-center rounded-lg text-sm font-medium transition-colors
-				{collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'}
-				{isSettingsActive
-					? 'bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300'
-					: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'}"
-		>
-			<Settings class="w-5 h-5 shrink-0" />
-			{#if !collapsed}
-				<span>{i18n.t('nav.settings')}</span>
-			{/if}
-		</a>
-
-		<!-- Collapse toggle -->
-		<button
-			onclick={toggleCollapse}
-			class="flex items-center w-full rounded-lg text-sm font-medium transition-colors mt-1
-				{collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'}
-				text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700/50 dark:hover:text-gray-300"
-			title={collapsed ? i18n.t('sidebar.expandTitle') : i18n.t('sidebar.collapseTitle')}
-		>
+		{@render navLink({ href: '/settings', label: i18n.t('nav.settings'), icon: Settings }, isSettingsActive)}
+		<button onclick={toggleCollapse}
+			class="flex items-center w-full rounded-lg text-sm font-medium transition-colors mt-1 {collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'} text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200"
+			title={collapsed ? i18n.t('sidebar.expandTitle') : i18n.t('sidebar.collapseTitle')}>
 			{#if collapsed}
-				<PanelLeftOpen class="w-5 h-5 shrink-0" />
+				<PanelLeftOpen class="w-5 h-5 shrink-0" aria-hidden="true" />
 			{:else}
-				<PanelLeftClose class="w-5 h-5 shrink-0" />
+				<PanelLeftClose class="w-5 h-5 shrink-0" aria-hidden="true" />
 				<span>{i18n.t('sidebar.collapse')}</span>
 			{/if}
 		</button>
-
 		{#if !collapsed}
-			<p class="text-xs text-gray-400 dark:text-gray-500 px-3 mt-2">
-				{appVersion ? `v${appVersion}` : ''}
-			</p>
+			<p class="text-xs text-gray-500 dark:text-gray-400 px-3 mt-2">{appVersion ? `v${appVersion}` : ''}</p>
 		{/if}
 	</div>
 </aside>
+
+{#snippet navLink(item: NavItem, forceActive?: boolean)}
+	{@const active = forceActive ?? isActive(item)}
+	<a href={item.href} title={collapsed ? item.label : undefined} aria-current={active ? 'page' : undefined}
+		class="flex items-center rounded-lg text-sm font-medium transition-colors {collapsed ? 'justify-center px-0 py-2 relative' : 'gap-3 px-3 py-2'}
+			{active ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-200' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50'}">
+		<item.icon class="w-5 h-5 shrink-0" aria-hidden="true" />
+		{#if !collapsed}
+			<span class="whitespace-nowrap overflow-hidden flex-1">{item.label}</span>
+		{/if}
+		{#if item.badge}
+			<span class="{collapsed ? 'absolute -top-0.5 -right-0.5' : ''} min-w-5 h-5 px-1.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 text-[11px] font-semibold flex items-center justify-center"
+				aria-label={i18n.t('sync.home.divergences', { n: item.badge })}>{item.badge}</span>
+		{/if}
+	</a>
+{/snippet}
