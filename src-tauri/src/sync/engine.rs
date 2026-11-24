@@ -58,6 +58,14 @@ pub enum ClaudePatch {
     UserServers(Map<String, Value>),
     /// Remove local-scope entries `projects[project].mcpServers[names]`.
     RemoveLocal { project: String, names: Vec<String> },
+    /// Turn a server off/on for Claude in one project only:
+    /// `projects[project].disabledMcpServers` (what Claude's own `/mcp`
+    /// writes; works for user-scope servers too).
+    ProjectDisabled {
+        project: String,
+        name: String,
+        disabled: bool,
+    },
 }
 
 impl ClaudePatch {
@@ -79,8 +87,54 @@ impl ClaudePatch {
                     }
                 }
             }
+            ClaudePatch::ProjectDisabled {
+                project,
+                name,
+                disabled,
+            } => {
+                let projects = m
+                    .entry("projects")
+                    .or_insert_with(|| Value::Object(Map::new()));
+                let Some(projects) = projects.as_object_mut() else {
+                    return;
+                };
+                let entry = projects
+                    .entry(project.clone())
+                    .or_insert_with(|| Value::Object(Map::new()));
+                let Some(entry) = entry.as_object_mut() else {
+                    return;
+                };
+                let mut list: Vec<Value> = entry
+                    .get("disabledMcpServers")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                list.retain(|v| v.as_str() != Some(name.as_str()));
+                if *disabled {
+                    list.push(Value::String(name.clone()));
+                }
+                entry.insert("disabledMcpServers".into(), Value::Array(list));
+            }
         }
     }
+}
+
+/// Servers Claude has turned off in one project (`~/.claude.json`
+/// `projects[path].disabledMcpServers`).
+pub fn claude_project_disabled(claude_json: &Path, project: &Path) -> BTreeSet<String> {
+    load_json(claude_json)
+        .and_then(|c| {
+            c.get("projects")
+                .and_then(|ps| ps.get(project.to_string_lossy().as_ref()))
+                .and_then(|pr| pr.get("disabledMcpServers"))
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_str().map(String::from))
+                        .collect()
+                })
+        })
+        .unwrap_or_default()
 }
 
 #[derive(Debug, Clone, Default)]
@@ -699,6 +753,19 @@ impl<'a> Engine<'a> {
                             &self.secrets,
                             &mut warns,
                         ) {
+                            want_x.push((n.clone(), t));
+                        }
+                    }
+                    // global servers turned off in Codex for this project only:
+                    // full definition with `enabled = false` (valid whether
+                    // Codex merges the project layer deeply or not)
+                    for (n, c) in &self.snap.global {
+                        if src_x.contains_key(n) || !sync.is_cli_off(&name, Cli::Codex, n) {
+                            continue;
+                        }
+                        if let Some(t) =
+                            to_codex(n, c, true, cur.get(n), true, &self.secrets, &mut warns)
+                        {
                             want_x.push((n.clone(), t));
                         }
                     }

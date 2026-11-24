@@ -12,9 +12,11 @@
 		onToggle?: (enabled: boolean) => void;
 		/** Plain CLI label (no on/off meaning). */
 		label?: boolean;
+		/** Shown state but not switchable here, with the reason as tooltip. */
+		lockedReason?: string;
 	};
 
-	let { cli, state, disabled = false, onToggle, label = false }: Props = $props();
+	let { cli, state, disabled = false, onToggle, label = false, lockedReason }: Props = $props();
 
 	const cliIcon = { claude: Asterisk, codex: SquareTerminal, agy: Orbit };
 	let Icon = $derived(cliIcon[cli]);
@@ -52,6 +54,12 @@
 	<span class="chip border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200" title={CLI_LABEL[cli]}>
 		<Icon class="w-3 h-3" aria-hidden="true" />
 		<span>{CLI_SHORT[cli]}</span>
+	</span>
+{:else if onToggle && lockedReason}
+	<span class="chip {styles[kind]} cursor-not-allowed opacity-70" title="{tooltip} · {lockedReason}" aria-label="{CLI_LABEL[cli]}: {tooltip}. {lockedReason}">
+		<Icon class="w-3 h-3" aria-hidden="true" />
+		<span>{CLI_SHORT[cli]}</span>
+		{@render stateIcon()}
 	</span>
 {:else if onToggle}
 	<button

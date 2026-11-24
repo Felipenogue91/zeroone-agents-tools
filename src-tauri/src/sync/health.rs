@@ -151,6 +151,14 @@ pub fn compute_health(
             if !snap.projects.iter().any(|p| p.path == Path::new(path)) {
                 continue;
             }
+            // a global turned off for this project only (Codex `enabled = false`)
+            let pname = Path::new(path)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            if snap.global.contains_key(&o.name) && snap.sync.is_cli_off(&pname, o.cli, &o.name) {
+                continue;
+            }
         }
         seen.insert((o.cli, o.uid.clone()));
         let provided = o.scope == Scope::Global && snap.sync.is_plugin_provided(o.cli, &o.name);

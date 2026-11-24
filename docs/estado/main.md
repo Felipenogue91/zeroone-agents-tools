@@ -1,14 +1,27 @@
-# Estado (atualizado em 2026-11-24 16:55 por claude-code)
+# Estado (atualizado em 2026-11-24 17:15 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`) concluída: fases 0 a 7 commitadas na `main` (sem push, sem empacotar). Aguardando o Felipe conferir para empacotar Linux + Windows juntos.
+Frente **UI que organiza de verdade** (Felipe testou a fase 7 e reprovou: mostra sem deixar ajustar). Varredura feita em 2026-11-24 17:10 no app rodando (`npm run tauri dev`, tauri-mcp). Problemas achados:
+
+1. **Projeto > MCPs:** herdados do global aparecem com chips, mas não dá pra clicar (só "Mude na Biblioteca"). Precisa desligar um global só neste projeto, por CLI ou nas 3.
+2. **Biblioteca é dois mundos:** "Tudo" usa a fonte nova (MCPs 29, Skills 37, Agentes 0) e as abas Skills/Agentes/Hooks/Comandos/Regras são as telas antigas do banco (Skills 131 = 37 globais + 94 de projetos misturados sem agrupar; Agentes 7). Números não batem.
+3. **MCPs:** chips por linha parecem etiqueta; falta tabela com colunas Claude/Codex/agy, marcar coluna inteira, ligar nas 3, seleção múltipla, ordenar/filtrar por CLI e por projeto.
+4. **Skills:** grade de 131 cards sem dizer de qual projeto vem, sem ligar por CLI, sem agrupar famílias (`aos-*`, `ai-memory-*`, `neon-*`).
+5. **CLIs:** "N pendentes" sem lista; "Reaplicar" não diz que apaga o que só existe na CLI.
+6. **Início:** "Diferente da fonte" não mostra o que difere; cartões das CLIs não filtram; lista longa sem agrupar por projeto.
+7. **Projetos:** 136 projetos com lixo (`.paperclip/instances`, `Workspace/runs/...`), colunas `0 | 0 | 0` sem rótulo, chip "Claude" fixo, não separa gerenciado/não gerenciado.
+8. **Catálogo de MCPs:** banco antigo, não chega nas CLIs.
+9. **Regras:** mostra 0 porque a consulta de regras globais quebra (`ambiguous column name: created_at`).
+10. **Containers:** só lista os criados pelo app; os do Docker (`docker ps -a`, 20+) não aparecem. Select branco no modo escuro.
+11. **Pedido novo:** aba Code Forest (embutir o servidor local do `~/Workspace/projects/code-forest`, sem fundir repos).
+
+Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Felipe confere o app (`npm run tauri dev`) e decide os pontos em aberto abaixo.
-- Depois: empacotar Linux + Windows juntos (só com o ok dele), push da `main`.
-- Pendente de antes: run da tag `v1.0.0` e troca do pacote antigo `claude-code-tool-manager` (porta `23847`).
+- Item 3 (tabela de MCPs na Biblioteca com colunas por CLI + coluna "a CLI reconhece?" via `claude mcp list` / `codex mcp list` / `agy mcp list`).
+- "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
 
@@ -24,6 +37,8 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`) concluída: fases 0 a
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Item 1, MCP herdado por projeto (2026-11-24, Claude Code):** chips dos herdados agora clicáveis + botão ligar/desligar. Claude grava `~/.claude.json` `projects[path].disabledMcpServers` (o mesmo que o `/mcp` do Claude grava); Codex grava `cliOff[projeto].codex` e o motor escreve o servidor com `enabled = false` no `.codex/config.toml` do projeto (só projeto gerenciado); agy não tem como (testado: `agy mcp list` ignora a pasta), chip travado com o motivo. Saúde não acusa a entrada desligada como "só na CLI". Teste novo `inherited_global_off_per_project_in_claude_and_codex`; `cargo test sync::` 116/116, Vitest ok, check no baseline.
 
 - **App só em pt-BR (2026-11-24, Claude Code):** botão de idioma saiu do cabeçalho; build de release sempre em pt-BR (só dev/teste aceitam `locale` no localStorage, usado pelas suítes em inglês). Vitest 1580/1580, `npm run check` igual ao baseline (11 erros).
 

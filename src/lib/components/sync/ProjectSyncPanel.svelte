@@ -58,6 +58,26 @@
 		await load();
 	}
 
+	// what each CLI can do with a global server in one project
+	let inheritedLocks = $derived<Partial<Record<Cli, string>>>({
+		agy: i18n.t('sync.project.agyCantInherit'),
+		...(view?.managed ? {} : { codex: i18n.t('sync.project.codexNeedsSync') })
+	});
+
+	function inheritedAllOff(s: ProjectServer) {
+		return (['claude', 'codex'] as Cli[]).every((c) => s.targets[c]?.state !== 'on');
+	}
+
+	async function toggleInheritedAll(s: ProjectServer) {
+		const turnOn = inheritedAllOff(s);
+		for (const cli of ['claude', 'codex'] as Cli[]) {
+			if (inheritedLocks[cli]) continue;
+			const st = s.targets[cli]?.state;
+			if (turnOn ? st === 'off' : st === 'on') await syncStore.setTarget(s.name, cli, turnOn, path);
+		}
+		await load();
+	}
+
 	async function manage(managed: boolean) {
 		await syncStore.manageProject(path, managed);
 		await load();
@@ -147,9 +167,15 @@
 					</header>
 					<ul>
 						{#each inherited as s (s.name)}
-							<li class="row-dense opacity-60" title={i18n.t('sync.project.inheritedRow')}>
-								<p class="text-body flex-1 truncate">{s.name} <span class="text-meta">· {i18n.t('sync.project.inheritedTag')}</span></p>
-								<CliChips targets={s.targets} />
+							<li class="row-dense {inheritedAllOff(s) ? 'opacity-60' : ''}">
+								<p class="text-body flex-1 truncate"><span class="font-medium text-gray-900 dark:text-white">{s.name}</span> <span class="text-meta">· {i18n.t('sync.project.inheritedTag')}</span></p>
+								<CliChips targets={s.targets} locked={inheritedLocks} disabled={syncStore.isBusy(`${path}:${s.name}`)}
+									onToggle={(cli, enabled) => toggleCli(s, cli, enabled)} />
+								<button class="btn btn-ghost p-1.5" disabled={syncStore.isBusy(`${path}:${s.name}`)} onclick={() => toggleInheritedAll(s)}
+									title={inheritedAllOff(s) ? i18n.t('sync.project.inheritedOn') : i18n.t('sync.project.inheritedOff')}
+									aria-label={inheritedAllOff(s) ? i18n.t('sync.project.inheritedOn') : i18n.t('sync.project.inheritedOff')}>
+									<Power class="w-4 h-4 {inheritedAllOff(s) ? 'text-gray-400' : 'text-primary-600 dark:text-primary-300'}" aria-hidden="true" />
+								</button>
 							</li>
 						{/each}
 					</ul>

@@ -118,6 +118,12 @@ pub fn plan_set_target(
     cli: Cli,
     enabled: bool,
 ) -> Result<Vec<FileChange>, String> {
+    if let Scope::Project { path } = scope {
+        let own = super::source::ProjectSource::load(Path::new(path));
+        if !own.servers.contains_key(name) && snap.global.contains_key(name) {
+            return plan_set_inherited(snap, Path::new(path), name, cli, enabled);
+        }
+    }
     if let (Scope::Project { path }, Cli::Claude) = (scope, cli) {
         // Claude-only switch: settings.local.json (only Claude reads it)
         let file = Path::new(path).join(".claude").join("settings.local.json");
@@ -188,6 +194,117 @@ pub fn plan_set_target(
     )])
 }
 
+/// A global server switched for one project only.
+/// - Claude: `~/.claude.json` `projects[path].disabledMcpServers`;
+/// - Codex: `sync.json` `cliOff[project].codex` (the engine writes the
+///   server with `enabled = false` in the project's `.codex/config.toml`);
+/// - agy has no way to turn a global off for one folder.
+fn plan_set_inherited(
+    snap: &SourceSnapshot,
+    project: &Path,
+    name: &str,
+    cli: Cli,
+    enabled: bool,
+) -> Result<Vec<FileChange>, String> {
+    match cli {
+        Cli::Claude => {
+            let file = super::occurrences::CliFiles::for_home(&snap.home).claude_json;
+            let off = super::engine::claude_project_disabled(&file, project);
+            if off.contains(name) == !enabled {
+                return Ok(vec![]);
+            }
+            let before = std::fs::read_to_string(&file).ok();
+            let patch = super::engine::ClaudePatch::ProjectDisabled {
+                project: project.to_string_lossy().to_string(),
+                name: name.to_string(),
+                disabled: !enabled,
+            };
+            let mut doc: Value = before
+                .as_deref()
+                .map(serde_json::from_str)
+                .transpose()
+                .map_err(|e| format!("~/.claude.json inválido: {}", e))?
+                .unwrap_or_else(|| json!({}));
+            patch.apply_to(&mut doc);
+            let after = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?;
+            let mut ch = text_change(
+                file,
+                before,
+                after,
+                Scope::Project {
+                    path: project.to_string_lossy().to_string(),
+                },
+                vec![name.into()],
+            );
+            ch.claude_patch = Some(patch);
+            Ok(vec![ch])
+        }
+        Cli::Codex => {
+            let managed = snap.projects.iter().any(|p| p.path == project);
+            if !managed {
+                return Err(
+                    "Ative a sincronização deste projeto para o Codex receber esse ajuste".into(),
+                );
+            }
+            let scope_name = project_name(project);
+            let mut list: BTreeSet<String> = snap
+                .sync
+                .cli_off
+                .get(&scope_name)
+                .and_then(|c| c.get(&cli))
+                .cloned()
+                .unwrap_or_default();
+            let changed = if enabled { list.remove(name) } else { list.insert(name.to_string()) };
+            if !changed {
+                return Ok(vec![]);
+            }
+            write_cli_off(snap, &scope_name, cli, list, project, name)
+        }
+        Cli::Agy => Err(
+            "O Antigravity não tem como desligar um MCP global só numa pasta. Desligue no global (Biblioteca) ou mova o MCP para os projetos que usam."
+                .into(),
+        ),
+    }
+}
+
+fn write_cli_off(
+    snap: &SourceSnapshot,
+    scope_name: &str,
+    cli: Cli,
+    list: BTreeSet<String>,
+    project: &Path,
+    name: &str,
+) -> Result<Vec<FileChange>, String> {
+    let (before, base) = sync_json_text(snap);
+    let value = (!list.is_empty()).then(|| json!(list.into_iter().collect::<Vec<_>>()));
+    let mut after = set_key(&base, &["cliOff", scope_name], cli.key(), value.as_ref())?;
+    let doc: Value = serde_json::from_str(&after).map_err(|e| e.to_string())?;
+    if doc["cliOff"][scope_name]
+        .as_object()
+        .map(|m| m.is_empty())
+        .unwrap_or(false)
+    {
+        after = set_key(&after, &["cliOff"], scope_name, None)?;
+    }
+    let doc: Value = serde_json::from_str(&after).map_err(|e| e.to_string())?;
+    if doc["cliOff"]
+        .as_object()
+        .map(|m| m.is_empty())
+        .unwrap_or(false)
+    {
+        after = set_key(&after, &[], "cliOff", None)?;
+    }
+    Ok(vec![text_change(
+        snap.agents.sync_file.clone(),
+        before,
+        after,
+        Scope::Project {
+            path: project.to_string_lossy().to_string(),
+        },
+        vec![name.into()],
+    )])
+}
+
 /// Add/remove a project in `sync.json` `projects` (stored as `~/...`).
 pub fn plan_manage_project(
     snap: &SourceSnapshot,
@@ -252,6 +369,7 @@ pub fn save_and_sync(
         let touched_claude = source_changes.iter().any(|c| {
             let p = c.path.to_string_lossy();
             p.ends_with(".mcp.json")
+                || p.ends_with(".claude.json")
                 || p.ends_with("settings.json")
                 || p.ends_with("settings.local.json")
         });
@@ -379,6 +497,11 @@ pub fn project_view(snap: &SourceSnapshot, eng: &Engine, project: &Path) -> Proj
         });
     }
     let local_names: BTreeSet<String> = servers.iter().map(|s| s.name.clone()).collect();
+    let claude_off = super::engine::claude_project_disabled(
+        &super::occurrences::CliFiles::for_home(&snap.home).claude_json,
+        project,
+    );
+    let pname = project_name(project);
     for r in resources
         .iter()
         .filter(|r| r.kind == super::model::ResourceKind::Mcp && r.scope == Scope::Global)
@@ -386,12 +509,22 @@ pub fn project_view(snap: &SourceSnapshot, eng: &Engine, project: &Path) -> Proj
         if own_names.contains(r.name.as_str()) || local_names.contains(&r.name) {
             continue;
         }
+        let mut targets = r.targets.clone();
+        let on = |s: Option<&super::model::TargetState>| {
+            matches!(s, Some(super::model::TargetState::On))
+        };
+        if on(targets.get(&Cli::Claude)) && claude_off.contains(&r.name) {
+            targets.insert(Cli::Claude, super::model::TargetState::Off);
+        }
+        if on(targets.get(&Cli::Codex)) && snap.sync.is_cli_off(&pname, Cli::Codex, &r.name) {
+            targets.insert(Cli::Codex, super::model::TargetState::Off);
+        }
         servers.push(ProjectServer {
             name: r.name.clone(),
             inherited: true,
             overrides_global: false,
             transport: r.transport.clone().unwrap_or_default(),
-            targets: r.targets.clone(),
+            targets,
             secret_refs: r.secret_refs.clone(),
         });
     }
@@ -457,6 +590,67 @@ mod tests {
 
     fn snap(home: &Path) -> SourceSnapshot {
         SourceSnapshot::load(home)
+    }
+
+    #[test]
+    fn inherited_global_off_per_project_in_claude_and_codex() {
+        let (_t, home, proj) = fx();
+        write(&home.join(".claude.json"), "{\n  \"projects\": {}\n}\n");
+        let scope = Scope::Project {
+            path: proj.to_string_lossy().to_string(),
+        };
+        let backups = home.join("bk");
+        // Claude: ~/.claude.json projects[path].disabledMcpServers
+        let ch = plan_set_target(&snap(&home), &scope, "ctx", Cli::Claude, false).unwrap();
+        save_and_sync(&home, &backups, ch, &scope).unwrap();
+        let cj: Value =
+            serde_json::from_str(&std::fs::read_to_string(home.join(".claude.json")).unwrap())
+                .unwrap();
+        assert_eq!(
+            cj["projects"][proj.to_string_lossy().as_ref()]["disabledMcpServers"],
+            json!(["ctx"])
+        );
+        // Codex: cliOff + project config with enabled = false
+        let ch = plan_set_target(&snap(&home), &scope, "ctx", Cli::Codex, false).unwrap();
+        save_and_sync(&home, &backups, ch, &scope).unwrap();
+        let toml = std::fs::read_to_string(proj.join(".codex/config.toml")).unwrap();
+        assert!(toml.contains("[mcp_servers.ctx]"), "{}", toml);
+        assert!(toml.contains("enabled = false"), "{}", toml);
+        let s = snap(&home);
+        let eng = Engine::new(&s);
+        let view = project_view(&s, &eng, &proj);
+        let ctx = view.servers.iter().find(|x| x.name == "ctx").unwrap();
+        assert!(ctx.inherited);
+        assert_eq!(ctx.targets[&Cli::Claude], TargetState::Off);
+        assert_eq!(ctx.targets[&Cli::Codex], TargetState::Off);
+        assert!(view.pending.is_empty(), "{:?}", view.pending);
+        // nothing reported as "only in CLI"
+        let occ = crate::sync::occurrences::collect(&home, &[proj.clone()]);
+        let health = crate::sync::health::compute_health(&s, &s.resources(), &occ, &eng.plan(None));
+        assert!(
+            !health
+                .divergences
+                .iter()
+                .any(|d| d.name == "ctx" && d.scope != Scope::Global),
+            "{:?}",
+            health.divergences
+        );
+        // agy cannot do it
+        assert!(plan_set_target(&s, &scope, "ctx", Cli::Agy, false).is_err());
+        // back on: both cleaned up
+        let ch = plan_set_target(&snap(&home), &scope, "ctx", Cli::Codex, true).unwrap();
+        save_and_sync(&home, &backups, ch, &scope).unwrap();
+        let ch = plan_set_target(&snap(&home), &scope, "ctx", Cli::Claude, true).unwrap();
+        save_and_sync(&home, &backups, ch, &scope).unwrap();
+        let toml = std::fs::read_to_string(proj.join(".codex/config.toml")).unwrap_or_default();
+        assert!(!toml.contains("mcp_servers.ctx"), "{}", toml);
+        let cj: Value =
+            serde_json::from_str(&std::fs::read_to_string(home.join(".claude.json")).unwrap())
+                .unwrap();
+        assert_eq!(
+            cj["projects"][proj.to_string_lossy().as_ref()]["disabledMcpServers"],
+            json!([])
+        );
     }
 
     #[test]
