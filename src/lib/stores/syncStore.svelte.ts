@@ -194,9 +194,9 @@ class SyncState {
 		return this.save(`manage:${project}`, () => invoke<SaveOutcome>('sync_manage_project', { project, managed }));
 	}
 
-	setSkillTarget(name: string, cli: Cli, enabled: boolean) {
-		return this.save(`skill:${name}`, async () => {
-			const out = await invoke<ApplyOutcome | null>('set_skill_target', { name, cli, enabled });
+	setSkillTarget(name: string, cli: Cli, enabled: boolean, project: string | null = null) {
+		return this.save(`skill:${project ?? 'global'}:${name}`, async () => {
+			const out = await invoke<ApplyOutcome | null>('set_skill_target', { name, cli, enabled, project });
 			return out ?? { backupId: null, applied: [`skill:${name}`], skipped: [], clis: [cli] };
 		});
 	}

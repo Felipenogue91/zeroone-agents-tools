@@ -20,7 +20,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Item 4 (skills na mesma tabela: incluir skills de projeto na fonte, agrupar por origem; aba Skills antiga sai).
+- Item 5 (CLIs: lista de pendências por CLI com motivo e ação; "Reaplicar" vira "Igualar à fonte" com resumo +/~/−).
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +37,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Item 4, skills na tabela (2026-11-24, Claude Code):** aba Skills da Biblioteca agora é a mesma tabela (`/library?kind=skill`), com as skills de cada projeto conhecido (`<p>/.agents/skills` = Codex e agy leem direto; `<p>/.claude/skills` = Claude) agrupadas por projeto, e as estacionadas (`.skills-disabled`) listadas como desligadas em vez de sumirem. Ligar no Claude por projeto = link relativo `../../.agents/skills/<nome>`; desligar = tira o link ou estaciona a pasta real (nunca apaga). Abas da Biblioteca: MCPs · Skills · Agentes · Hooks · Comandos · Regras · Catálogo. `ResourceList.svelte` removido (testes migrados para `ResourceMatrix`). Na máquina real: 199 skills (17 globais + projetos).
 
 - **Item 3, tabela de MCPs (2026-11-24, Claude Code):** `ResourceMatrix.svelte` na Biblioteca: colunas Claude/Codex/agy clicáveis, checkbox da coluna inteira (itens visíveis), ligar/desligar nas 3 por linha, seleção múltipla com barra "Ligar no / Desligar no", ordenar por nome/origem/CLI, agrupado por origem (Global, depois cada projeto), filtros por origem/projeto e "ligados/desligados no X" e "o X não carrega". Status real por célula (`sync/live.rs`: `claude mcp list`, `codex mcp list --json`, `agy mcp list`; só global, porque Codex e agy ignoram a pasta) e quadro "carregados pelas CLIs mas fora da fonte". Lote = `sync_set_targets` / `save_many` (um backup, um Desfazer). Testes novos: parsers do live e `save_many_is_one_undoable_set`.
 - Observado 17:26: alguém fora do app mexeu em `~/.agents` (global.json 8→5 MCPs, skills 37→17, sem backup do app). Não fui eu.

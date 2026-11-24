@@ -2303,6 +2303,7 @@ export const en = {
 	"sync.matrix.selectAll": "Select all visible",
 	"sync.matrix.selectRow": "Select {name}",
 	"sync.matrix.name": "Name",
+	"sync.lib.skillEditor": "Create or edit skill",
 	"sync.matrix.groupGlobal": "Global (every folder)",
 	"sync.matrix.sortByCli": "Sort: on in {cli} first",
 	"sync.matrix.wholeColumn": "Whole column (visible items)",

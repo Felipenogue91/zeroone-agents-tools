@@ -145,3 +145,6 @@ export const FileCode2 = StubIcon;
 export const House = StubIcon;
 export const TerminalSquare = StubIcon;
 export const Power = StubIcon;
+export const CircleAlert = StubIcon;
+export const CircleX = StubIcon;
+export const CircleDashed = StubIcon;

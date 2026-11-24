@@ -504,6 +504,127 @@ pub fn skill_resources(home: &Path, agents: &AgentsHome) -> Vec<Resource> {
             });
         }
     }
+    let listed: BTreeSet<String> = out.iter().map(|r| r.name.clone()).collect();
+    out.extend(parked_skill_resources(
+        &home.join(".claude"),
+        &Scope::Global,
+        &listed,
+    ));
+    out
+}
+
+fn skill_resource(
+    name: String,
+    scope: Scope,
+    dir: &Path,
+    targets: BTreeMap<Cli, TargetState>,
+) -> Resource {
+    let canonical = if is_link(dir) {
+        std::fs::canonicalize(dir).unwrap_or(dir.to_path_buf())
+    } else {
+        dir.to_path_buf()
+    };
+    Resource {
+        uid: resource_uid(ResourceKind::Skill, &scope, &name),
+        kind: ResourceKind::Skill,
+        description: skill_description(dir),
+        canonical: canonical.to_string_lossy().to_string(),
+        name,
+        scope,
+        config: None,
+        transport: None,
+        targets,
+        overrides: BTreeMap::new(),
+        secret_refs: Vec::new(),
+        literal_secret_keys: Vec::new(),
+    }
+}
+
+fn skill_dirs(dir: &Path) -> BTreeMap<String, PathBuf> {
+    let mut out = BTreeMap::new();
+    if let Ok(rd) = std::fs::read_dir(dir) {
+        for e in rd.filter_map(|e| e.ok()) {
+            let p = e.path();
+            if p.join("SKILL.md").is_file() {
+                out.insert(e.file_name().to_string_lossy().to_string(), p);
+            }
+        }
+    }
+    out
+}
+
+/// Skills turned off in Claude by parking the real folder
+/// (`<.claude>/.skills-disabled/<name>`): still listed, as off.
+pub fn parked_skill_resources(
+    claude_dir: &Path,
+    scope: &Scope,
+    skip: &BTreeSet<String>,
+) -> Vec<Resource> {
+    let parked = claude_dir.join(crate::services::skill_writer::DISABLED_SKILLS_DIR);
+    skill_dirs(&parked)
+        .into_iter()
+        .filter(|(n, _)| !skip.contains(n))
+        .map(|(name, dir)| {
+            let mut targets = BTreeMap::new();
+            targets.insert(Cli::Claude, TargetState::Off);
+            for cli in [Cli::Codex, Cli::Agy] {
+                targets.insert(
+                    cli,
+                    TargetState::Unsupported {
+                        reason: "Só existe para o Claude (pasta .claude/skills)".into(),
+                    },
+                );
+            }
+            skill_resource(name, scope.clone(), &dir, targets)
+        })
+        .collect()
+}
+
+/// Project skills: `<p>/.agents/skills` (Codex and agy read it directly)
+/// and `<p>/.claude/skills` (Claude; usually links into `.agents/skills`).
+pub fn project_skill_resources(project: &Path) -> Vec<Resource> {
+    let scope = Scope::Project {
+        path: project.to_string_lossy().to_string(),
+    };
+    let shared = skill_dirs(&project.join(".agents").join("skills"));
+    let claude = skill_dirs(&project.join(".claude").join("skills"));
+    let mut names: BTreeSet<String> = shared.keys().cloned().collect();
+    names.extend(claude.keys().cloned());
+    let mut out: Vec<Resource> = names
+        .iter()
+        .map(|name| {
+            let mut targets = BTreeMap::new();
+            targets.insert(
+                Cli::Claude,
+                if claude.contains_key(name) {
+                    TargetState::On
+                } else {
+                    TargetState::Off
+                },
+            );
+            for cli in [Cli::Codex, Cli::Agy] {
+                targets.insert(
+                    cli,
+                    if shared.contains_key(name) {
+                        TargetState::Native
+                    } else {
+                        TargetState::Unsupported {
+                            reason:
+                                "Só existe em .claude/skills; o Codex e o agy leem .agents/skills"
+                                    .into(),
+                        }
+                    },
+                );
+            }
+            let dir = shared.get(name).or_else(|| claude.get(name)).unwrap();
+            skill_resource(name.clone(), scope.clone(), dir, targets)
+        })
+        .collect();
+    out.extend(parked_skill_resources(
+        &project.join(".claude"),
+        &scope,
+        &names,
+    ));
     out
 }
 

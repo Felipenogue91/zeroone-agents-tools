@@ -96,7 +96,11 @@ pub fn get_sync_resources(
     let snap = SourceSnapshot::load(&home);
     let meta = db.get_resource_meta_all().map_err(|e| e.to_string())?;
     let occ = db.get_occurrences().map_err(|e| e.to_string())?;
-    Ok(build_views(snap.resources(), &meta, &occ))
+    let mut res = snap.resources();
+    for p in known_projects(&db, &snap) {
+        res.extend(crate::sync::source::project_skill_resources(&p));
+    }
+    Ok(build_views(res, &meta, &occ))
 }
 
 #[tauri::command]
@@ -237,8 +241,22 @@ pub fn set_skill_target(
     name: String,
     cli: Cli,
     enabled: bool,
+    project: Option<String>,
 ) -> Result<Option<ApplyOutcome>, String> {
     let home = home_dir()?;
+    if let Some(p) = project {
+        if cli != Cli::Claude {
+            return Err(
+                "No projeto, o Codex e o agy leem .agents/skills direto: tire ou ponha a pasta lá."
+                    .into(),
+            );
+        }
+        crate::sync::skills::set_project_claude_skill(std::path::Path::new(&p), &name, enabled)?;
+        if let Ok(db) = db.lock() {
+            let _ = refresh_occurrences_in_db(&db);
+        }
+        return Ok(None);
+    }
     let agents = crate::utils::agents_home::AgentsHome::from_home(&home);
     let out = match cli {
         Cli::Claude => {

@@ -91,49 +91,63 @@ describe('DiffView', () => {
 	});
 });
 
-describe('ResourceList', () => {
+describe('ResourceMatrix', () => {
 	const list = [
 		resource({ name: 'ai-memory', description: 'memory' }),
+		resource({ name: 'context7', targets: { claude: { state: 'on' }, codex: { state: 'off' }, agy: { state: 'on' } } }),
 		resource({ name: 'supabase', uid: 'mcp:project:/w/site:supabase', scope: { type: 'project', path: '/w/site' } }),
 		resource({ name: 'shared-skill', uid: 'skill:global:shared-skill', kind: 'skill', targets: { claude: { state: 'off' }, codex: { state: 'native' }, agy: { state: 'native' } } })
 	];
+	const ok = { backupId: 'b1', applied: ['x'], skipped: [], clis: ['codex'], unmanagedProject: false };
 
-	it('filters by kind, origin, CLI and text', async () => {
-		const { default: ResourceList } = await import('$lib/components/sync/ResourceList.svelte');
-		render(ResourceList, { props: { resources: list, onOpen: vi.fn() } });
-		expect(screen.getAllByRole('button', { name: /\(global\)|\(site\)/ }).length).toBe(3);
-
-		await fireEvent.click(screen.getByRole('tab', { name: /Skills/ }));
-		expect(screen.getByRole('button', { name: 'shared-skill (global)' })).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: 'ai-memory (global)' })).not.toBeInTheDocument();
-
-		await fireEvent.click(screen.getByRole('tab', { name: /All/ }));
+	it('shows only the chosen kind, grouped by origin, and filters by text', async () => {
+		const { default: ResourceMatrix } = await import('$lib/components/sync/ResourceMatrix.svelte');
+		render(ResourceMatrix, { props: { kind: 'mcp', resources: list, onOpen: vi.fn() } });
+		expect(screen.getByRole('button', { name: 'ai-memory' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'shared-skill' })).not.toBeInTheDocument();
+		expect(screen.getByText(/Global \(every folder\)/)).toBeInTheDocument();
+		expect(screen.getAllByText('site').length).toBeGreaterThan(0);
 		await fireEvent.input(screen.getByPlaceholderText('Search by name or description'), { target: { value: 'supa' } });
-		expect(screen.getByRole('button', { name: 'supabase (site)' })).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: 'ai-memory (global)' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'supabase' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'ai-memory' })).not.toBeInTheDocument();
 	});
 
-	it('opens the detail on Enter and shows an empty state with an action', async () => {
-		const { default: ResourceList } = await import('$lib/components/sync/ResourceList.svelte');
-		const onOpen = vi.fn();
-		const onAdd = vi.fn();
-		const { unmount } = render(ResourceList, { props: { resources: list, onOpen } });
-		await fireEvent.keyDown(screen.getByRole('button', { name: 'ai-memory (global)' }), { key: 'Enter' });
-		expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ name: 'ai-memory' }));
-		unmount();
-		render(ResourceList, { props: { resources: [], onOpen, onAdd } });
-		expect(screen.getByText('Nothing here yet')).toBeInTheDocument();
-		await fireEvent.click(screen.getAllByRole('button', { name: 'Add MCP' })[1]);
-		expect(onAdd).toHaveBeenCalled();
-	});
-
-	it('toggling a chip calls the per-CLI command for that scope', async () => {
+	it('a cell switches one CLI for that scope', async () => {
 		invokeMock.mockReset();
-		invokeMock.mockResolvedValue({ backupId: 'b1', applied: ['x'], skipped: [], clis: ['codex'], unmanagedProject: false });
-		const { default: ResourceList } = await import('$lib/components/sync/ResourceList.svelte');
-		render(ResourceList, { props: { resources: [list[1]], onOpen: vi.fn() } });
-		await fireEvent.click(screen.getByRole('button', { name: /^Codex:/ }));
+		invokeMock.mockResolvedValue(ok);
+		const { default: ResourceMatrix } = await import('$lib/components/sync/ResourceMatrix.svelte');
+		render(ResourceMatrix, { props: { kind: 'mcp', resources: [list[2]], onOpen: vi.fn() } });
+		await fireEvent.click(screen.getByRole('button', { name: /^supabase · On in Codex/ }));
 		expect(invokeMock).toHaveBeenCalledWith('sync_set_target', { project: '/w/site', name: 'supabase', cli: 'codex', enabled: false });
+	});
+
+	it('the column switch turns the visible rows on in one CLI as one batch', async () => {
+		invokeMock.mockReset();
+		invokeMock.mockResolvedValue(ok);
+		const off = [
+			resource({ name: 'a', targets: { claude: { state: 'on' }, codex: { state: 'off' }, agy: { state: 'on' } } }),
+			resource({ name: 'b', targets: { claude: { state: 'on' }, codex: { state: 'off' }, agy: { state: 'on' } } })
+		];
+		const { default: ResourceMatrix } = await import('$lib/components/sync/ResourceMatrix.svelte');
+		render(ResourceMatrix, { props: { kind: 'mcp', resources: off, onOpen: vi.fn() } });
+		await fireEvent.click(screen.getByRole('checkbox', { name: /Turn the 2 visible on in Codex/ }));
+		expect(invokeMock).toHaveBeenCalledWith('sync_set_targets', {
+			changes: [
+				{ project: null, name: 'a', cli: 'codex', enabled: true },
+				{ project: null, name: 'b', cli: 'codex', enabled: true }
+			]
+		});
+	});
+
+	it('selected rows get the bulk bar ("all 3")', async () => {
+		invokeMock.mockReset();
+		invokeMock.mockResolvedValue(ok);
+		const { default: ResourceMatrix } = await import('$lib/components/sync/ResourceMatrix.svelte');
+		render(ResourceMatrix, { props: { kind: 'mcp', resources: list.slice(0, 2), onOpen: vi.fn() } });
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select context7' }));
+		expect(screen.getByText('1 selected')).toBeInTheDocument();
+		await fireEvent.click(screen.getAllByRole('button', { name: 'all 3' })[0]);
+		expect(invokeMock).toHaveBeenCalledWith('sync_set_target', { project: null, name: 'context7', cli: 'codex', enabled: true });
 	});
 });
 

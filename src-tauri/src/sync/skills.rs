@@ -18,28 +18,62 @@ fn is_link(p: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Claude: link (on) / unlink (off). Never touches the canonical folder.
+/// Claude (global): link (on) / unlink (off). Never touches the canonical folder.
 pub fn set_claude_skill(
     home: &Path,
     agents: &AgentsHome,
     name: &str,
     on: bool,
 ) -> Result<(), String> {
+    set_claude_skill_at(&home.join(".claude"), &agents.skills_dir, name, on, None)
+}
+
+/// Claude in one project: `<p>/.claude/skills/<name>` as a relative link to
+/// `<p>/.agents/skills/<name>` (works in git and in worktrees).
+pub fn set_project_claude_skill(project: &Path, name: &str, on: bool) -> Result<(), String> {
+    set_claude_skill_at(
+        &project.join(".claude"),
+        &project.join(".agents").join("skills"),
+        name,
+        on,
+        Some(Path::new("../../.agents/skills")),
+    )
+}
+
+/// `claude_dir` = `~/.claude` or `<p>/.claude`. On: restore a parked folder,
+/// or link from `shared_dir`. Off: unlink, or park a real folder (never delete).
+pub fn set_claude_skill_at(
+    claude_dir: &Path,
+    shared_dir: &Path,
+    name: &str,
+    on: bool,
+    relative_link: Option<&Path>,
+) -> Result<(), String> {
     if name.is_empty() || name.contains('/') || name.contains('\\') || name.contains("..") {
         return Err("nome de skill inválido".into());
     }
-    let src = agents.skills_dir.join(name);
-    let dest = home.join(".claude").join("skills").join(name);
+    let src = shared_dir.join(name);
+    let dest = claude_dir.join("skills").join(name);
+    let parked = claude_dir
+        .join(crate::services::skill_writer::DISABLED_SKILLS_DIR)
+        .join(name);
     if on {
-        if !src.join("SKILL.md").is_file() {
-            return Err(format!("{} não tem SKILL.md", src.display()));
-        }
         if dest.exists() || is_link(&dest) {
             return Ok(());
         }
         std::fs::create_dir_all(dest.parent().unwrap()).map_err(|e| e.to_string())?;
+        if parked.join("SKILL.md").is_file() {
+            return std::fs::rename(&parked, &dest).map_err(|e| e.to_string());
+        }
+        if !src.join("SKILL.md").is_file() {
+            return Err(format!("{} não tem SKILL.md", src.display()));
+        }
+        let target = match relative_link {
+            Some(rel) => rel.join(name),
+            None => src.clone(),
+        };
         #[cfg(unix)]
-        let linked = std::os::unix::fs::symlink(&src, &dest);
+        let linked = std::os::unix::fs::symlink(&target, &dest);
         #[cfg(windows)]
         let linked = std::os::windows::fs::symlink_dir(&src, &dest);
         if linked.is_err() {
@@ -58,10 +92,6 @@ pub fn set_claude_skill(
             return Ok(());
         }
         // A real folder: park it (restorable), never delete.
-        let parked = home
-            .join(".claude")
-            .join(crate::services::skill_writer::DISABLED_SKILLS_DIR)
-            .join(name);
         std::fs::create_dir_all(parked.parent().unwrap()).map_err(|e| e.to_string())?;
         if parked.exists() {
             return Err(format!(
@@ -252,6 +282,38 @@ mod tests {
         assert!(!dest.exists() && !is_link(&dest));
         assert!(agents.skills_dir.join("a/scripts").is_dir());
         assert!(set_claude_skill(&home, &agents, "../x", true).is_err());
+    }
+
+    #[test]
+    fn project_claude_skill_relative_link_and_park_restore() {
+        let tmp = TempDir::new().unwrap();
+        let p = tmp.path().join("proj");
+        let shared = p.join(".agents/skills/s1");
+        std::fs::create_dir_all(&shared).unwrap();
+        std::fs::write(shared.join("SKILL.md"), "---\nname: s1\n---\n").unwrap();
+        set_project_claude_skill(&p, "s1", true).unwrap();
+        let link = p.join(".claude/skills/s1");
+        assert_eq!(
+            std::fs::read_link(&link).unwrap(),
+            Path::new("../../.agents/skills/s1")
+        );
+        assert!(link.join("SKILL.md").is_file());
+        set_project_claude_skill(&p, "s1", false).unwrap();
+        assert!(!link.exists() && shared.exists());
+        // claude-only real folder: off parks, on restores
+        let only = p.join(".claude/skills/only");
+        std::fs::create_dir_all(&only).unwrap();
+        std::fs::write(only.join("SKILL.md"), "x").unwrap();
+        set_project_claude_skill(&p, "only", false).unwrap();
+        assert!(!only.exists());
+        let res = crate::sync::source::project_skill_resources(&p);
+        let o = res.iter().find(|r| r.name == "only").unwrap();
+        assert_eq!(
+            o.targets[&crate::sync::model::Cli::Claude],
+            crate::sync::model::TargetState::Off
+        );
+        set_project_claude_skill(&p, "only", true).unwrap();
+        assert!(only.join("SKILL.md").is_file());
     }
 
     #[test]

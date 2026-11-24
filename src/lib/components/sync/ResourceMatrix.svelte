@@ -12,8 +12,9 @@
 		loading?: boolean;
 		onOpen: (r: ResourceView) => void;
 		onAdd?: () => void;
+		addLabel?: string;
 	};
-	let { kind, resources, loading = false, onOpen, onAdd }: Props = $props();
+	let { kind, resources, loading = false, onOpen, onAdd, addLabel }: Props = $props();
 
 	// ---------------------------------------------------------------- filters
 	let query = $state('');
@@ -150,7 +151,7 @@
 
 	// ---------------------------------------------------------------- switching
 	const projectOf = (r: ResourceView) => (r.scope.type === 'project' ? r.scope.path : null);
-	const busyKey = (r: ResourceView) => (kind === 'skill' ? `skill:${r.name}` : `${projectOf(r) ?? 'global'}:${r.name}`);
+	const busyKey = (r: ResourceView) => (kind === 'skill' ? `skill:${projectOf(r) ?? 'global'}:${r.name}` : `${projectOf(r) ?? 'global'}:${r.name}`);
 	let bulkBusy = $derived(syncStore.isBusy('bulk'));
 
 	function canSwitch(r: ResourceView, cli: Cli) {
@@ -160,7 +161,7 @@
 	async function apply(changes: TargetChange[]) {
 		if (!changes.length) return;
 		if (kind === 'skill') {
-			for (const c of changes) await syncStore.setSkillTarget(c.name, c.cli, c.enabled);
+			for (const c of changes) await syncStore.setSkillTarget(c.name, c.cli, c.enabled, c.project);
 		} else if (changes.length === 1) {
 			const c = changes[0];
 			await syncStore.setTarget(c.name, c.cli, c.enabled, c.project);
@@ -273,7 +274,7 @@
 			</button>
 		{/if}
 		{#if onAdd}
-			<button class="btn btn-primary" onclick={onAdd}><Plus class="w-4 h-4 mr-1.5" aria-hidden="true" />{i18n.t('sync.lib.addMcp')}</button>
+			<button class="btn btn-primary" onclick={onAdd}><Plus class="w-4 h-4 mr-1.5" aria-hidden="true" />{addLabel ?? i18n.t('sync.lib.addMcp')}</button>
 		{/if}
 	</div>
 

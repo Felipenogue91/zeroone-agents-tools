@@ -2308,6 +2308,7 @@ export const ptBR: Translations = {
 	"sync.matrix.selectAll": "Selecionar todos os visíveis",
 	"sync.matrix.selectRow": "Selecionar {name}",
 	"sync.matrix.name": "Nome",
+	"sync.lib.skillEditor": "Criar ou editar skill",
 	"sync.matrix.groupGlobal": "Global (todas as pastas)",
 	"sync.matrix.sortByCli": "Ordenar: ligados no {cli} primeiro",
 	"sync.matrix.wholeColumn": "Coluna inteira (itens visíveis)",
