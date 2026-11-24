@@ -34,7 +34,6 @@ export const ptBR: Translations = {
 	// ── Header ───────────────────────────────────────────
 	'header.refresh': 'Atualizar dados',
 	'header.toggleTheme': 'Alternar tema',
-	'header.switchLanguage': 'Trocar idioma',
 
 	// ── Common actions ───────────────────────────────────
 	'common.confirm': 'Confirmar',

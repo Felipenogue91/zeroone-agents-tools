@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { RefreshCw, Moon, Sun, Languages, Search } from 'lucide-svelte';
+	import { RefreshCw, Moon, Sun, Search } from 'lucide-svelte';
 	import { mcpLibrary, projectsStore, notifications, i18n } from '$lib/stores';
 	import type { Snippet } from 'svelte';
 	import { syncStore } from '$lib/stores/syncStore.svelte';
@@ -73,16 +73,6 @@
 			<Search class="w-4 h-4" aria-hidden="true" />
 			<span class="hidden md:inline text-gray-500 dark:text-gray-400">{i18n.t('header.search')}</span>
 			<kbd class="hidden md:inline-flex">Ctrl K</kbd>
-		</button>
-
-		<button
-			onclick={() => i18n.setLocale(i18n.nextLocale)}
-			class="btn btn-ghost text-xs font-medium"
-			title={i18n.t('header.switchLanguage')}
-			aria-label={i18n.t('header.switchLanguage')}
-		>
-			<Languages class="w-4 h-4" />
-			{i18n.currentLabel}
 		</button>
 
 		<button

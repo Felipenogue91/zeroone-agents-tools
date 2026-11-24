@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { invoke } from '@tauri-apps/api/core';
-import { detectLocale } from '$lib/i18n/i18n.svelte';
 import { scopeKey, scopeLabel, isToggleable } from '$lib/types/sync';
 import type { ResourceView } from '$lib/types/sync';
 
@@ -29,20 +28,6 @@ function resource(partial: Partial<ResourceView>): ResourceView {
 		...partial
 	};
 }
-
-describe('locale detection', () => {
-	it('defaults to pt-BR even when the webview reports en-US', () => {
-		expect(detectLocale(['en-US', 'en'])).toBe('pt-BR');
-		expect(detectLocale([])).toBe('pt-BR');
-		expect(detectLocale(['pt-BR'])).toBe('pt-BR');
-	});
-
-	it('keeps Chinese system languages', () => {
-		expect(detectLocale(['zh-TW'])).toBe('zh-TW');
-		expect(detectLocale(['zh-Hant-HK'])).toBe('zh-TW');
-		expect(detectLocale(['zh-CN'])).toBe('zh-CN');
-	});
-});
 
 describe('sync type helpers', () => {
 	it('matches the Rust scope key', () => {

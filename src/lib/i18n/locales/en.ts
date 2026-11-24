@@ -29,7 +29,6 @@ export const en = {
 	// ── Header ───────────────────────────────────────────
 	'header.refresh': 'Refresh data',
 	'header.toggleTheme': 'Toggle theme',
-	'header.switchLanguage': 'Switch language',
 
 	// ── Common actions ───────────────────────────────────
 	'common.confirm': 'Confirm',

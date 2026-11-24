@@ -38,7 +38,6 @@ export const zhCN: Translations = {
 	// ── 顶部栏 ───────────────────────────────────────────
 	'header.refresh': '刷新数据',
 	'header.toggleTheme': '切换主题',
-	'header.switchLanguage': '切换语言',
 
 	// ── 常用操作 ───────────────────────────────────────
 	'common.confirm': '确认',

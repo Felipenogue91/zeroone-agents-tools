@@ -33,7 +33,6 @@ export const zhTW: Translations = {
 	// ── 頂部列 ───────────────────────────────────────────
 	'header.refresh': '重新整理',
 	'header.toggleTheme': '切換主題',
-	'header.switchLanguage': '切換語言',
 
 	// ── 常用操作 ───────────────────────────────────────
 	'common.confirm': '確認',

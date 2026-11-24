@@ -1,4 +1,4 @@
-# Estado (atualizado em 2026-11-24 23:30 por claude-code)
+# Estado (atualizado em 2026-11-24 16:55 por claude-code)
 
 ## Fazendo agora
 
@@ -12,6 +12,8 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`) concluída: fases 0 a
 
 ## Decisões em aberto
 
+- **Bug visto no `tauri dev`:** "Failed to load global rules: ambiguous column name: created_at" (query de regras globais). Não corrigido ainda.
+
 - **Aplicar na máquina real:** nada foi aplicado nas configs do Felipe. `zeroone-agents-tools --sync-health` mostra 34 divergências reais (inclui `claude-code-tool-manager` no agy e cópias antigas no escopo local do Claude); revisar e aplicar pela tela Início só com aprovação.
 - **Hook de sessão:** trocar `mcp-sync --here` por `zeroone-agents-tools --sync-here` (mesma saída, entende `cliOff`) ou manter o script — ver `docs/sync-cliOff.md`.
 - **Incidente (2026-11-24 ~15:42):** um subcomando ainda não registrado (`--secrets-status`) abriu a janela do build de dev por ~10 min contra a pasta de dados real. Efeito só no banco (cache): migrations 25/26 e scan de início (saíram as 14 entradas do catálogo do marketplace, 41 → 27 MCPs; atribuições intactas; 5 MCPs passaram a `${VAR}`). Nenhum arquivo de config das CLIs mudou (conferido por mtime). Corrigido: argumento `--sync-*`/`--secrets-*` desconhecido agora mostra ajuda e sai com código 2.
@@ -22,6 +24,8 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`) concluída: fases 0 a
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **App só em pt-BR (2026-11-24, Claude Code):** botão de idioma saiu do cabeçalho; build de release sempre em pt-BR (só dev/teste aceitam `locale` no localStorage, usado pelas suítes em inglês). Vitest 1580/1580, `npm run check` igual ao baseline (11 erros).
 
 - **Fase 7 sync multi-CLI — UI (2026-11-24, Claude Code):**
   - Navegação por tarefa: Início · Projetos · Biblioteca · CLIs (+ Configurações no rodapé); Perfis, Permissões, Memória, Status Line, Analytics, Insights, Sessões, Comparação, Containers e Marketplace no grupo recolhível "Claude Code avançado". Selo de divergências no Início.

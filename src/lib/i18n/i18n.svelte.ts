@@ -2,7 +2,7 @@ import { en } from './locales/en';
 import { ptBR } from './locales/pt-BR';
 import { zhTW } from './locales/zh-TW';
 import { zhCN } from './locales/zh-CN';
-import type { Locale, LocaleInfo, TranslationKey, Translations } from './types';
+import type { Locale, TranslationKey, Translations } from './types';
 
 const locales: Record<Locale, Translations> = {
 	en,
@@ -11,38 +11,23 @@ const locales: Record<Locale, Translations> = {
 	'zh-CN': zhCN
 };
 
-const localeInfos: LocaleInfo[] = [
-	{ code: 'en', label: 'EN' },
-	{ code: 'pt-BR', label: 'PT' },
-	{ code: 'zh-CN', label: '简' },
-	{ code: 'zh-TW', label: '繁' }
-];
-
 /**
- * pt-BR is the default. The Linux webview (WebKitGTK) reports `en-US` no
- * matter the system language, so English is only used when the user picks it
- * (stored in localStorage). Chinese system languages keep their locale.
+ * The app ships in pt-BR only (no language switch in the UI). Dev and test
+ * builds may still force another locale through localStorage, which is how the
+ * component and e2e suites keep asserting the English copy.
  */
-export function detectLocale(languages?: readonly string[]): Locale {
-	const langs = languages ?? (typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]));
-	for (const lang of langs) {
-		const l = lang.toLowerCase();
-		if (l === 'zh-tw' || l === 'zh-hk' || l.startsWith('zh-hant')) return 'zh-TW';
-		if (l.startsWith('zh')) return 'zh-CN';
+function getInitialLocale(): Locale {
+	if (import.meta.env.DEV) {
+		try {
+			const stored = localStorage.getItem('locale');
+			if (stored && stored in locales) {
+				return stored as Locale;
+			}
+		} catch {
+			// localStorage unavailable
+		}
 	}
 	return 'pt-BR';
-}
-
-function getInitialLocale(): Locale {
-	try {
-		const stored = localStorage.getItem('locale');
-		if (stored && stored in locales) {
-			return stored as Locale;
-		}
-	} catch {
-		// localStorage unavailable
-	}
-	return detectLocale();
 }
 
 class I18nState {
@@ -74,19 +59,6 @@ class I18nState {
 		if (typeof document !== 'undefined') {
 			document.documentElement.lang = locale;
 		}
-	}
-
-	get availableLocales(): LocaleInfo[] {
-		return localeInfos;
-	}
-
-	get currentLabel(): string {
-		return localeInfos.find((l) => l.code === this.locale)?.label ?? 'EN';
-	}
-
-	get nextLocale(): Locale {
-		const idx = localeInfos.findIndex((l) => l.code === this.locale);
-		return localeInfos[(idx + 1) % localeInfos.length].code;
 	}
 }
 

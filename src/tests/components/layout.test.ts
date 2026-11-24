@@ -51,13 +51,10 @@ vi.mock('$lib/stores', () => ({
 				'sidebar.navLabel': 'Main navigation',
 				'header.refresh': 'Refresh',
 				'header.toggleTheme': 'Toggle theme',
-				'header.switchLanguage': 'Switch language'
 			};
 			return translations[key] ?? key;
 		},
-		setLocale: vi.fn(),
-		currentLabel: 'EN',
-		nextLocale: 'zh-TW'
+		setLocale: vi.fn()
 	}
 }));
 
