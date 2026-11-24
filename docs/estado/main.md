@@ -1,12 +1,12 @@
-# Estado (atualizado em 2026-11-24 19:10 por claude-code)
+# Estado (atualizado em 2026-11-24 19:45 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fase 0 concluída.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 e 1 concluídas.
 
 ## Próximo passo exato
 
-- Fase 1 (modelo de dados): recurso com ID próprio, matriz de destinos CLI × escopo, overrides, segredos como `${VAR}`, tabela de ocorrências, migration sem perder favoritos/tags.
+- Fase 2 (motor de sync): adaptadores Claude/Codex/agy com `read → plan → diff → apply` portando o `~/.agents/bin/mcp-sync`, backup e prévia de diff; skills materializadas por CLI.
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
@@ -17,6 +17,14 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases 
 
 ## Feito e verificado
 
+- **Fase 1 sync multi-CLI (2026-11-24, Claude Code):**
+  - `src-tauri/src/sync/model.rs`: `Resource` com `uid` próprio (`kind:escopo:nome`, sensível a maiúsculas, por projeto), `Cli` (claude/codex/agy), matriz de destinos (`On`/`Off`/`ProvidedByPlugin`/`Native`/`Unsupported`), overrides por CLI, `secret_refs` (`${VAR}`, nunca valor) e `literal_secret_keys`.
+  - `src-tauri/src/sync/source.rs`: lê a fonte (`global.json`, `sync.json` ignorando `_doc`, `.mcp.json` + `disabledMcpjsonServers` dos projetos, `~/.agents/skills`, `~/.claude/skills`, agents). Codex lê `~/.agents/skills` nativamente (confirmado no binário 0.171: `user-agent-skills`); agy via `~/.gemini/config/skills.json`.
+  - `src-tauri/src/sync/occurrences.rs`: índice de onde cada recurso aparece em cada arquivo de cada CLI (inclusive escopo local do Claude no `~/.claude.json`).
+  - `src-tauri/src/db/resources.rs` + migration 26: tabelas `resource_meta` (favorito/tags/estado de UI por `uid`) e `resource_occurrences`; favoritos e tags antigos migrados por escopo. Scanner atualiza o índice no fim do scan.
+  - Comandos: `get_sync_resources`, `refresh_sync_occurrences`, `set_resource_favorite`, `set_resource_tags`.
+  - Conferido contra o `~/.agents` real (teste `real_home_snapshot`, ignorado por padrão, só nomes): 8 globais, 6 projetos, pluginProvided/overrides/desligados corretos, 37 skills.
+  - Verificação: `cargo test` 2068/2068, Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes.
 - **Fase 0 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/utils/agents_home.rs`: detecta `~/.agents` sem caminho fixo. Se `~/.agents/mcp/` existe, MCP é "gerenciado externamente": `sync_global_config`, `sync_project_config`, `activate_profile` e o registro de projeto no `~/.claude.json` recusam escrever (mensagem pt-BR). Novo comando `get_mcp_management_status` para a UI.
   - `src-tauri/src/utils/atomic.rs`: escrita atômica (temp + rename, segue symlink, preserva permissão) em todos os writers de config (`config_writer`, `claude_json`, `codex`, `gemini`, `cursor`, `copilot`, `opencode`, skills, agents, hooks, rules, commands, settings…).

@@ -1125,6 +1125,10 @@ impl Database {
         // touches user config files).
         self.cleanup_scan_pollution()?;
 
+        // Migration 26: multi-CLI resource cache (meta keyed by uid +
+        // occurrence index), carrying favorites/tags over.
+        self.migrate_resource_tables()?;
+
         Ok(())
     }
 

@@ -145,6 +145,11 @@ pub fn run_full_scan(db: &Database) -> Result<usize> {
     // Reconcile deleted projects and auto-detected assets against disk
     reconcile_filesystem_entries(db)?;
 
+    // Multi-CLI occurrence index (read-only, non-fatal)
+    if let Err(e) = crate::commands::sync::refresh_occurrences_in_db(db) {
+        log::warn!("[sync] occurrence index not refreshed: {}", e);
+    }
+
     Ok(global_mcp_count
         + claude_json_count
         + plugin_count

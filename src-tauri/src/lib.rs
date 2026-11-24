@@ -6,6 +6,7 @@ mod db;
 mod mcp_gateway;
 mod mcp_server;
 mod services;
+mod sync;
 mod utils;
 
 use db::Database;
@@ -230,6 +231,10 @@ pub fn run() {
             commands::config::toggle_global_mcp_assignment,
             commands::config::sync_global_config,
             commands::config::get_mcp_management_status,
+            commands::sync::get_sync_resources,
+            commands::sync::refresh_sync_occurrences,
+            commands::sync::set_resource_favorite,
+            commands::sync::set_resource_tags,
             commands::config::get_claude_paths,
             commands::config::open_config_file,
             commands::config::backup_configs,
