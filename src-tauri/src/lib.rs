@@ -526,6 +526,10 @@ pub fn run() {
             commands::sessions::get_project_sessions,
             commands::sessions::get_session_detail,
             // Container Commands
+            commands::context::list_context_sessions,
+            commands::context::get_session_context,
+            commands::context::list_context_hooks,
+            commands::context::run_context_hook,
             commands::code_forest::code_forest_status,
             commands::code_forest::open_code_forest,
             commands::containers::list_docker_containers,

@@ -8,6 +8,7 @@ pub mod code_forest;
 pub mod commands;
 pub mod config;
 pub mod containers;
+pub mod context;
 pub mod debug;
 pub mod docker_hosts;
 pub mod hooks;
