@@ -1,8 +1,10 @@
-# Estado (atualizado em 2026-11-24 17:15 por claude-code)
+# Estado (atualizado em 2026-11-24 18:20 por claude-code)
 
 ## Fazendo agora
 
-Frente **UI que organiza de verdade** (Felipe testou a fase 7 e reprovou: mostra sem deixar ajustar). Varredura feita em 2026-11-24 17:10 no app rodando (`npm run tauri dev`, tauri-mcp). Problemas achados:
+Frente **UI que organiza de verdade**: itens 1–11 feitos e commitados (sem push). Aguardando o Felipe conferir no `npm run tauri dev`.
+
+Histórico da frente: (Felipe testou a fase 7 e reprovou: mostra sem deixar ajustar). Varredura feita em 2026-11-24 17:10 no app rodando (`npm run tauri dev`, tauri-mcp). Problemas achados:
 
 1. **Projeto > MCPs:** herdados do global aparecem com chips, mas não dá pra clicar (só "Mude na Biblioteca"). Precisa desligar um global só neste projeto, por CLI ou nas 3.
 2. **Biblioteca é dois mundos:** "Tudo" usa a fonte nova (MCPs 29, Skills 37, Agentes 0) e as abas Skills/Agentes/Hooks/Comandos/Regras são as telas antigas do banco (Skills 131 = 37 globais + 94 de projetos misturados sem agrupar; Agentes 7). Números não batem.
@@ -20,7 +22,9 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Verificação final (e2e), depois Felipe confere; push e empacotamento só com ok dele.
+- Felipe confere as telas. Push da `main` e empacotar Linux + Windows só com ok dele.
+- Em aberto dele: embutir a floresta dentro da janela principal exigiria liberar `frame-ancestors` no code-forest só para a origem do app.
+- Pendente menor: tela Projetos ainda lista 137 pastas com lixo (`.paperclip`, `Workspace/runs`) e colunas `0 | 0 | 0` sem rótulo (item 7 da varredura).
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +41,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Verificação final (2026-11-24 18:20):** `cargo test` 2136/2136 (+2 ignorados), Vitest 85 arquivos / 1581 testes, `npm run check` no baseline (11 erros antigos), e2e Playwright 46/46 (rodado com o headless shell 1255 já instalado, porque o Playwright 1.58 do projeto não baixa navegador no Ubuntu 26.04).
 
 - **Item 11, aba Code Forest (2026-11-24, Claude Code):** item "Code Forest" no menu (só aparece se `~/Workspace/projects/code-forest/bin/code-forest` existe). A página sobe o servidor da floresta se preciso (`setsid bin/code-forest serve`, sobrevive ao app como o `code-forest open`) e abre a floresta numa **janela nativa** do app (`WebviewWindowBuilder`, label `code-forest`, `http://127.0.0.1:4790/`). Não é iframe porque a floresta manda `frame-ancestors 'none'` (protege o botão de poda); afrouxar isso no code-forest é decisão do Felipe. Nada do code-forest foi copiado para cá. Containers também subiu para o menu principal.
 
