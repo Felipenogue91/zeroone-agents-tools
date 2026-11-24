@@ -134,7 +134,35 @@ pub struct SessionContext {
     /// Loaded only when used (skill/subagent bodies); filled by the caller,
     /// which knows the folders.
     pub on_demand: Vec<ContextGroup>,
+    /// How the context grew, message by message.
+    pub turns: Vec<TurnStat>,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnStat {
+    /// 1-based position in the session.
+    pub index: usize,
+    pub at: Option<String>,
+    /// Start of what was typed (or a label for automatic messages).
+    pub prompt: String,
+    /// `prompt` (typed) or `task` (background task notice).
+    pub kind: String,
+    pub images: usize,
+    /// Real context size after this message's last reply (API usage).
+    pub context_after: Option<u64>,
+    /// Real growth against the previous message (negative after a compaction).
+    pub growth: Option<i64>,
+    /// Model calls in this message (one per tool round).
+    pub api_calls: usize,
+    /// Tokens the model wrote (reasoning included).
+    pub output_tokens: u64,
+    pub compacted: bool,
+    /// Estimated split of what was added (chars/4).
+    pub parts: Vec<ContextItem>,
+    /// Tool results by tool, biggest first.
+    pub tools: Vec<ContextItem>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -481,6 +509,300 @@ fn text_size_of(v: &Value) -> usize {
     }
 }
 
+// ─── Message by message ─────────────────────────────────────────────────────
+
+/// Rough size of one image in the context (~1.6k tokens for a screenshot).
+const IMAGE_CHARS: usize = 6400;
+
+fn count_images(v: &Value) -> usize {
+    match v {
+        Value::Array(a) => a.iter().map(count_images).sum(),
+        Value::Object(o) => {
+            usize::from(o.get("type").and_then(Value::as_str) == Some("image"))
+                + o.get("content").map(count_images).unwrap_or(0)
+        }
+        _ => 0,
+    }
+}
+
+/// Text size of a tool result's content (strings and text blocks).
+fn result_chars(v: &Value) -> usize {
+    match v {
+        Value::String(s) => char_len(s),
+        Value::Array(a) => a.iter().map(result_chars).sum(),
+        Value::Object(o) => match o.get("type").and_then(Value::as_str) {
+            Some("text") => o
+                .get("text")
+                .and_then(Value::as_str)
+                .map(char_len)
+                .unwrap_or(0),
+            Some("image") => 0,
+            _ => o.get("content").map(result_chars).unwrap_or(0),
+        },
+        _ => 0,
+    }
+}
+
+fn usage_input(u: &Value) -> u64 {
+    let g = |k: &str| u.get(k).and_then(Value::as_u64).unwrap_or(0);
+    g("input_tokens") + g("cache_creation_input_tokens") + g("cache_read_input_tokens")
+}
+
+#[derive(Default)]
+struct TurnAcc {
+    index: usize,
+    at: Option<String>,
+    prompt: String,
+    kind: String,
+    images: usize,
+    prompt_chars: usize,
+    hook_chars: usize,
+    att_chars: usize,
+    reply_chars: usize,
+    tools: BTreeMap<String, (usize, usize)>,
+    api_calls: usize,
+    output_tokens: u64,
+    first_input: Option<u64>,
+    last_input: Option<u64>,
+    last_output: u64,
+    compacted: bool,
+}
+
+#[derive(Default)]
+struct TurnTracker {
+    turns: Vec<TurnStat>,
+    cur: Option<TurnAcc>,
+    tool_names: std::collections::HashMap<String, String>,
+    seen_msgs: std::collections::HashSet<String>,
+    /// Context after the previous message.
+    last_ctx: Option<u64>,
+}
+
+impl TurnTracker {
+    /// A user record that opens a new message: typed text, images, or a
+    /// background task notice. Tool results and meta records do not.
+    fn opens_turn(v: &Value) -> Option<(String, String, usize)> {
+        if v.get("isMeta").and_then(Value::as_bool) == Some(true) {
+            return None;
+        }
+        let content = v.get("message")?.get("content")?;
+        if let Value::Array(parts) = content {
+            if parts
+                .iter()
+                .any(|p| p.get("type").and_then(Value::as_str) == Some("tool_result"))
+            {
+                return None;
+            }
+        }
+        let images = count_images(content);
+        let text = prompt_text(v).unwrap_or_default();
+        if text.starts_with("<task-notification>") {
+            return Some(("Aviso de tarefa em segundo plano".into(), "task".into(), 0));
+        }
+        if text.is_empty() && images == 0 {
+            return None;
+        }
+        let shown: String = if text.is_empty() {
+            "(só imagem)".into()
+        } else {
+            text.chars().take(160).collect()
+        };
+        Some((shown, "prompt".into(), images))
+    }
+
+    fn feed(&mut self, v: &Value, started: bool) {
+        if v.get("isSidechain").and_then(Value::as_bool) == Some(true) {
+            return;
+        }
+        match str_of(v, "type") {
+            "user" => {
+                if let Some((prompt, kind, images)) = Self::opens_turn(v) {
+                    self.close();
+                    let chars = prompt_text(v).map(|t| char_len(&t)).unwrap_or(0);
+                    self.cur = Some(TurnAcc {
+                        index: self.turns.len() + 1,
+                        at: v.get("timestamp").and_then(Value::as_str).map(String::from),
+                        prompt,
+                        kind,
+                        images,
+                        prompt_chars: chars + images * IMAGE_CHARS,
+                        ..Default::default()
+                    });
+                    return;
+                }
+                let Some(cur) = self.cur.as_mut() else { return };
+                let Some(Value::Array(parts)) = v.get("message").and_then(|m| m.get("content"))
+                else {
+                    return;
+                };
+                for p in parts {
+                    if p.get("type").and_then(Value::as_str) != Some("tool_result") {
+                        continue;
+                    }
+                    let id = str_of(p, "tool_use_id");
+                    let name = self
+                        .tool_names
+                        .get(id)
+                        .cloned()
+                        .unwrap_or_else(|| "?".into());
+                    let content = p.get("content").unwrap_or(&Value::Null);
+                    let chars = result_chars(content) + count_images(content) * IMAGE_CHARS;
+                    let e = cur.tools.entry(name).or_default();
+                    e.0 += 1;
+                    e.1 += chars;
+                }
+            }
+            "assistant" => {
+                let Some(msg) = v.get("message") else { return };
+                for block in msg
+                    .get("content")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                {
+                    match str_of(block, "type") {
+                        "tool_use" => {
+                            self.tool_names.insert(
+                                str_of(block, "id").to_string(),
+                                str_of(block, "name").to_string(),
+                            );
+                            if let Some(cur) = self.cur.as_mut() {
+                                cur.reply_chars += block
+                                    .get("input")
+                                    .and_then(|i| serde_json::to_string(i).ok())
+                                    .map(|s| char_len(&s))
+                                    .unwrap_or(0);
+                            }
+                        }
+                        "text" => {
+                            if let Some(cur) = self.cur.as_mut() {
+                                cur.reply_chars += char_len(str_of(block, "text"));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                // One API call is logged as several records (one per block).
+                let id = str_of(msg, "id").to_string();
+                if id.is_empty() || !self.seen_msgs.insert(id) {
+                    return;
+                }
+                let (Some(cur), Some(u)) = (self.cur.as_mut(), msg.get("usage")) else {
+                    return;
+                };
+                let input = usage_input(u);
+                if input == 0 {
+                    return;
+                }
+                if cur.last_input.is_some_and(|prev| input + 2000 < prev) {
+                    cur.compacted = true;
+                }
+                cur.api_calls += 1;
+                cur.first_input.get_or_insert(input);
+                cur.last_input = Some(input);
+                cur.last_output = u.get("output_tokens").and_then(Value::as_u64).unwrap_or(0);
+                cur.output_tokens += cur.last_output;
+            }
+            "attachment" if started => {
+                let Some(cur) = self.cur.as_mut() else { return };
+                let Some(att) = v.get("attachment") else {
+                    return;
+                };
+                let akind = str_of(att, "type");
+                if akind.starts_with("hook_") {
+                    if akind != "hook_additional_context" {
+                        cur.hook_chars += hook_injected(att).0;
+                    }
+                } else if !is_log_only(akind) {
+                    cur.att_chars += text_size_of(att).saturating_sub(char_len(akind));
+                }
+            }
+            "system" if str_of(v, "subtype") == "compact_boundary" => {
+                if let Some(cur) = self.cur.as_mut() {
+                    cur.compacted = true;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn close(&mut self) {
+        let Some(t) = self.cur.take() else { return };
+        let context_after = t.last_input.map(|i| i + t.last_output);
+        // The first message is measured from its first call (which already
+        // holds everything loaded at start).
+        let before = self.last_ctx.or(t.first_input);
+        let growth = match (context_after, before) {
+            (Some(a), Some(b)) => Some(a as i64 - b as i64),
+            _ => None,
+        };
+        if context_after.is_some() {
+            self.last_ctx = context_after;
+        }
+        let compacted = t.compacted || growth.is_some_and(|g| g < -2000);
+        let mut parts = vec![
+            ContextItem::new("Sua mensagem", None, t.prompt_chars),
+            ContextItem::new(
+                "Resultados de ferramentas",
+                None,
+                t.tools.values().map(|(_, c)| c).sum(),
+            ),
+            ContextItem::new("Hooks", None, t.hook_chars),
+            ContextItem::new("Anexos do Claude Code", None, t.att_chars),
+        ];
+        if t.images > 0 {
+            parts[0].note = Some(format!("{} imagem(ns), ~1,6 mil tokens cada", t.images));
+        }
+        // The model's own output is measured (reasoning included: it stays
+        // in the context while the message runs its tools).
+        let mut reply = ContextItem::new("Respostas do Claude", None, t.reply_chars);
+        if t.output_tokens > 0 {
+            reply.tokens = t.output_tokens as usize;
+            reply.note = Some("Medido: texto, chamadas de ferramenta e raciocínio".into());
+        }
+        parts.push(reply);
+        parts.retain(|p| p.tokens > 0);
+        if let Some(g) = growth.filter(|g| *g > 0 && !compacted) {
+            let known: usize = parts.iter().map(|p| p.tokens).sum();
+            let rest = g as usize;
+            if rest > known {
+                let mut r = ContextItem::new(
+                    "Resto (embalagem do Claude Code e diferença da estimativa)",
+                    None,
+                    0,
+                );
+                r.tokens = rest - known;
+                parts.push(r);
+            }
+        }
+        parts.sort_by(|a, b| b.tokens.cmp(&a.tokens));
+        let mut tools: Vec<ContextItem> = t
+            .tools
+            .into_iter()
+            .map(|(name, (n, chars))| {
+                let mut i = ContextItem::new(name, None, chars);
+                i.count = Some(n);
+                i
+            })
+            .collect();
+        tools.sort_by(|a, b| b.chars.cmp(&a.chars));
+        self.turns.push(TurnStat {
+            index: t.index,
+            at: t.at,
+            prompt: t.prompt,
+            kind: t.kind,
+            images: t.images,
+            context_after,
+            growth,
+            api_calls: t.api_calls,
+            output_tokens: t.output_tokens,
+            compacted,
+            parts,
+            tools,
+        });
+    }
+}
+
 // ─── Main parser ────────────────────────────────────────────────────────────
 
 #[derive(Default)]
@@ -525,6 +847,7 @@ pub fn parse_lines(
         per_turn: Vec::new(),
         prompts: 0,
         on_demand: Vec::new(),
+        turns: Vec::new(),
         warnings: Vec::new(),
     };
 
@@ -547,8 +870,10 @@ pub fn parse_lines(
     let mut turn_bits: BTreeMap<String, (usize, usize)> = BTreeMap::new();
 
     let mut started = false; // first main-thread reply seen
+    let mut tracker = TurnTracker::default();
 
     for v in records {
+        tracker.feed(&v, started);
         let kind = str_of(&v, "type");
         if ctx.cwd.is_none() {
             if let Some(c) = v.get("cwd").and_then(Value::as_str) {
@@ -933,6 +1258,8 @@ pub fn parse_lines(
         ),
     );
     ctx.per_turn = per_turn;
+    tracker.close();
+    ctx.turns = tracker.turns;
 
     Ok(ctx)
 }
@@ -1098,6 +1425,99 @@ mod tests {
     }
 
     #[test]
+    fn tracks_growth_message_by_message() {
+        let a = |id: &str, input: u64, out: u64, content: Value| {
+            json!({"type": "assistant", "message": {"id": id, "content": content,
+                "usage": {"input_tokens": 1, "cache_read_input_tokens": input - 1, "output_tokens": out}}})
+        };
+        let recs = vec![
+            att(
+                json!({"type": "hook_success", "hookEvent": "SessionStart", "command": "x", "content": "inicio"}),
+            ),
+            json!({"type": "user", "message": {"content": "lê o arquivo"}, "timestamp": "t1"}),
+            att(json!({"type": "skill_listing", "content": "- a: b\n"})),
+            a(
+                "m1",
+                10000,
+                50,
+                json!([{"type": "tool_use", "id": "tu1", "name": "Read", "input": {"file_path": "/a"}}]),
+            ),
+            // same call, second block: usage must not count twice
+            a("m1", 10000, 50, json!([{"type": "text", "text": "lendo"}])),
+            json!({"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "tu1", "content": "x".repeat(8000)}]}}),
+            att(
+                json!({"type": "hook_success", "hookEvent": "PostToolUse", "command": "y", "content": "nota!"}),
+            ),
+            a(
+                "m2",
+                12100,
+                100,
+                json!([{"type": "text", "text": "pronto"}]),
+            ),
+            json!({"type": "user", "message": {"content": [{"type": "text", "text": "e agora?"}, {"type": "image", "source": {}}]}}),
+            att(json!({"type": "task_reminder", "content": "tarefas"})),
+            a("m3", 13000, 20, json!([{"type": "text", "text": "ok"}])),
+            json!({"type": "user", "message": {"content": "<task-notification>\n<status>completed</status>"}}),
+            json!({"type": "system", "subtype": "compact_boundary"}),
+            a("m4", 3000, 10, json!([{"type": "text", "text": "resumo"}])),
+            json!({"type": "user", "message": {"content": "interrompida"}}),
+        ];
+        let ctx = parse_lines(Path::new("/l/t.jsonl"), recs.into_iter()).unwrap();
+        assert_eq!(ctx.turns.len(), 4);
+
+        let t1 = &ctx.turns[0];
+        assert_eq!(t1.prompt, "lê o arquivo");
+        assert_eq!(t1.at.as_deref(), Some("t1"));
+        assert_eq!(t1.api_calls, 2);
+        assert_eq!(t1.context_after, Some(12200));
+        assert_eq!(t1.growth, Some(2200)); // against its first call
+        assert_eq!(t1.output_tokens, 150);
+        let read = &t1.tools[0];
+        assert_eq!(
+            (read.label.as_str(), read.count, read.chars),
+            ("Read", Some(1), 8000)
+        );
+        assert!(t1.parts.iter().any(|p| p.label == "Hooks" && p.chars == 5));
+        let reply = t1
+            .parts
+            .iter()
+            .find(|p| p.label == "Respostas do Claude")
+            .unwrap();
+        assert_eq!(reply.tokens, 150);
+        let known: usize = t1
+            .parts
+            .iter()
+            .filter(|p| !p.label.starts_with("Resto"))
+            .map(|p| p.tokens)
+            .sum();
+        let rest = t1
+            .parts
+            .iter()
+            .find(|p| p.label.starts_with("Resto"))
+            .unwrap();
+        assert_eq!(rest.tokens, 2200 - known);
+        // the startup skill listing is not part of the first message
+        assert!(!t1.parts.iter().any(|p| p.label == "Anexos do Claude Code"));
+
+        let t2 = &ctx.turns[1];
+        assert_eq!(t2.images, 1);
+        assert_eq!(t2.growth, Some(13020 - 12200));
+        let msg = t2.parts.iter().find(|p| p.label == "Sua mensagem").unwrap();
+        assert_eq!(msg.chars, "e agora?".len() + IMAGE_CHARS);
+        assert!(t2.parts.iter().any(|p| p.label == "Anexos do Claude Code"));
+
+        let t3 = &ctx.turns[2];
+        assert_eq!(t3.kind, "task");
+        assert!(t3.compacted);
+        assert!(t3.growth.unwrap() < 0);
+
+        let t4 = &ctx.turns[3];
+        assert_eq!(t4.api_calls, 0);
+        assert_eq!(t4.context_after, None);
+        assert_eq!(t4.growth, None);
+    }
+
+    #[test]
     fn old_log_warns() {
         let recs = vec![json!({"type": "user", "message": {"content": "oi"}})];
         let ctx = parse_lines(Path::new("/l/x.jsonl"), recs.into_iter()).unwrap();
@@ -1163,6 +1583,8 @@ mod tests {
             "{\"type\":\"user\",\"cwd\":\"/proj/b\"}\n",
         )
         .unwrap();
+        // mtime resolution: make the rewrite clearly newer than /proj/b
+        std::thread::sleep(std::time::Duration::from_millis(50));
         std::fs::write(
             dir.join("new.jsonl"),
             "{\"type\":\"user\",\"cwd\":\"/proj/a\"}\n",

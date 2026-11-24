@@ -28,7 +28,22 @@
 		perTurn: Group[];
 		prompts: number;
 		onDemand: Group[];
+		turns: Turn[];
 		warnings: string[];
+	};
+	type Turn = {
+		index: number;
+		at: string | null;
+		prompt: string;
+		kind: string;
+		images: number;
+		contextAfter: number | null;
+		growth: number | null;
+		apiCalls: number;
+		outputTokens: number;
+		compacted: boolean;
+		parts: Item[];
+		tools: Item[];
 	};
 	type SessionRef = { sessionId: string; modified: string | null; sizeBytes: number; title: string | null };
 	type Folder = { path: string; sessions: number; lastUsed: string | null; exists: boolean };
@@ -193,6 +208,17 @@
 		}
 	}
 
+	let turnSort = $state<'order' | 'growth'>('order');
+	const turns = $derived(ctx?.turns ?? []);
+	const sortedTurns = $derived(
+		turnSort === 'order' ? turns : [...turns].sort((a, b) => (b.growth ?? -Infinity) - (a.growth ?? -Infinity))
+	);
+	const maxContext = $derived(Math.max(1, ...turns.map((t) => t.contextAfter ?? 0)));
+	const maxGrowth = $derived(Math.max(1, ...turns.map((t) => t.growth ?? 0)));
+	const signed = (n: number) => (n >= 0 ? '+' : '−') + fmt(Math.abs(n));
+	const fmtTime = (iso: string | null) =>
+		iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+
 	const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 	const maxTokens = (g: Group) => Math.max(1, ...g.items.map((i) => i.tokens));
 
@@ -311,6 +337,92 @@
 							{@render groupBlock(g, startupTotal, COLORS[g.key])}
 						{/each}
 					</div>
+				</section>
+
+				<!-- Message by message -->
+				<section class="card space-y-3" aria-labelledby="ctx-turns">
+					<div class="flex items-start gap-3 flex-wrap">
+						<div class="flex-1 min-w-0">
+							<h2 id="ctx-turns" class="text-title">{i18n.t('context.turnsTitle')}</h2>
+							<p class="text-meta">{i18n.t('context.turnsBody')}</p>
+						</div>
+						{#if turns.length > 1}
+							<div class="flex gap-1" role="group" aria-label={i18n.t('context.turnsTitle')}>
+								<button class="btn {turnSort === 'order' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'order'} onclick={() => (turnSort = 'order')}>{i18n.t('context.sortOrder')}</button>
+								<button class="btn {turnSort === 'growth' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'growth'} onclick={() => (turnSort = 'growth')}>{i18n.t('context.sortGrowth')}</button>
+							</div>
+						{/if}
+					</div>
+
+					{#if turns.length === 0}
+						<p class="text-body">{i18n.t('context.turnsEmpty')}</p>
+					{:else}
+						<!-- context size after each message, in order -->
+						<div class="flex items-end gap-px h-16 rounded-md bg-gray-50 dark:bg-gray-900 px-1 pt-1" aria-label={i18n.t('context.chart')} role="img">
+							{#each turns as t (t.index)}
+								<div
+									class="flex-1 min-w-[2px] rounded-t-sm {t.compacted ? 'bg-amber-500' : 'bg-primary-500/70'}"
+									style="height: {Math.max(2, ((t.contextAfter ?? 0) / maxContext) * 100)}%"
+									title="#{t.index} · {i18n.t('context.after', { n: t.contextAfter !== null ? fmt(t.contextAfter) : '—' })}"
+								></div>
+							{/each}
+						</div>
+
+						<div class="space-y-1.5">
+							{#each sortedTurns as t (t.index)}
+								<details class="group rounded-lg border border-gray-200 dark:border-gray-700">
+									<summary class="flex items-center gap-3 px-3 py-2 cursor-pointer select-none list-none">
+										<ChevronDown class="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+										<span class="text-meta tabular-nums w-8 shrink-0">#{t.index}</span>
+										<span class="flex-1 min-w-0">
+											<span class="block text-sm text-gray-800 dark:text-gray-100 truncate {t.kind === 'task' ? 'italic' : ''}" title={t.prompt}>{t.prompt}</span>
+											<span class="text-meta">
+												{fmtTime(t.at)}
+												{#if t.apiCalls > 0} · {i18n.t('context.calls', { n: t.apiCalls })}{/if}
+												· {t.contextAfter !== null ? i18n.t('context.after', { n: fmt(t.contextAfter) }) : i18n.t('context.noReply')}
+												{#if t.compacted}<span class="chip border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 ml-1">{i18n.t('context.compacted')}</span>{/if}
+											</span>
+										</span>
+										<div class="w-24 shrink-0 hidden sm:block" aria-hidden="true">
+											<div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+												<div class="h-full rounded-full bg-primary-500" style="width: {Math.max(0, ((t.growth ?? 0) / maxGrowth) * 100)}%"></div>
+											</div>
+										</div>
+										<span class="text-body font-semibold tabular-nums w-20 text-right">{t.growth !== null ? signed(t.growth) : '—'}</span>
+									</summary>
+									<div class="px-3 pb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div>
+											<p class="text-meta font-medium mb-1">{i18n.t('context.parts')}</p>
+											<ul class="space-y-1">
+												{#each t.parts as p (p.label)}
+													<li class="flex items-start gap-2 text-sm">
+														<span class="flex-1 min-w-0 text-gray-800 dark:text-gray-100">
+															{p.label}
+															{#if p.note}<span class="block text-meta">{p.note}</span>{/if}
+														</span>
+														<span class="tabular-nums text-gray-700 dark:text-gray-200">{fmt(p.tokens)}</span>
+													</li>
+												{/each}
+											</ul>
+										</div>
+										{#if t.tools.length > 0}
+											<div>
+												<p class="text-meta font-medium mb-1">{i18n.t('context.toolsUsed')}</p>
+												<ul class="space-y-1">
+													{#each t.tools as tool (tool.label)}
+														<li class="flex items-start gap-2 text-sm">
+															<span class="flex-1 min-w-0 font-mono text-xs text-gray-800 dark:text-gray-100 break-all">{tool.label} <span class="text-meta font-sans">{i18n.t('context.runs', { n: tool.count ?? 0 })}</span></span>
+															<span class="tabular-nums text-gray-700 dark:text-gray-200">{fmt(tool.tokens)}</span>
+														</li>
+													{/each}
+												</ul>
+											</div>
+										{/if}
+									</div>
+								</details>
+							{/each}
+						</div>
+					{/if}
 				</section>
 
 				<!-- During the session -->

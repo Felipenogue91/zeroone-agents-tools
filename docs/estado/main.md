@@ -1,4 +1,4 @@
-# Estado (atualizado em 2026-11-24 18:50 por claude-code)
+# Estado (atualizado em 2026-11-24 19:02 por claude-code)
 
 ## Fazendo agora
 
@@ -45,6 +45,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Aba Contexto, mensagem por mensagem (2026-11-24 19:02, Claude Code):** pedido do Felipe ("e o que entra a cada mensagem?"). O parser acompanha cada mensagem (digitada, só imagem ou aviso de tarefa): contexto real depois dela (`usage` da última chamada + saída), crescimento real, nº de chamadas, compactação, e de onde veio (sua mensagem com imagens ~1,6 mil tokens cada, resultados por ferramenta, respostas do Claude pelos tokens de saída medidos com raciocínio, hooks, anexos, e o resto). Tela: seção "Mensagem por mensagem" com gráfico do tamanho do contexto, lista em ordem ou por maior crescimento, detalhe ao abrir. Achado: na sessão de 2026-11-24 19:48 UTC, a mensagem 7 cresceu +274 mil (158 chamadas, 131 Bash, 14 prints). Verificado: `cargo test` 2149, Vitest 1581, `check` no baseline, conferido no app.
 
 - **Aba Contexto, Claude Code (2026-11-24 18:50, Claude Code):** backend `services/context_inspector.rs` (parser do log, lista de pastas onde o Claude foi usado, sessões) e `services/context_config.rs` (hooks configurados de settings global/projeto/local + plugins ativos; rodar hook por id com stdin de hook, timeout que mata o grupo de processos; corpo das skills/subagentes). Comandos `list_context_folders`, `list_context_sessions`, `get_session_context`, `list_context_hooks`, `run_context_hook`. Tela `/context` (menu "Contexto"): seletor de CLI/pasta/sessão, medido × estimado × diferença, barra por grupo, grupos que abrem com origem e tokens por item, "Durante a sessão", "Hooks configurados" (apareceu ou não no log, "Rodar agora" com confirmação) e "Só quando usa". Verificado: `cargo test` 2148 ok, Vitest 85/1581, `npm run check` no baseline (11), tela conferida no app via tauri-mcp e "Rodar agora" testado com o `onde-estamos.sh`.
 
