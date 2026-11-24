@@ -12,6 +12,16 @@ fn parse_json_array(s: Option<String>) -> Option<Vec<String>> {
 
 const RULE_SELECT_FIELDS: &str = "id, name, description, content, paths, tags, source, source_path, is_symlink, symlink_target, is_favorite, created_at, updated_at";
 
+/// Same fields, prefixed (`r.id, r.name, ...`) for joins: `global_rules` and
+/// `project_rules` also have `id`/`created_at`, so bare names are ambiguous.
+fn rule_fields_as(alias: &str) -> String {
+    RULE_SELECT_FIELDS
+        .split(',')
+        .map(|f| format!("{}.{}", alias, f.trim()))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 fn row_to_rule(row: &rusqlite::Row) -> rusqlite::Result<Rule> {
     Ok(Rule {
         id: row.get(0)?,
@@ -206,11 +216,11 @@ pub fn get_global_rules(db: State<'_, Arc<Mutex<Database>>>) -> Result<Vec<Globa
     let db = db.lock().map_err(|e| e.to_string())?;
     let query = format!(
         "SELECT gr.id, gr.rule_id, gr.is_enabled,
-                r.{}
+                {}
          FROM global_rules gr
          JOIN rules r ON gr.rule_id = r.id
          ORDER BY r.name",
-        RULE_SELECT_FIELDS
+        rule_fields_as("r")
     );
     let mut stmt = db.conn().prepare(&query).map_err(|e| e.to_string())?;
 
@@ -290,11 +300,11 @@ pub fn toggle_global_rule(
         .map_err(|e| e.to_string())?;
 
     let query = format!(
-        "SELECT r.{}
+        "SELECT {}
          FROM global_rules gr
          JOIN rules r ON gr.rule_id = r.id
          WHERE gr.id = ?",
-        RULE_SELECT_FIELDS
+        rule_fields_as("r")
     );
     let mut stmt = db_guard.conn().prepare(&query).map_err(|e| e.to_string())?;
     let rule: Rule = stmt
@@ -322,12 +332,12 @@ pub fn get_project_rules(
     let db = db.lock().map_err(|e| e.to_string())?;
     let query = format!(
         "SELECT pr.id, pr.rule_id, pr.is_enabled,
-                r.{}
+                {}
          FROM project_rules pr
          JOIN rules r ON pr.rule_id = r.id
          WHERE pr.project_id = ?
          ORDER BY r.name",
-        RULE_SELECT_FIELDS
+        rule_fields_as("r")
     );
     let mut stmt = db.conn().prepare(&query).map_err(|e| e.to_string())?;
 
@@ -438,12 +448,12 @@ pub fn toggle_project_rule(
     // Get the project path and rule
     let (project_path, rule): (String, Rule) = {
         let query = format!(
-            "SELECT p.path, r.{}
+            "SELECT p.path, {}
              FROM project_rules pr
              JOIN rules r ON pr.rule_id = r.id
              JOIN projects p ON pr.project_id = p.id
              WHERE pr.id = ?",
-            RULE_SELECT_FIELDS
+            rule_fields_as("r")
         );
         let mut stmt = db_guard.conn().prepare(&query).map_err(|e| e.to_string())?;
         stmt.query_row([assignment_id], |row| {
@@ -588,6 +598,18 @@ mod tests {
 
     fn setup_test_db() -> Database {
         Database::in_memory().unwrap()
+    }
+
+    #[test]
+    fn global_and_project_rule_joins_are_not_ambiguous() {
+        let db = setup_test_db();
+        // every join query must prepare (bare `created_at` broke the Rules page)
+        for q in [
+            format!("SELECT gr.id, gr.rule_id, gr.is_enabled, {} FROM global_rules gr JOIN rules r ON gr.rule_id = r.id ORDER BY r.name", rule_fields_as("r")),
+            format!("SELECT pr.id, pr.rule_id, pr.is_enabled, {} FROM project_rules pr JOIN rules r ON pr.rule_id = r.id ORDER BY r.name", rule_fields_as("r")),
+        ] {
+            db.conn().prepare(&q).unwrap_or_else(|e| panic!("{}: {}", e, q));
+        }
     }
 
     #[test]
