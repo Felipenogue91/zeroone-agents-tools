@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ClaudeSettings, AgentTeamMember } from '$lib/types';
 	import { TEAMMATE_MODES, AGENT_TEAM_PERMISSION_MODES, AVAILABLE_MODEL_SHORTCUTS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save, Plus, X, Users, ChevronDown, ChevronUp } from 'lucide-svelte';
 
 	type Props = {
@@ -95,27 +96,27 @@
 	>
 		<div class="flex items-center gap-3 mb-1">
 			<Users class="w-5 h-5 text-primary-500" />
-			<h3 class="text-base font-semibold text-gray-900 dark:text-white">Agent Teams</h3>
+			<h3 class="text-base font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.agentTeamsTitle')}</h3>
 		</div>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Configure team members that Claude Code can spawn as parallel teammates
+			{i18n.t('settingsComp.agentTeamsDesc')}
 		</p>
 
 		<div class="space-y-4">
 			<div class="flex items-center justify-between">
 				<div>
 					<label for="agent-team-enabled" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Enable Agent Teams
+						{i18n.t('settingsComp.enableAgentTeams')}
 					</label>
 					<p class="text-xs text-gray-500 dark:text-gray-400">
-						Allow Claude to spawn teammate agents for parallel work
+						{i18n.t('settingsComp.enableAgentTeamsDesc')}
 					</p>
 				</div>
 				<button
 					id="agent-team-enabled"
 					role="switch"
 					aria-checked={enabled}
-					aria-label="Enable Agent Teams"
+					aria-label={i18n.t('settingsComp.enableAgentTeams')}
 					onclick={() => (enabled = !enabled)}
 					class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors
 						{enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'}"
@@ -129,10 +130,10 @@
 
 			<div>
 				<label for="teammate-mode" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Teammate Display Mode
+					{i18n.t('settingsComp.teammateDisplayMode')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					How teammates appear in the terminal
+					{i18n.t('settingsComp.teammateDisplayModeDesc')}
 				</p>
 				<select id="teammate-mode" bind:value={teammateMode} class="input w-full">
 					{#each TEAMMATE_MODES as mode}
@@ -147,9 +148,9 @@
 	<div
 		class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5"
 	>
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Team Members</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.teamMembersTitle')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Pre-configure teammates with names, models, and roles. Claude will use these when spawning a team.
+			{i18n.t('settingsComp.teamMembersDesc')}
 		</p>
 
 		{#if members.length > 0}
@@ -163,7 +164,7 @@
 							<button
 								onclick={() => toggleExpand(i)}
 								class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-								aria-label={expandedIndex === i ? 'Collapse' : 'Expand'}
+								aria-label={expandedIndex === i ? i18n.t('settingsComp.collapse') : i18n.t('settingsComp.expand')}
 							>
 								{#if expandedIndex === i}
 									<ChevronUp class="w-4 h-4" />
@@ -191,7 +192,7 @@
 							<button
 								onclick={() => removeMember(i)}
 								class="text-red-400 hover:text-red-600 dark:hover:text-red-400"
-								aria-label="Remove {member.name}"
+								aria-label={i18n.t('settingsComp.removeItem', { name: member.name })}
 							>
 								<X class="w-4 h-4" />
 							</button>
@@ -205,7 +206,7 @@
 										for="member-name-{i}"
 										class="text-xs font-medium text-gray-600 dark:text-gray-400"
 									>
-										Name
+										{i18n.t('common.name')}
 									</label>
 									<input
 										id="member-name-{i}"
@@ -221,7 +222,7 @@
 										for="member-model-{i}"
 										class="text-xs font-medium text-gray-600 dark:text-gray-400"
 									>
-										Model
+										{i18n.t('subagentForm.model')}
 									</label>
 									<select
 										id="member-model-{i}"
@@ -234,7 +235,7 @@
 											)}
 										class="input text-sm w-full mt-1"
 									>
-										<option value="">Default (inherit from lead)</option>
+										<option value="">{i18n.t('settingsComp.defaultInheritFromLead')}</option>
 										{#each AVAILABLE_MODEL_SHORTCUTS as model}
 											<option value={model.value}>{model.label}</option>
 										{/each}
@@ -245,7 +246,7 @@
 										for="member-permission-{i}"
 										class="text-xs font-medium text-gray-600 dark:text-gray-400"
 									>
-										Permission Mode
+										{i18n.t('subagentForm.permissionMode')}
 									</label>
 									<select
 										id="member-permission-{i}"
@@ -268,7 +269,7 @@
 										for="member-desc-{i}"
 										class="text-xs font-medium text-gray-600 dark:text-gray-400"
 									>
-										Description / Role
+										{i18n.t('settingsComp.descOrRole')}
 									</label>
 									<input
 										id="member-desc-{i}"
@@ -280,7 +281,7 @@
 												'description',
 												(e.target as HTMLInputElement).value
 											)}
-										placeholder="e.g. Handles frontend components"
+										placeholder={i18n.t('settingsComp.memberDescPlaceholder')}
 										class="input text-sm w-full mt-1"
 									/>
 								</div>
@@ -291,24 +292,24 @@
 			</div>
 		{:else}
 			<p class="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
-				No team members configured. Add members below to pre-define your team composition.
+				{i18n.t('settingsComp.noTeamMembers')}
 			</p>
 		{/if}
 
 		<!-- Add new member -->
 		<div class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-3">
-			<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Add Team Member</p>
+			<p class="text-xs font-medium text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.addTeamMember')}</p>
 			<div class="flex items-center gap-2">
 				<input
 					type="text"
 					bind:value={newName}
-					placeholder="Name (e.g. researcher, frontend-dev)"
+					placeholder={i18n.t('settingsComp.memberNamePlaceholder')}
 					class="input text-sm flex-1"
 					class:border-red-400={isDuplicateName}
 					onkeydown={(e) => e.key === 'Enter' && addMember()}
 				/>
 				<select bind:value={newModel} class="input text-sm w-28">
-					<option value="">Model</option>
+					<option value="">{i18n.t('subagentForm.model')}</option>
 					{#each AVAILABLE_MODEL_SHORTCUTS as model}
 						<option value={model.value}>{model.label}</option>
 					{/each}
@@ -317,13 +318,13 @@
 					onclick={addMember}
 					disabled={!newName.trim() || isDuplicateName}
 					class="btn btn-ghost"
-					aria-label="Add member"
+					aria-label={i18n.t('settingsComp.addMemberAria')}
 				>
 					<Plus class="w-4 h-4" />
 				</button>
 			</div>
 			{#if isDuplicateName}
-				<p class="text-xs text-red-500">A member with this name already exists</p>
+				<p class="text-xs text-red-500">{i18n.t('settingsComp.duplicateMemberName')}</p>
 			{/if}
 			<div class="flex gap-2">
 				<select bind:value={newPermissionMode} class="input text-sm flex-1">
@@ -334,7 +335,7 @@
 				<input
 					type="text"
 					bind:value={newDescription}
-					placeholder="Description / role (optional)"
+					placeholder={i18n.t('settingsComp.memberRolePlaceholder')}
 					class="input text-sm flex-1"
 					onkeydown={(e) => e.key === 'Enter' && addMember()}
 				/>
@@ -345,7 +346,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Agent Team Settings
+			{i18n.t('settingsComp.saveAgentTeams')}
 		</button>
 	</div>
 </div>

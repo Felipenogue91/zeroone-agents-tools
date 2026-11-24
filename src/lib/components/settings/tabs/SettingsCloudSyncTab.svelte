@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { cloudSyncStore, projectsStore, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { Cloud, Check, AlertCircle, Upload, Download, ExternalLink, LogOut, Loader2, FolderSync, RefreshCw } from 'lucide-svelte';
 	import GithubIcon from '$lib/components/shared/GithubIcon.svelte';
 	import type { SyncConfig, ProjectMapping } from '$lib/types';
@@ -27,7 +28,7 @@
 	async function handleConnect() {
 		try {
 			await cloudSyncStore.connect();
-			notifications.success(`Connected as ${cloudSyncStore.authStatus?.username}`);
+			notifications.success(i18n.t('settingsComp.cloudConnectedAs', { username: cloudSyncStore.authStatus?.username ?? '' }));
 		} catch (e) {
 			notifications.error(String(e));
 		}
@@ -35,7 +36,7 @@
 
 	async function handleDisconnect() {
 		await cloudSyncStore.disconnect();
-		notifications.success('Cloud sync disconnected');
+		notifications.success(i18n.t('settingsComp.cloudDisconnected'));
 	}
 
 	async function toggleConfigOption(key: keyof SyncConfig, value: boolean) {
@@ -75,37 +76,37 @@
 		const result = await cloudSyncStore.push();
 		if (result) {
 			if (result.pushed.length > 0) {
-				notifications.success(`Pushed: ${result.pushed.join(', ')}`);
+				notifications.success(i18n.t('settingsComp.cloudPushed', { items: result.pushed.join(', ') }));
 			} else {
-				notifications.success('Push complete (nothing to sync)');
+				notifications.success(i18n.t('settingsComp.cloudPushEmpty'));
 			}
 			if (result.conflicts.length > 0) {
-				notifications.error(`Conflicts: ${result.conflicts.join(', ')}`);
+				notifications.error(i18n.t('settingsComp.cloudConflicts', { items: result.conflicts.join(', ') }));
 			}
 		}
 	}
 
 	async function handlePull() {
 		const confirmed = window.confirm(
-			'Pull will overwrite local config with cloud data. Existing files will be backed up with a .bak extension. Continue?'
+			i18n.t('settingsComp.cloudPullConfirm')
 		);
 		if (!confirmed) return;
 
 		const result = await cloudSyncStore.pull();
 		if (result) {
 			if (result.pulled.length > 0) {
-				notifications.success(`Pulled: ${result.pulled.join(', ')}`);
+				notifications.success(i18n.t('settingsComp.cloudPulled', { items: result.pulled.join(', ') }));
 			} else {
-				notifications.success('Pull complete (nothing new)');
+				notifications.success(i18n.t('settingsComp.cloudPullEmpty'));
 			}
 			if (result.conflicts.length > 0) {
-				notifications.error(`Conflicts: ${result.conflicts.join(', ')}`);
+				notifications.error(i18n.t('settingsComp.cloudConflicts', { items: result.conflicts.join(', ') }));
 			}
 		}
 	}
 
 	function formatDate(iso: string | null): string {
-		if (!iso) return 'Never';
+		if (!iso) return i18n.t('settingsComp.never');
 		try {
 			return new Date(iso).toLocaleString();
 		} catch {
@@ -119,16 +120,16 @@
 	<div class="card">
 		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
 			<GithubIcon class="w-5 h-5" />
-			GitHub Connection
+			{i18n.t('settingsComp.githubConnection')}
 		</h3>
 		<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-			Connect via the GitHub CLI to sync your Claude Code configuration across machines using a private Gist.
+			{i18n.t('settingsComp.githubConnectionDesc')}
 		</p>
 
 		{#if !isInitialized || cloudSyncStore.isLoading}
 			<div class="flex items-center gap-2 text-gray-400">
 				<Loader2 class="w-4 h-4 animate-spin" />
-				<span class="text-sm">Loading...</span>
+				<span class="text-sm">{i18n.t('common.loading')}</span>
 			</div>
 		{:else if cloudSyncStore.isAuthenticated}
 			<div class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -142,7 +143,7 @@
 						</p>
 						<div class="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
 							<Check class="w-3 h-3" />
-							Connected
+							{i18n.t('settingsComp.connected')}
 							{#if cloudSyncStore.authStatus?.gistUrl}
 								<span class="text-gray-400">|</span>
 								<a
@@ -151,7 +152,7 @@
 									rel="noopener noreferrer"
 									class="hover:underline inline-flex items-center gap-1"
 								>
-									View Gist <ExternalLink class="w-3 h-3" />
+									{i18n.t('settingsComp.viewGist')} <ExternalLink class="w-3 h-3" />
 								</a>
 							{/if}
 						</div>
@@ -162,7 +163,7 @@
 					class="btn btn-secondary text-sm flex items-center gap-1.5 text-red-600 dark:text-red-400"
 				>
 					<LogOut class="w-4 h-4" />
-					Disconnect
+					{i18n.t('settingsComp.disconnect')}
 				</button>
 			</div>
 		{:else}
@@ -171,7 +172,7 @@
 					<div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
 						<p class="text-sm text-amber-700 dark:text-amber-400">
 							<AlertCircle class="w-4 h-4 inline mr-1" />
-							GitHub CLI not found. Install it from <a href="https://cli.github.com" target="_blank" rel="noopener noreferrer" class="underline">cli.github.com</a> and run <code class="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded text-xs">gh auth login</code>.
+							{i18n.t('settingsComp.ghCliNotFoundPrefix')} <a href="https://cli.github.com" target="_blank" rel="noopener noreferrer" class="underline">cli.github.com</a> {i18n.t('settingsComp.ghCliNotFoundMiddle')} <code class="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded text-xs">gh auth login</code>.
 						</p>
 					</div>
 				{/if}
@@ -183,10 +184,10 @@
 				>
 					{#if cloudSyncStore.isConnecting}
 						<Loader2 class="w-4 h-4 animate-spin" />
-						Connecting...
+						{i18n.t('settingsComp.connecting')}
 					{:else}
 						<GithubIcon class="w-4 h-4" />
-						Connect with GitHub CLI
+						{i18n.t('settingsComp.connectWithGhCli')}
 					{/if}
 				</button>
 
@@ -204,10 +205,10 @@
 		<div class="card">
 			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
 				<Cloud class="w-5 h-5" />
-				What to Sync
+				{i18n.t('settingsComp.whatToSync')}
 			</h3>
 			<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-				Choose which configuration items to include in cloud sync.
+				{i18n.t('settingsComp.whatToSyncDesc')}
 			</p>
 
 			<div class="space-y-3">
@@ -215,7 +216,7 @@
 				<label class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer">
 					<div>
 						<p class="font-medium text-gray-900 dark:text-white">Global CLAUDE.md</p>
-						<p class="text-xs text-gray-500 dark:text-gray-400">Your personal instructions file (~/.claude/CLAUDE.md)</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.globalClaudeMdDesc')}</p>
 					</div>
 					<input
 						type="checkbox"
@@ -228,8 +229,8 @@
 				<!-- Skills -->
 				<label class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer">
 					<div>
-						<p class="font-medium text-gray-900 dark:text-white">Skills & Agents</p>
-						<p class="text-xs text-gray-500 dark:text-gray-400">Custom skills, slash commands, and agent configurations</p>
+						<p class="font-medium text-gray-900 dark:text-white">{i18n.t('settingsComp.skillsAndAgents')}</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.skillsAndAgentsDesc')}</p>
 					</div>
 					<input
 						type="checkbox"
@@ -242,8 +243,8 @@
 				<!-- MCPs -->
 				<label class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer">
 					<div>
-						<p class="font-medium text-gray-900 dark:text-white">MCP Servers</p>
-						<p class="text-xs text-gray-500 dark:text-gray-400">MCP server configurations (excluding system MCPs)</p>
+						<p class="font-medium text-gray-900 dark:text-white">{i18n.t('settingsComp.mcpServers')}</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.mcpServersDesc')}</p>
 					</div>
 					<input
 						type="checkbox"
@@ -256,8 +257,8 @@
 				<!-- Auto-sync -->
 				<label class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer">
 					<div>
-						<p class="font-medium text-gray-900 dark:text-white">Auto-sync on launch</p>
-						<p class="text-xs text-gray-500 dark:text-gray-400">Automatically pull latest config when the app starts</p>
+						<p class="font-medium text-gray-900 dark:text-white">{i18n.t('settingsComp.autoSyncOnLaunch')}</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.autoSyncOnLaunchDesc')}</p>
 					</div>
 					<input
 						type="checkbox"
@@ -273,16 +274,16 @@
 		<div class="card">
 			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
 				<FolderSync class="w-5 h-5" />
-				Project Sync
+				{i18n.t('settingsComp.projectSync')}
 			</h3>
 			<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-				Select projects whose CLAUDE.md files should be synced. Each project gets a canonical name used to match it across machines.
+				{i18n.t('settingsComp.projectSyncDesc')}
 			</p>
 
 			{#if projectsStore.projects.length === 0}
 				<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center">
 					<p class="text-sm text-gray-500 dark:text-gray-400">
-						No projects configured. Add projects from the Projects page to sync them.
+						{i18n.t('settingsComp.noProjectsConfigured')}
 					</p>
 				</div>
 			{:else}
@@ -309,7 +310,7 @@
 								</div>
 								{#if isEnabled && mapping}
 									<div class="flex items-center gap-2 ml-4">
-										<span class="text-xs text-gray-500 dark:text-gray-400">as</span>
+										<span class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.asLabel')}</span>
 										<input
 											type="text"
 											value={mapping.canonicalName}
@@ -318,7 +319,7 @@
 												if (idx >= 0) updateMapping(idx, (e.target as HTMLInputElement).value);
 											}}
 											class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white w-32"
-											placeholder="canonical name"
+											placeholder={i18n.t('settingsComp.canonicalNamePlaceholder')}
 										/>
 									</div>
 								{/if}
@@ -333,7 +334,7 @@
 		<div class="card">
 			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
 				<RefreshCw class="w-5 h-5" />
-				Sync Controls
+				{i18n.t('settingsComp.syncControls')}
 			</h3>
 
 			<div class="flex items-center gap-3 mb-6">
@@ -344,10 +345,10 @@
 				>
 					{#if cloudSyncStore.isPushing}
 						<Loader2 class="w-4 h-4 animate-spin" />
-						Pushing...
+						{i18n.t('settingsComp.pushing')}
 					{:else}
 						<Upload class="w-4 h-4" />
-						Push to Cloud
+						{i18n.t('settingsComp.pushToCloud')}
 					{/if}
 				</button>
 				<button
@@ -357,10 +358,10 @@
 				>
 					{#if cloudSyncStore.isPulling}
 						<Loader2 class="w-4 h-4 animate-spin" />
-						Pulling...
+						{i18n.t('settingsComp.pulling')}
 					{:else}
 						<Download class="w-4 h-4" />
-						Pull from Cloud
+						{i18n.t('settingsComp.pullFromCloud')}
 					{/if}
 				</button>
 			</div>
@@ -369,13 +370,13 @@
 			{#if cloudSyncStore.syncStatus}
 				<div class="grid grid-cols-2 gap-4 text-sm">
 					<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Last Pushed</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{i18n.t('settingsComp.lastPushed')}</p>
 						<p class="font-medium text-gray-900 dark:text-white">
 							{formatDate(cloudSyncStore.syncStatus.lastPushedAt)}
 						</p>
 					</div>
 					<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Last Pulled</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{i18n.t('settingsComp.lastPulled')}</p>
 						<p class="font-medium text-gray-900 dark:text-white">
 							{formatDate(cloudSyncStore.syncStatus.lastPulledAt)}
 						</p>
@@ -396,12 +397,12 @@
 						{/if}
 						{#if cloudSyncStore.syncStatus.itemCounts.skills > 0}
 							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-								{cloudSyncStore.syncStatus.itemCounts.skills} Skills
+								{i18n.t('settingsComp.countSkills', { count: cloudSyncStore.syncStatus.itemCounts.skills })}
 							</span>
 						{/if}
 						{#if cloudSyncStore.syncStatus.itemCounts.projects > 0}
 							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-								{cloudSyncStore.syncStatus.itemCounts.projects} Projects
+								{i18n.t('settingsComp.countProjects', { count: cloudSyncStore.syncStatus.itemCounts.projects })}
 							</span>
 						{/if}
 					</div>
@@ -411,23 +412,23 @@
 			<!-- Last Result -->
 			{#if cloudSyncStore.lastResult}
 				<div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Last Sync Result</p>
+					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{i18n.t('settingsComp.lastSyncResult')}</p>
 					{#if cloudSyncStore.lastResult.pushed.length > 0}
 						<p class="text-sm text-green-700 dark:text-green-400">
 							<Upload class="w-3 h-3 inline mr-1" />
-							Pushed: {cloudSyncStore.lastResult.pushed.join(', ')}
+							{i18n.t('settingsComp.cloudPushed', { items: cloudSyncStore.lastResult.pushed.join(', ') })}
 						</p>
 					{/if}
 					{#if cloudSyncStore.lastResult.pulled.length > 0}
 						<p class="text-sm text-blue-700 dark:text-blue-400">
 							<Download class="w-3 h-3 inline mr-1" />
-							Pulled: {cloudSyncStore.lastResult.pulled.join(', ')}
+							{i18n.t('settingsComp.cloudPulled', { items: cloudSyncStore.lastResult.pulled.join(', ') })}
 						</p>
 					{/if}
 					{#if cloudSyncStore.lastResult.conflicts.length > 0}
 						<p class="text-sm text-amber-700 dark:text-amber-400 mt-1">
 							<AlertCircle class="w-3 h-3 inline mr-1" />
-							Conflicts: {cloudSyncStore.lastResult.conflicts.join(', ')}
+							{i18n.t('settingsComp.cloudConflicts', { items: cloudSyncStore.lastResult.conflicts.join(', ') })}
 						</p>
 					{/if}
 				</div>

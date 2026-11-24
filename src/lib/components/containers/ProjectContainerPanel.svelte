@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ProjectContainer, Container } from '$lib/types';
 	import ContainerStatusBadge from './ContainerStatus.svelte';
 	import { Plus, X, Heart } from 'lucide-svelte';
@@ -23,7 +24,7 @@
 			await containerLibrary.assignToProject(projectId, container.id);
 			await loadProjectContainers();
 			showAssignDialog = false;
-			notifications.success(`${container.name} assigned to project`);
+			notifications.success(i18n.t('containerComp.assignedToProject', { name: container.name }));
 		} catch (e) {
 			notifications.error(String(e));
 		}
@@ -33,7 +34,7 @@
 		try {
 			await containerLibrary.removeFromProject(projectId, containerId);
 			await loadProjectContainers();
-			notifications.success('Container removed from project');
+			notifications.success(i18n.t('containerComp.removedFromProject'));
 		} catch (e) {
 			notifications.error(String(e));
 		}
@@ -57,15 +58,15 @@
 
 <div class="space-y-3">
 	<div class="flex items-center justify-between">
-		<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Containers</h3>
+		<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('nav.containers')}</h3>
 		<button onclick={() => showAssignDialog = true}
 			class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1">
-			<Plus class="w-3 h-3" aria-hidden="true" /> Assign
+			<Plus class="w-3 h-3" aria-hidden="true" /> {i18n.t('containerComp.assign')}
 		</button>
 	</div>
 
 	{#if projectContainers.length === 0}
-		<p class="text-sm text-gray-400 py-2">No containers assigned</p>
+		<p class="text-sm text-gray-400 py-2">{i18n.t('containerComp.noContainersAssigned')}</p>
 	{:else}
 		{#each projectContainers as pc (pc.id)}
 			<div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
@@ -78,7 +79,7 @@
 				</div>
 				<div class="flex items-center gap-1">
 					{#if !pc.isDefault}
-						<button onclick={() => handleSetDefault(pc.containerId)} class="text-xs text-gray-300 hover:text-rose-400 dark:text-gray-600 dark:hover:text-rose-400" title="Set as default">
+						<button onclick={() => handleSetDefault(pc.containerId)} class="text-xs text-gray-300 hover:text-rose-400 dark:text-gray-600 dark:hover:text-rose-400" title={i18n.t('containerComp.setAsDefault')}>
 							<Heart class="w-3 h-3" aria-hidden="true" />
 						</button>
 					{/if}
@@ -97,9 +98,9 @@
 		onkeydown={(e) => e.key === 'Escape' && (showAssignDialog = false)}
 		onclick={(e) => e.target === e.currentTarget && (showAssignDialog = false)}>
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Assign Container</h3>
+			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{i18n.t('containerComp.assignContainer')}</h3>
 			{#if unassignedContainers.length === 0}
-				<p class="text-sm text-gray-500">All containers are already assigned</p>
+				<p class="text-sm text-gray-500">{i18n.t('containerComp.allContainersAssigned')}</p>
 			{:else}
 				<div class="space-y-2 max-h-64 overflow-auto">
 					{#each unassignedContainers as container (container.id)}
@@ -119,7 +120,7 @@
 			<div class="flex justify-end mt-4">
 				<button onclick={() => showAssignDialog = false}
 					class="btn btn-secondary">
-					Close
+					{i18n.t('common.close')}
 				</button>
 			</div>
 		</div>

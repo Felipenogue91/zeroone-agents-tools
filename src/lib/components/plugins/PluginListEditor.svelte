@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
 	import { Save, Plus, X, Trash2 } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		settings: ClaudeSettings;
@@ -79,9 +80,9 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Enabled Plugins</h3>
+	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('pluginComp.enabledPlugins')}</h3>
 	<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-		Configure which plugins are enabled and which tools they can access
+		{i18n.t('pluginComp.enabledPluginsDesc')}
 	</p>
 
 	{#if plugins.length > 0}
@@ -97,9 +98,9 @@
 							onchange={(e) => setMode(i, (e.target as HTMLSelectElement).value as 'enabled' | 'disabled' | 'tools')}
 							class="input text-xs w-36"
 						>
-							<option value="enabled">Enabled</option>
-							<option value="disabled">Disabled</option>
-							<option value="tools">Specific Tools</option>
+							<option value="enabled">{i18n.t('pluginComp.modeEnabled')}</option>
+							<option value="disabled">{i18n.t('pluginComp.modeDisabled')}</option>
+							<option value="tools">{i18n.t('pluginComp.modeTools')}</option>
 						</select>
 						<button
 							onclick={() => removePlugin(i)}
@@ -117,7 +118,7 @@
 								placeholder="tool1, tool2, tool3"
 								class="input text-xs w-full font-mono"
 							/>
-							<p class="text-[10px] text-gray-400 mt-0.5">Comma-separated list of allowed tool names</p>
+							<p class="text-[10px] text-gray-400 mt-0.5">{i18n.t('pluginComp.allowedToolsHelp')}</p>
 						</div>
 					{/if}
 				</div>
@@ -125,7 +126,7 @@
 		</div>
 	{:else}
 		<p class="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
-			No plugins configured
+			{i18n.t('pluginComp.noPlugins')}
 		</p>
 	{/if}
 
@@ -133,7 +134,7 @@
 		<input
 			type="text"
 			bind:value={newPluginName}
-			placeholder="Plugin name"
+			placeholder={i18n.t('pluginComp.pluginNamePlaceholder')}
 			class="input text-sm flex-1"
 			onkeydown={(e) => e.key === 'Enter' && addPlugin()}
 		/>
@@ -149,7 +150,7 @@
 	<div class="flex justify-end mt-4">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Plugins
+			{i18n.t('pluginComp.savePlugins')}
 		</button>
 	</div>
 </div>

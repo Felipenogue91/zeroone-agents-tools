@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CreateMcpRequest, McpType, Mcp } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import McpTypeSelector from './McpTypeSelector.svelte';
 	import { EnvEditor } from '$lib/components/shared';
 	import { parseMcpFromClipboard, type ParsedMcp } from '$lib/utils/mcpPasteParser';
@@ -59,7 +60,7 @@
 		}
 
 		pasteStatus = 'success';
-		pasteMessage = `Imported "${mcp.name}" (${mcp.type})`;
+		pasteMessage = i18n.t('mcpComp.imported', { name: mcp.name, type: mcp.type });
 
 		// Reset status after 3 seconds
 		setTimeout(() => {
@@ -80,7 +81,7 @@
 
 			// If multiple MCPs were found, notify user
 			if (result.mcps.length > 1) {
-				pasteMessage += ` (+${result.mcps.length - 1} more available)`;
+				pasteMessage += i18n.t('mcpComp.moreAvailable', { count: result.mcps.length - 1 });
 			}
 		}
 		// If parsing fails, let the default paste behavior happen
@@ -95,7 +96,7 @@
 				applyParsedMcp(result.mcps[0]);
 			} else {
 				pasteStatus = 'error';
-				pasteMessage = result.error ?? 'Could not parse clipboard content';
+				pasteMessage = result.error ?? i18n.t('commandForm.clipboardParseError');
 				setTimeout(() => {
 					pasteStatus = 'idle';
 					pasteMessage = '';
@@ -103,7 +104,7 @@
 			}
 		} catch {
 			pasteStatus = 'error';
-			pasteMessage = 'Could not access clipboard';
+			pasteMessage = i18n.t('commandForm.clipboardError');
 			setTimeout(() => {
 				pasteStatus = 'idle';
 				pasteMessage = '';
@@ -115,23 +116,23 @@
 		errors = {};
 
 		if (!name.trim()) {
-			errors.name = 'Name is required';
+			errors.name = i18n.t('commandForm.nameRequired');
 		} else if (!/^[a-zA-Z0-9_-]+$/.test(name.trim())) {
-			errors.name = 'Name can only contain letters, numbers, hyphens, and underscores';
+			errors.name = i18n.t('mcpComp.nameInvalid');
 		}
 
 		if (mcpType === 'stdio') {
 			if (!command.trim()) {
-				errors.command = 'Command is required';
+				errors.command = i18n.t('mcpComp.commandRequired');
 			}
 		} else {
 			if (!url.trim()) {
-				errors.url = 'URL is required';
+				errors.url = i18n.t('mcpComp.urlRequired');
 			} else {
 				try {
 					new URL(url);
 				} catch {
-					errors.url = 'Invalid URL format';
+					errors.url = i18n.t('mcpComp.urlInvalid');
 				}
 			}
 		}
@@ -186,10 +187,10 @@
 						</p>
 					{:else}
 						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-							Quick Import
+							{i18n.t('mcpComp.quickImport')}
 						</p>
 						<p class="text-xs text-gray-500 dark:text-gray-400">
-							Paste a <code class="px-1 bg-gray-200 dark:bg-gray-700 rounded">claude mcp add</code> command or JSON config
+							{i18n.t('mcpComp.quickImportDescPrefix')} <code class="px-1 bg-gray-200 dark:bg-gray-700 rounded">claude mcp add</code> {i18n.t('mcpComp.quickImportDescSuffix')}
 						</p>
 					{/if}
 				</div>
@@ -200,7 +201,7 @@
 				class="btn btn-secondary text-sm"
 			>
 				<Clipboard class="w-4 h-4 mr-1.5" />
-				Paste
+				{i18n.t('common.paste')}
 			</button>
 		</div>
 	</div>
@@ -208,7 +209,7 @@
 	<!-- Name -->
 	<div>
 		<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Name <span class="text-red-500">*</span>
+			{i18n.t('common.name')} <span class="text-red-500">*</span>
 		</label>
 		<input
 			type="text"
@@ -216,7 +217,7 @@
 			bind:value={name}
 			class="input mt-1"
 			class:border-red-500={errors.name}
-			placeholder="my-mcp-server"
+			placeholder={i18n.t('mcpComp.namePlaceholder')}
 		/>
 		{#if errors.name}
 			<p class="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -226,14 +227,14 @@
 	<!-- Description -->
 	<div>
 		<label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Description
+			{i18n.t('common.description')}
 		</label>
 		<textarea
 			id="description"
 			bind:value={description}
 			rows={2}
 			class="input mt-1 resize-none"
-			placeholder="Optional description of what this MCP does..."
+			placeholder={i18n.t('mcpComp.descPlaceholder')}
 		></textarea>
 	</div>
 
@@ -245,7 +246,7 @@
 		<div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
 			<div>
 				<label for="command" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-					Command <span class="text-red-500">*</span>
+					{i18n.t('hook.command')} <span class="text-red-500">*</span>
 				</label>
 				<input
 					type="text"
@@ -262,7 +263,7 @@
 
 			<div>
 				<label for="args" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-					Arguments
+					{i18n.t('mcpComp.arguments')}
 				</label>
 				<input
 					type="text"
@@ -272,7 +273,7 @@
 					placeholder="-y @package/mcp-server"
 				/>
 				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-					Space-separated arguments
+					{i18n.t('mcpComp.argsHelp')}
 				</p>
 			</div>
 		</div>
@@ -280,7 +281,7 @@
 		<div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
 			<div>
 				<label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-					URL <span class="text-red-500">*</span>
+					{i18n.t('mcpComp.url')} <span class="text-red-500">*</span>
 				</label>
 				<input
 					type="url"
@@ -298,12 +299,12 @@
 			{#if mcpType === 'http'}
 				<div>
 					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Headers
+						{i18n.t('mcpComp.headers')}
 					</label>
 					<EnvEditor
 						bind:values={headers}
-						keyPlaceholder="Header name"
-						valuePlaceholder={'Header value (use ${VAR} for env vars)'}
+						keyPlaceholder={i18n.t('mcpComp.headerName')}
+						valuePlaceholder={i18n.t('mcpComp.headerValue')}
 					/>
 				</div>
 			{/if}
@@ -313,7 +314,7 @@
 	<!-- Environment Variables -->
 	<div>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-			Environment Variables
+			{i18n.t('marketplace.envVars')}
 		</label>
 		<EnvEditor bind:values={env} />
 	</div>
@@ -321,10 +322,10 @@
 	<!-- Actions -->
 	<div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
 		<button type="button" onclick={onCancel} class="btn btn-secondary">
-			Cancel
+			{i18n.t('common.cancel')}
 		</button>
 		<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
-			{initialValues.name ? 'Update MCP' : 'Create MCP'}
+			{initialValues.name ? i18n.t('mcpComp.updateMcp') : i18n.t('mcpComp.createMcp')}
 		</button>
 	</div>
 </form>

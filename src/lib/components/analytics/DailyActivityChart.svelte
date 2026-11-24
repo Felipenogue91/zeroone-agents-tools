@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DailyActivity, DateRangeFilter } from '$lib/types';
 	import { formatCompactNumber } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		data: DailyActivity[];
@@ -13,11 +14,11 @@
 	type Metric = 'messageCount' | 'sessionCount' | 'toolCallCount';
 	let metric = $state<Metric>('messageCount');
 
-	const metricLabels: Record<Metric, string> = {
-		messageCount: 'Messages',
-		sessionCount: 'Sessions',
-		toolCallCount: 'Tool Calls'
-	};
+	const metricLabels = $derived<Record<Metric, string>>({
+		messageCount: i18n.t('analyticsComp.messages'),
+		sessionCount: i18n.t('analyticsComp.sessions'),
+		toolCallCount: i18n.t('analyticsComp.toolCalls')
+	});
 
 	let tooltip = $state<{ x: number; y: number; label: string; value: number } | null>(null);
 
@@ -85,7 +86,7 @@
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 >
 	<div class="flex items-center justify-between mb-4">
-		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daily Activity</h3>
+		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{i18n.t('analyticsComp.dailyActivity')}</h3>
 		<div class="flex items-center gap-2">
 			<!-- Metric selector -->
 			<div class="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
@@ -111,7 +112,7 @@
 								? 'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300'
 								: 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 					>
-						{r === 'all' ? 'All' : r}
+						{r === 'all' ? i18n.t('analyticsComp.rangeAll') : r}
 					</button>
 				{/each}
 			</div>
@@ -120,7 +121,7 @@
 
 	{#if data.length === 0}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			No activity data available
+			{i18n.t('analyticsComp.noActivityData')}
 		</div>
 	{:else}
 		<div class="relative">

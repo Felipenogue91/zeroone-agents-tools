@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { AgentTeamEditor } from '$lib/components/agent-teams';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -25,7 +26,7 @@
 	{#snippet children({ settings, save })}
 		<AgentTeamEditor
 			{settings}
-			onsave={(s) => save(s, 'Agent team settings saved', 'Failed to save agent team settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.agentTeamsSaved'), i18n.t('settingsComp.agentTeamsSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

@@ -7,6 +7,7 @@
 		HELPFULNESS_LABELS,
 		SESSION_TYPE_LABELS
 	} from '$lib/types/insights';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		facets: SessionFacet[];
@@ -40,15 +41,15 @@
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 >
 	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-		Session Summaries
+		{i18n.t('analyticsComp.sessionSummaries')}
 		<span class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-2">
-			{facets.length} sessions
+			{i18n.t('analyticsComp.sessionsCount', { count: facets.length })}
 		</span>
 	</h3>
 
 	{#if facets.length === 0}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			No session data available
+			{i18n.t('analyticsComp.noSessionData')}
 		</div>
 	{:else}
 		<div class="space-y-1.5 max-h-[500px] overflow-y-auto">
@@ -73,7 +74,7 @@
 						></div>
 
 						<span class="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
-							{facet.briefSummary || facet.underlyingGoal || 'Untitled session'}
+							{facet.briefSummary || facet.underlyingGoal || i18n.t('analyticsComp.untitledSession')}
 						</span>
 
 						<span
@@ -90,7 +91,7 @@
 							{#if facet.underlyingGoal}
 								<div>
 									<span class="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
-										Goal
+										{i18n.t('analyticsComp.goal')}
 									</span>
 									<p class="text-sm text-gray-700 dark:text-gray-300 mt-0.5">
 										{facet.underlyingGoal}
@@ -101,7 +102,7 @@
 							{#if facet.briefSummary}
 								<div>
 									<span class="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
-										Summary
+										{i18n.t('analyticsComp.summary')}
 									</span>
 									<p class="text-sm text-gray-700 dark:text-gray-300 mt-0.5">
 										{facet.briefSummary}
@@ -137,7 +138,7 @@
 									<span
 										class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium {facet.primarySuccess === 'true' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}"
 									>
-										{facet.primarySuccess === 'true' ? 'Success' : 'Not Successful'}
+										{facet.primarySuccess === 'true' ? i18n.t('analyticsComp.success') : i18n.t('analyticsComp.notSuccessful')}
 									</span>
 								{/if}
 							</div>
@@ -145,7 +146,7 @@
 							{#if facet.frictionDetail}
 								<div>
 									<span class="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
-										Friction
+										{i18n.t('analyticsComp.friction')}
 									</span>
 									<p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
 										{facet.frictionDetail}
@@ -156,7 +157,7 @@
 							{#if Object.keys(facet.goalCategories).length > 0}
 								<div>
 									<span class="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
-										Categories
+										{i18n.t('analyticsComp.categories')}
 									</span>
 									<div class="flex flex-wrap gap-1 mt-0.5">
 										{#each Object.entries(facet.goalCategories) as [cat, count]}

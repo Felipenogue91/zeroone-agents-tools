@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ContainerLog } from '$lib/types';
 
 	let { containerId }: { containerId: number } = $props();
@@ -41,20 +42,20 @@
 		<div class="flex items-center gap-3">
 			<select bind:value={tailLines} onchange={fetchLogs}
 				class="input w-auto py-1 text-xs">
-				<option value={50}>Last 50</option>
-				<option value={100}>Last 100</option>
-				<option value={500}>Last 500</option>
-				<option value={1000}>Last 1000</option>
+				<option value={50}>{i18n.t('containerComp.lastN', { count: 50 })}</option>
+				<option value={100}>{i18n.t('containerComp.lastN', { count: 100 })}</option>
+				<option value={500}>{i18n.t('containerComp.lastN', { count: 500 })}</option>
+				<option value={1000}>{i18n.t('containerComp.lastN', { count: 1000 })}</option>
 			</select>
 		</div>
 		<label class="flex items-center gap-1.5 text-xs text-gray-500">
 			<input type="checkbox" bind:checked={autoScroll} class="rounded" />
-			Auto-scroll
+			{i18n.t('containerComp.autoScroll')}
 		</label>
 	</div>
 	<div bind:this={logContainer} class="flex-1 overflow-auto p-3 bg-gray-950 font-mono text-xs leading-5">
 		{#if logs.length === 0}
-			<p class="text-gray-500">No logs available</p>
+			<p class="text-gray-500">{i18n.t('containerComp.noLogs')}</p>
 		{:else}
 			{#each logs as log}
 				<div class="flex">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Copy, Check, Terminal, Clock } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 
 	interface CliFlag {
 		flag: string;
@@ -8,17 +9,17 @@
 		example: string;
 	}
 
-	const flags: CliFlag[] = [
-		{ flag: '--agent', arg: '<name>', description: 'Run session as a specific subagent', example: 'claude --agent code-reviewer' },
-		{ flag: '--baremode', description: 'Minimal startup without plugins or extras', example: 'claude --baremode' },
-		{ flag: '--system-prompt', arg: '<text>', description: 'Set a custom system prompt', example: 'claude --system-prompt "You are a Go expert"' },
-		{ flag: '--append-system-prompt', arg: '<text>', description: 'Append text to the default system prompt', example: 'claude --append-system-prompt "Always use TypeScript"' },
-		{ flag: '--permissions', arg: '<mode>', description: 'Set permission mode (default, allowEdits, bypassPermissions, plan, auto)', example: 'claude --permissions plan' },
-		{ flag: '--allowedTools', arg: '<tools>', description: 'Comma-separated list of allowed tools', example: 'claude --allowedTools "Read,Grep,Glob"' },
-		{ flag: '--disallowedTools', arg: '<tools>', description: 'Comma-separated list of disallowed tools', example: 'claude --disallowedTools "Bash,Write"' },
-		{ flag: '--model', arg: '<id>', description: 'Override the default model', example: 'claude --model claude-opus-4-6' },
-		{ flag: '--max-turns', arg: '<n>', description: 'Limit the number of agentic turns', example: 'claude --max-turns 10' },
-	];
+	const flags = $derived<CliFlag[]>([
+		{ flag: '--agent', arg: '<name>', description: i18n.t('settingsComp.cliFlagAgentDesc'), example: 'claude --agent code-reviewer' },
+		{ flag: '--baremode', description: i18n.t('settingsComp.cliFlagBaremodeDesc'), example: 'claude --baremode' },
+		{ flag: '--system-prompt', arg: '<text>', description: i18n.t('settingsComp.cliFlagSystemPromptDesc'), example: 'claude --system-prompt "You are a Go expert"' },
+		{ flag: '--append-system-prompt', arg: '<text>', description: i18n.t('settingsComp.cliFlagAppendSystemPromptDesc'), example: 'claude --append-system-prompt "Always use TypeScript"' },
+		{ flag: '--permissions', arg: '<mode>', description: i18n.t('settingsComp.cliFlagPermissionsDesc'), example: 'claude --permissions plan' },
+		{ flag: '--allowedTools', arg: '<tools>', description: i18n.t('settingsComp.cliFlagAllowedToolsDesc'), example: 'claude --allowedTools "Read,Grep,Glob"' },
+		{ flag: '--disallowedTools', arg: '<tools>', description: i18n.t('settingsComp.cliFlagDisallowedToolsDesc'), example: 'claude --disallowedTools "Bash,Write"' },
+		{ flag: '--model', arg: '<id>', description: i18n.t('settingsComp.cliFlagModelDesc'), example: 'claude --model claude-opus-4-6' },
+		{ flag: '--max-turns', arg: '<n>', description: i18n.t('settingsComp.cliFlagMaxTurnsDesc'), example: 'claude --max-turns 10' },
+	]);
 
 	// Command builder state
 	let selectedFlags = $state<Record<string, boolean>>({});
@@ -57,10 +58,10 @@
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
 		<div class="flex items-center gap-2 mb-1">
 			<Terminal class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-			<h3 class="text-base font-semibold text-gray-900 dark:text-white">CLI Startup Flags</h3>
+			<h3 class="text-base font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.cliStartupFlags')}</h3>
 		</div>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Flags you can pass when launching Claude Code from the command line. Toggle flags below to build a command.
+			{i18n.t('settingsComp.cliStartupFlagsDesc')}
 		</p>
 
 		<div class="space-y-2">
@@ -95,17 +96,17 @@
 		{#if hasSelection}
 			<div class="mt-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
 				<div class="flex items-center justify-between mb-1">
-					<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Command</p>
+					<p class="text-xs font-medium text-gray-500 dark:text-gray-400">{i18n.t('settingsComp.commandLabel')}</p>
 					<button
 						onclick={copyCommand}
 						class="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
 					>
 						{#if copied}
 							<Check class="w-3 h-3" />
-							Copied
+							{i18n.t('settingsComp.copied')}
 						{:else}
 							<Copy class="w-3 h-3" />
-							Copy
+							{i18n.t('settingsComp.copy')}
 						{/if}
 					</button>
 				</div>
@@ -118,43 +119,43 @@
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
 		<div class="flex items-center gap-2 mb-1">
 			<Clock class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-			<h3 class="text-base font-semibold text-gray-900 dark:text-white">Scheduling</h3>
+			<h3 class="text-base font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.schedulingTitle')}</h3>
 		</div>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Claude Code supports recurring tasks and scheduled agents via slash commands and tools.
+			{i18n.t('settingsComp.schedulingDesc')}
 		</p>
 
 		<div class="space-y-3">
 			<div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
 				<code class="text-sm font-semibold text-gray-800 dark:text-gray-200">/loop</code>
-				<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">interval command</span>
+				<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">{i18n.t('settingsComp.intervalCommand')}</span>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-					Run a prompt or slash command on a recurring interval. Defaults to 10 minutes.
+					{i18n.t('settingsComp.loopCommandDesc')}
 				</p>
 				<p class="text-xs text-gray-600 dark:text-gray-300 mt-1 font-mono">
-					Example: <code>/loop 5m /commit</code>
+					{i18n.t('settingsComp.exampleLabel')} <code>/loop 5m /commit</code>
 				</p>
 			</div>
 
 			<div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
 				<code class="text-sm font-semibold text-gray-800 dark:text-gray-200">/schedule</code>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-					Create persistent scheduled agents that run on a cron schedule. Available in cloud and desktop environments.
+					{i18n.t('settingsComp.scheduleCommandDesc')}
 				</p>
 				<p class="text-xs text-gray-600 dark:text-gray-300 mt-1 font-mono">
-					Example: <code>/schedule "daily at 9am" review open PRs</code>
+					{i18n.t('settingsComp.exampleLabel')} <code>/schedule "daily at 9am" review open PRs</code>
 				</p>
 			</div>
 
 			<div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
-				<p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Available Tools</p>
+				<p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{i18n.t('settingsComp.availableTools')}</p>
 				<div class="flex flex-wrap gap-2">
 					{#each ['CronCreate', 'CronList', 'CronDelete'] as tool}
 						<code class="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{tool}</code>
 					{/each}
 				</div>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-					These tools are available within Claude Code for managing scheduled tasks programmatically.
+					{i18n.t('settingsComp.cronToolsDesc')}
 				</p>
 			</div>
 		</div>

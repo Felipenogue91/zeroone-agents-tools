@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { projectsStore, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { FolderOpen, ArrowLeft, ChevronDown, RefreshCw, ExternalLink, Wrench, Settings } from 'lucide-svelte';
 	import ProjectToolsPanel from './ProjectToolsPanel.svelte';
@@ -54,9 +55,9 @@
 		try {
 			await invoke('update_project_editor_type', { projectId: project.id, editorType });
 			await projectsStore.loadProjects();
-			notifications.success(`Switched to ${editorType === 'claude_code' ? 'Claude Code' : 'OpenCode'}`);
+			notifications.success(i18n.t('projComp.switchedEditor', { editor: editorType === 'claude_code' ? 'Claude Code' : 'OpenCode' }));
 		} catch (err) {
-			notifications.error('Failed to change editor');
+			notifications.error(i18n.t('projComp.changeEditorFailed'));
 			console.error(err);
 		} finally {
 			updatingEditor = false;
@@ -67,9 +68,9 @@
 	async function handleSyncConfig() {
 		try {
 			await projectsStore.syncProjectConfig(project.id);
-			notifications.success('Config synced');
+			notifications.success(i18n.t('projComp.configSynced'));
 		} catch (err) {
-			notifications.error('Failed to sync config');
+			notifications.error(i18n.t('global.syncFailed'));
 			console.error(err);
 		}
 	}
@@ -78,7 +79,7 @@
 		try {
 			await invoke('open_folder', { path: project.path });
 		} catch (err) {
-			notifications.error('Failed to open folder');
+			notifications.error(i18n.t('projComp.openFolderFailed'));
 			console.error(err);
 		}
 	}
@@ -98,7 +99,7 @@
 			<button
 				onclick={() => goto('/projects')}
 				class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-				title="Back to Projects"
+				title={i18n.t('project.backToProjects')}
 			>
 				<ArrowLeft class="w-5 h-5" />
 			</button>
@@ -155,18 +156,18 @@
 				<button
 					onclick={handleOpenFolder}
 					class="btn btn-ghost text-sm"
-					title="Open project folder"
+					title={i18n.t('projComp.openFolderTitle')}
 				>
 					<ExternalLink class="w-4 h-4" />
-					<span class="hidden sm:inline ml-1.5">Open Folder</span>
+					<span class="hidden sm:inline ml-1.5">{i18n.t('global.openFolder')}</span>
 				</button>
 				<button
 					onclick={handleSyncConfig}
 					class="btn btn-ghost text-sm"
-					title="Sync config files"
+					title={i18n.t('projComp.syncConfigTitle')}
 				>
 					<RefreshCw class="w-4 h-4" />
-					<span class="hidden sm:inline ml-1.5">Sync Config</span>
+					<span class="hidden sm:inline ml-1.5">{i18n.t('projComp.syncConfig')}</span>
 				</button>
 			</div>
 		</div>
@@ -178,7 +179,7 @@
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'tools' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Wrench class="w-4 h-4" />
-				Tools
+				{i18n.t('nav.tools')}
 				{#if toolsCount > 0}
 					<span class="ml-1 px-1.5 py-0.5 text-xs rounded-full {activeTab === 'tools' ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}">
 						{toolsCount}
@@ -190,7 +191,7 @@
 				class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'settings' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
 				<Settings class="w-4 h-4" />
-				Settings
+				{i18n.t('nav.settings')}
 			</button>
 		</div>
 	</div>

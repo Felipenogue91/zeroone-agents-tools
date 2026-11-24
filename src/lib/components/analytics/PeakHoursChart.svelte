@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { i18n } from '$lib/i18n';
+
 	type Props = {
 		hourCounts: number[];
 	};
@@ -91,17 +93,17 @@
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 >
 	<div class="flex items-center justify-between mb-4">
-		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">Peak Hours</h3>
+		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{i18n.t('analyticsComp.peakHours')}</h3>
 		{#if maxCount > 0}
 			<span class="text-xs text-gray-400 dark:text-gray-500">
-				Peak: {formatHour(peakHour)} ({maxCount} sessions)
+				{i18n.t('analyticsComp.peakInfo', { hour: formatHour(peakHour), count: maxCount })}
 			</span>
 		{/if}
 	</div>
 
 	{#if hourCounts.every((c) => c === 0)}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			No hour data available
+			{i18n.t('analyticsComp.noHourData')}
 		</div>
 	{:else}
 		<div class="relative">
@@ -175,7 +177,7 @@
 					class="absolute pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs rounded px-2 py-1 shadow-lg"
 					style="left: {tooltip.x}px; top: {tooltip.y}px; transform: translate(-50%, -100%);"
 				>
-					{formatHour(tooltip.hour)}: {tooltip.count} sessions
+					{i18n.t('analyticsComp.hourTooltip', { hour: formatHour(tooltip.hour), count: tooltip.count })}
 				</div>
 			{/if}
 		</div>

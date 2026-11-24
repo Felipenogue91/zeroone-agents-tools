@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Project } from '$lib/types';
 	import type { ClaudeSettings, ClaudeSettingsScope } from '$lib/types';
-	import { CLAUDE_SETTINGS_SCOPE_LABELS } from '$lib/types';
 	import { claudeSettingsLibrary, notifications } from '$lib/stores';
+	import { i18n, type TranslationKey } from '$lib/i18n';
 	import { SETTINGS_CATEGORIES } from '$lib/components/settings';
 	import { FolderOpen, FileText, RefreshCw, Info } from 'lucide-svelte';
 
@@ -26,9 +26,9 @@
 
 	const scopedCategories = SETTINGS_CATEGORIES.filter(c => c.type === 'scoped');
 
-	const scopes: { key: ClaudeSettingsScope; icon: typeof FolderOpen; label: string; description: string }[] = [
-		{ key: 'project', icon: FolderOpen, label: CLAUDE_SETTINGS_SCOPE_LABELS['project'].label, description: CLAUDE_SETTINGS_SCOPE_LABELS['project'].description },
-		{ key: 'local', icon: FileText, label: CLAUDE_SETTINGS_SCOPE_LABELS['local'].label, description: CLAUDE_SETTINGS_SCOPE_LABELS['local'].description }
+	const scopes: { key: ClaudeSettingsScope; icon: typeof FolderOpen; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+		{ key: 'project', icon: FolderOpen, labelKey: 'settingsWrapper.scopeProject', descKey: 'settingsWrapper.scopeProjectDesc' },
+		{ key: 'local', icon: FileText, labelKey: 'settingsWrapper.scopeLocal', descKey: 'settingsWrapper.scopeLocalDesc' }
 	];
 
 	function handleSectionChange(sectionId: string) {
@@ -37,7 +37,7 @@
 
 	async function handleRefresh() {
 		await claudeSettingsLibrary.load();
-		notifications.success('Settings refreshed');
+		notifications.success(i18n.t('settingsWrapper.refreshed'));
 	}
 
 	async function save(settings: ClaudeSettings, successMsg: string, errorMsg: string) {
@@ -54,7 +54,7 @@
 	<!-- Scope toggle + refresh bar -->
 	<div class="flex items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
 		<div class="flex gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1">
-			{#each scopes as { key, icon, label, description }}
+			{#each scopes as { key, icon, labelKey, descKey }}
 				{@const isActive = claudeSettingsLibrary.selectedScope === key}
 				<button
 					onclick={() => claudeSettingsLibrary.setScope(key)}
@@ -62,10 +62,10 @@
 						{isActive
 						? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
 						: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-					title={description}
+					title={i18n.t(descKey)}
 				>
 					<svelte:component this={icon} class="w-4 h-4" />
-					{label}
+					{i18n.t(labelKey)}
 				</button>
 			{/each}
 		</div>
@@ -73,7 +73,7 @@
 		<button
 			onclick={handleRefresh}
 			class="btn btn-ghost"
-			title="Refresh from settings files"
+			title={i18n.t('settingsWrapper.refreshTitle')}
 		>
 			<RefreshCw class="w-4 h-4" />
 		</button>
@@ -94,7 +94,7 @@
 								: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'}"
 					>
 						<svelte:component this={category.icon} class="w-4 h-4 flex-shrink-0" />
-						{category.label}
+						{i18n.t(category.labelKey)}
 					</button>
 				{/each}
 			</div>
@@ -117,7 +117,7 @@
 					<div class="flex items-start gap-3 mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
 						<Info class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
 						<p class="text-sm text-blue-700 dark:text-blue-300">
-							No project settings file exists yet. Saving will create <code class="bg-blue-100 dark:bg-blue-800/50 px-1 rounded">.claude/settings.json</code> in the project folder.
+							{i18n.t('projComp.noSettingsFilePrefix')} <code class="bg-blue-100 dark:bg-blue-800/50 px-1 rounded">.claude/settings.json</code> {i18n.t('projComp.noSettingsFileSuffix')}
 						</p>
 					</div>
 				{/if}
@@ -126,63 +126,63 @@
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						<ModelConfigEditor
 							{settings}
-							onsave={(s) => save(s, 'Model settings saved', 'Failed to save model settings')}
+							onsave={(s) => save(s, i18n.t('projComp.modelSaved'), i18n.t('projComp.modelSaveFailed'))}
 						/>
 						<AttributionEditor
 							{settings}
-							onsave={(s) => save(s, 'Attribution settings saved', 'Failed to save attribution settings')}
+							onsave={(s) => save(s, i18n.t('projComp.attributionSaved'), i18n.t('projComp.attributionSaveFailed'))}
 						/>
 					</div>
 				{:else if activeSection === 'security'}
 					<SandboxConfigEditor
 						{settings}
-						onsave={(s) => save(s, 'Security settings saved', 'Failed to save security settings')}
+						onsave={(s) => save(s, i18n.t('projComp.securitySaved'), i18n.t('projComp.securitySaveFailed'))}
 					/>
 				{:else if activeSection === 'plugins'}
 					<div class="space-y-6">
 						<PluginListEditor
 							{settings}
-							onsave={(s) => save(s, 'Plugin settings saved', 'Failed to save plugin settings')}
+							onsave={(s) => save(s, i18n.t('projComp.pluginSaved'), i18n.t('projComp.pluginSaveFailed'))}
 						/>
 						<MarketplaceEditor
 							{settings}
-							onsave={(s) => save(s, 'Marketplace settings saved', 'Failed to save marketplace settings')}
+							onsave={(s) => save(s, i18n.t('projComp.marketplaceSaved'), i18n.t('projComp.marketplaceSaveFailed'))}
 						/>
 					</div>
 				{:else if activeSection === 'environment'}
 					<EnvVarsEditor
 						{settings}
-						onsave={(s) => save(s, 'Environment variables saved', 'Failed to save environment variables')}
+						onsave={(s) => save(s, i18n.t('projComp.envSaved'), i18n.t('projComp.envSaveFailed'))}
 					/>
 				{:else if activeSection === 'interface'}
 					<UITogglesEditor
 						{settings}
-						onsave={(s) => save(s, 'Interface settings saved', 'Failed to save interface settings')}
+						onsave={(s) => save(s, i18n.t('projComp.interfaceSaved'), i18n.t('projComp.interfaceSaveFailed'))}
 					/>
 				{:else if activeSection === 'files'}
 					<FileSuggestionEditor
 						{settings}
-						onsave={(s) => save(s, 'File settings saved', 'Failed to save file settings')}
+						onsave={(s) => save(s, i18n.t('projComp.fileSaved'), i18n.t('projComp.fileSaveFailed'))}
 					/>
 				{:else if activeSection === 'session'}
 					<SessionCleanupEditor
 						{settings}
-						onsave={(s) => save(s, 'Session settings saved', 'Failed to save session settings')}
+						onsave={(s) => save(s, i18n.t('projComp.sessionSaved'), i18n.t('projComp.sessionSaveFailed'))}
 					/>
 				{:else if activeSection === 'authentication'}
 					<AuthHelpersEditor
 						{settings}
-						onsave={(s) => save(s, 'Auth settings saved', 'Failed to save auth settings')}
+						onsave={(s) => save(s, i18n.t('projComp.authSaved'), i18n.t('projComp.authSaveFailed'))}
 					/>
 				{:else if activeSection === 'mcp-approval'}
 					<McpApprovalEditor
 						{settings}
-						onsave={(s) => save(s, 'MCP approval settings saved', 'Failed to save MCP approval settings')}
+						onsave={(s) => save(s, i18n.t('projComp.mcpApprovalSaved'), i18n.t('projComp.mcpApprovalSaveFailed'))}
 					/>
 				{/if}
 			{:else}
 				<div class="text-center py-20 text-gray-400 dark:text-gray-500">
-					<p>No settings available for this scope</p>
+					<p>{i18n.t('projComp.noSettingsForScope')}</p>
 				</div>
 			{/if}
 		</div>

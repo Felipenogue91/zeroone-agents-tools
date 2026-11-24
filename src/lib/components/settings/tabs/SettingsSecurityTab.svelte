@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { SandboxConfigEditor } from '$lib/components/sandbox';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -29,7 +30,7 @@
 	{#snippet children({ settings, save })}
 		<SandboxConfigEditor
 			{settings}
-			onsave={(s) => save(s, 'Sandbox settings saved', 'Failed to save sandbox settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.sandboxSaved'), i18n.t('settingsComp.sandboxSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

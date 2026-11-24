@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { Send } from 'lucide-svelte';
 
 	type Props = {
@@ -61,9 +62,9 @@
 
 <div class="space-y-3">
 	<!-- Output -->
-	<div bind:this={outputEl} class="bg-gray-900 rounded-lg p-4 font-mono text-sm text-gray-200 h-64 overflow-auto" aria-label="Command output">
+	<div bind:this={outputEl} class="bg-gray-900 rounded-lg p-4 font-mono text-sm text-gray-200 h-64 overflow-auto" aria-label={i18n.t('containerComp.commandOutput')}>
 		{#if history.length === 0}
-			<p class="text-gray-500">Run a command to see output here</p>
+			<p class="text-gray-500">{i18n.t('containerComp.runCommandToSeeOutput')}</p>
 		{:else}
 			{#each history as entry}
 				<div class="mb-3">
@@ -75,7 +76,7 @@
 						<pre class="whitespace-pre-wrap text-red-400 mt-1">{entry.stderr}</pre>
 					{/if}
 					{#if entry.exitCode !== 0}
-						<div class="text-yellow-500 text-xs mt-1">exit code: {entry.exitCode}</div>
+						<div class="text-yellow-500 text-xs mt-1">{i18n.t('containerComp.exitCode', { code: entry.exitCode })}</div>
 					{/if}
 				</div>
 			{/each}
@@ -89,11 +90,11 @@
 			type="text"
 			bind:value={command}
 			onkeydown={handleKeydown}
-			placeholder={isRunning ? 'Running...' : 'Enter command...'}
+			placeholder={isRunning ? i18n.t('containerComp.running') : i18n.t('containerComp.enterCommandPlaceholder')}
 			disabled={isRunning}
 			class="input flex-1 font-mono text-sm"
 		/>
-		<button onclick={runCommand} disabled={isRunning} class="btn btn-primary p-2" aria-label="Run command">
+		<button onclick={runCommand} disabled={isRunning} class="btn btn-primary p-2" aria-label={i18n.t('containerComp.runCommand')}>
 			<Send class="w-4 h-4" />
 		</button>
 	</div>

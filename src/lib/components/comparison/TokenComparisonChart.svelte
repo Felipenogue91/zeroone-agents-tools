@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ProjectComparisonData } from '$lib/stores/comparisonStore.svelte';
 	import { formatCompactNumber } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		data: ProjectComparisonData[];
@@ -15,12 +16,12 @@
 		cacheWrite: '#f59e0b'
 	};
 
-	const TOKEN_LABELS: Record<string, string> = {
-		input: 'Input',
-		output: 'Output',
-		cacheRead: 'Cache Read',
-		cacheWrite: 'Cache Write'
-	};
+	const TOKEN_LABELS = $derived<Record<string, string>>({
+		input: i18n.t('compComp.input'),
+		output: i18n.t('compComp.output'),
+		cacheRead: i18n.t('compComp.cacheRead'),
+		cacheWrite: i18n.t('compComp.cacheWrite')
+	});
 
 	const chartWidth = 800;
 	const chartHeight = 350;
@@ -98,7 +99,7 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Token Comparison</h3>
+	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">{i18n.t('compComp.tokenComparison')}</h3>
 
 	<!-- Legend -->
 	<div class="flex flex-wrap gap-4 mb-3">
@@ -112,7 +113,7 @@
 
 	{#if data.length === 0}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			Select projects to compare
+			{i18n.t('compComp.selectProjectsToCompare')}
 		</div>
 	{:else}
 		<div class="relative">

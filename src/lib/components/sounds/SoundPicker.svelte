@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { soundLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { SystemSound } from '$lib/types';
 	import { Volume2, Play, Pause, ChevronDown, FolderOpen } from 'lucide-svelte';
 	import SoundBrowser from './SoundBrowser.svelte';
@@ -11,7 +12,7 @@
 		placeholder?: string;
 	};
 
-	let { value = '', onchange, placeholder = 'Select a sound...' }: Props = $props();
+	let { value = '', onchange, placeholder }: Props = $props();
 
 	let showBrowser = $state(false);
 	let dropdownOpen = $state(false);
@@ -64,7 +65,7 @@
 			{#if value}
 				<span class="flex-1 truncate text-gray-900 dark:text-white">{selectedName}</span>
 			{:else}
-				<span class="flex-1 text-gray-500">{placeholder}</span>
+				<span class="flex-1 text-gray-500">{placeholder ?? i18n.t('hookModal.selectSoundPlaceholder')}</span>
 			{/if}
 			<ChevronDown class="w-4 h-4 text-gray-400" />
 		</button>
@@ -75,7 +76,7 @@
 				onclick={handlePreview}
 				class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600
 					bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-				title="Preview sound"
+				title={i18n.t('hookModal.previewSoundTitle')}
 			>
 				{#if soundLibrary.isPlaying === value}
 					<Pause class="w-4 h-4 text-orange-600" />
@@ -93,7 +94,7 @@
 			type="button"
 			class="fixed inset-0 z-40"
 			onclick={() => (dropdownOpen = false)}
-			aria-label="Close dropdown"
+			aria-label={i18n.t('hookModal.closeDropdownAria')}
 		></button>
 
 		<div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -138,7 +139,7 @@
 					text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
 			>
 				<FolderOpen class="w-4 h-4" />
-				<span class="text-sm font-medium">Browse all sounds...</span>
+				<span class="text-sm font-medium">{i18n.t('hookModal.browseAllSounds')}</span>
 			</button>
 		</div>
 	{/if}

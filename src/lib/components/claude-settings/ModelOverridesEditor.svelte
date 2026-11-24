@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
 	import { CLAUDE_MODELS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save, Plus, X } from 'lucide-svelte';
 
 	type Props = {
@@ -45,16 +46,16 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Model Overrides</h3>
+	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.modelOverridesTitle')}</h3>
 	<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-		Map Anthropic model IDs to provider-specific IDs for Bedrock, Vertex, or Foundry deployments
+		{i18n.t('settingsComp.modelOverridesDesc')}
 	</p>
 
 	<div class="space-y-3">
 		{#if overrides.length > 0}
 			<div class="grid grid-cols-[1fr_1fr_auto] gap-2 items-center text-xs font-medium text-gray-500 dark:text-gray-400 px-1">
-				<span>Anthropic Model ID</span>
-				<span>Provider Model ID</span>
+				<span>{i18n.t('settingsComp.anthropicModelId')}</span>
+				<span>{i18n.t('settingsComp.providerModelId')}</span>
 				<span class="w-8"></span>
 			</div>
 		{/if}
@@ -84,7 +85,7 @@
 				<button
 					onclick={() => removeOverride(index)}
 					class="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-					title="Remove override"
+					title={i18n.t('settingsComp.removeOverride')}
 				>
 					<X class="w-4 h-4" />
 				</button>
@@ -96,14 +97,14 @@
 			class="flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
 		>
 			<Plus class="w-4 h-4" />
-			Add Override
+			{i18n.t('settingsComp.addOverride')}
 		</button>
 	</div>
 
 	<div class="mt-5 flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Model Overrides
+			{i18n.t('settingsComp.saveModelOverrides')}
 		</button>
 	</div>
 </div>

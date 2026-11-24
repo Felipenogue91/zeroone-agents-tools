@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { ModelConfigEditor, AttributionEditor } from '$lib/components/claude-settings';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -30,11 +31,11 @@
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<ModelConfigEditor
 				{settings}
-				onsave={(s) => save(s, 'Model settings saved', 'Failed to save model settings')}
+				onsave={(s) => save(s, i18n.t('settingsComp.modelsSaved'), i18n.t('settingsComp.modelsSaveFailed'))}
 			/>
 			<AttributionEditor
 				{settings}
-				onsave={(s) => save(s, 'Attribution settings saved', 'Failed to save attribution settings')}
+				onsave={(s) => save(s, i18n.t('settingsComp.attributionSaved'), i18n.t('settingsComp.attributionSaveFailed'))}
 			/>
 		</div>
 	{/snippet}

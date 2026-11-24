@@ -6,6 +6,7 @@
 		HELPFULNESS_LABELS,
 		HELPFULNESS_COLORS
 	} from '$lib/types/insights';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		facets: SessionFacet[];
@@ -73,12 +74,12 @@
 		class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 	>
 		<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-			Session Outcomes
+			{i18n.t('analyticsComp.sessionOutcomes')}
 		</h3>
 
 		{#if outcomeCounts.length === 0}
 			<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-				No outcome data available
+				{i18n.t('analyticsComp.noOutcomeData')}
 			</div>
 		{:else}
 			<div class="flex flex-col items-center gap-4">
@@ -114,7 +115,7 @@
 						class="fill-gray-400 dark:fill-gray-500"
 						font-size="10"
 					>
-						sessions
+						{i18n.t('analyticsComp.sessionsLower')}
 					</text>
 				</svg>
 
@@ -143,12 +144,12 @@
 		class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 	>
 		<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-			Claude Helpfulness
+			{i18n.t('analyticsComp.claudeHelpfulness')}
 		</h3>
 
 		{#if helpfulnessCounts.length === 0}
 			<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-				No helpfulness data available
+				{i18n.t('analyticsComp.noHelpfulnessData')}
 			</div>
 		{:else}
 			<div class="flex flex-col items-center gap-4">
@@ -184,7 +185,7 @@
 						class="fill-gray-400 dark:fill-gray-500"
 						font-size="10"
 					>
-						sessions
+						{i18n.t('analyticsComp.sessionsLower')}
 					</text>
 				</svg>
 

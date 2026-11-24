@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
 	import { UI_TOGGLE_FIELDS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save } from 'lucide-svelte';
 
 	type Props = {
@@ -36,8 +37,8 @@
 	}
 
 	function getTriStateLabel(value: boolean | undefined): string {
-		if (value === undefined) return 'Not set';
-		return value ? 'Enabled' : 'Disabled';
+		if (value === undefined) return i18n.t('settingsComp.notSet');
+		return value ? i18n.t('settingsComp.enabledLabel') : i18n.t('settingsComp.disabledLabel');
 	}
 
 	function getTriStateColor(value: boolean | undefined): string {
@@ -64,9 +65,9 @@
 
 <div class="space-y-6">
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">UI Toggles</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.uiTogglesTitle')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Control visual and interaction preferences for Claude Code
+			{i18n.t('settingsComp.uiTogglesDesc')}
 		</p>
 
 		<div class="space-y-4">
@@ -79,7 +80,7 @@
 						</label>
 						<p class="text-xs text-gray-500 dark:text-gray-400">
 							{field.description}
-							<span class="text-gray-400 dark:text-gray-500">(default: {field.defaultValue ? 'enabled' : 'disabled'})</span>
+							<span class="text-gray-400 dark:text-gray-500">({i18n.t('settingsComp.defaultColon')} {field.defaultValue ? i18n.t('common.enabled') : i18n.t('common.disabled')})</span>
 						</p>
 					</div>
 					<div class="flex items-center gap-2">
@@ -89,7 +90,7 @@
 						<button
 							onclick={() => handleToggle(field.key)}
 							class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {getTriStateColor(value)}"
-							title="Click to cycle: Not set → Enabled → Disabled → Not set"
+							title={i18n.t('settingsComp.triStateCycleTitle')}
 						>
 							<span
 								class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {getTriStatePosition(value)}"
@@ -104,7 +105,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save UI Toggle Settings
+			{i18n.t('settingsComp.saveUiToggles')}
 		</button>
 	</div>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SandboxFilesystemSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Plus, X } from 'lucide-svelte';
 
 	type Props = {
@@ -78,10 +79,10 @@
 	<!-- Allow Read -->
 	<div>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Allow Read
+			{i18n.t('settingsComp.allowRead')}
 		</label>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-			Re-allow reading paths within denied regions
+			{i18n.t('settingsComp.allowReadDesc')}
 		</p>
 		<div class="flex gap-2 mb-2">
 			<input
@@ -121,10 +122,10 @@
 	<!-- Deny Read -->
 	<div>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Deny Read
+			{i18n.t('settingsComp.denyRead')}
 		</label>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-			Paths that subprocesses cannot read
+			{i18n.t('settingsComp.denyReadDesc')}
 		</p>
 		<div class="flex gap-2 mb-2">
 			<input
@@ -164,10 +165,10 @@
 	<!-- Allow Unix Sockets -->
 	<div>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Allow Unix Sockets
+			{i18n.t('settingsComp.allowUnixSockets')}
 		</label>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-			Unix sockets to allow access to (e.g., for Docker)
+			{i18n.t('settingsComp.allowUnixSocketsDesc')}
 		</p>
 		<div class="flex gap-2 mb-2">
 			<input

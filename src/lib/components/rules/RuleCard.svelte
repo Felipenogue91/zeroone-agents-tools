@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Rule } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { BookOpen, MoreVertical, Edit, Trash2, Heart, Link } from 'lucide-svelte';
 
 	type Props = {
@@ -58,15 +59,15 @@
 				{#if rule.source === 'auto-detected'}
 					<span
 						class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 cursor-help"
-						title={rule.sourcePath ? `Source: ${rule.sourcePath}` : 'Auto-detected from filesystem'}
+						title={rule.sourcePath ? i18n.t('rule.sourceTooltip', { path: rule.sourcePath }) : i18n.t('rule.autoDetected')}
 					>
-						Auto
+						{i18n.t('common.auto')}
 					</span>
 				{/if}
 				{#if rule.isSymlink}
 					<span
 						class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 cursor-help"
-						title={rule.symlinkTarget ? `Links to: ${rule.symlinkTarget}` : 'Symlinked rule'}
+						title={rule.symlinkTarget ? i18n.t('rule.symlinkTooltip', { target: rule.symlinkTarget }) : i18n.t('rule.symlinked')}
 					>
 						Symlink
 					</span>
@@ -91,7 +92,7 @@
 					{/if}
 				{:else}
 					<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400">
-						Always active
+						{i18n.t('rule.alwaysActive')}
 					</span>
 				{/if}
 
@@ -119,7 +120,7 @@
 						class="p-1.5 rounded-lg transition-colors {rule.isFavorite
 							? 'text-rose-500 hover:text-rose-600'
 							: 'text-gray-300 hover:text-rose-400 dark:text-gray-600 dark:hover:text-rose-400'}"
-						title={rule.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+						title={rule.isFavorite ? i18n.t('mcp.removeFromFavorites') : i18n.t('mcp.addToFavorites')}
 					>
 						<Heart class="w-4 h-4" fill={rule.isFavorite ? 'currentColor' : 'none'} />
 					</button>
@@ -148,7 +149,7 @@
 									class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 								>
 									<Edit class="w-4 h-4" />
-									Edit
+									{i18n.t('common.edit')}
 								</button>
 							{/if}
 							{#if onDelete}
@@ -160,7 +161,7 @@
 									class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
 								>
 									<Trash2 class="w-4 h-4" />
-									Delete
+									{i18n.t('common.delete')}
 								</button>
 							{/if}
 						</div>

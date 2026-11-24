@@ -79,8 +79,8 @@
 				{ href: '/skills', label: i18n.t('nav.skills'), icon: Sparkles },
 				{ href: '/commands', label: i18n.t('nav.commands'), icon: Terminal },
 				{ href: '/hooks', label: i18n.t('nav.hooks'), icon: Zap },
-				{ href: '/rules', label: 'Rules', icon: BookOpen },
-				{ href: '/containers', label: 'Containers', icon: Container }
+				{ href: '/rules', label: i18n.t('nav.rules'), icon: BookOpen },
+				{ href: '/containers', label: i18n.t('nav.containers'), icon: Container }
 			]
 		},
 		{
@@ -120,7 +120,7 @@
 	</div>
 
 	<!-- Navigation -->
-	<nav aria-label="Main navigation" class="flex-1 overflow-y-auto p-3 {collapsed ? 'px-2' : ''}">
+	<nav aria-label={i18n.t('sidebar.navLabel')} class="flex-1 overflow-y-auto p-3 {collapsed ? 'px-2' : ''}">
 		{#each navGroups as group, groupIndex}
 			{#if groupIndex > 0}
 				<div class="mt-3"></div>
@@ -181,13 +181,13 @@
 			class="flex items-center w-full rounded-lg text-sm font-medium transition-colors mt-1
 				{collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'}
 				text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700/50 dark:hover:text-gray-300"
-			title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={collapsed ? i18n.t('sidebar.expandTitle') : i18n.t('sidebar.collapseTitle')}
 		>
 			{#if collapsed}
 				<PanelLeftOpen class="w-5 h-5 shrink-0" />
 			{:else}
 				<PanelLeftClose class="w-5 h-5 shrink-0" />
-				<span>Collapse</span>
+				<span>{i18n.t('sidebar.collapse')}</span>
 			{/if}
 		</button>
 

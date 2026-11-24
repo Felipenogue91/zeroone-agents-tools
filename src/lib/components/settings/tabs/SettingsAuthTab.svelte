@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { AuthHelpersEditor } from '$lib/components/auth-helpers';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -26,7 +27,7 @@
 	{#snippet children({ settings, save })}
 		<AuthHelpersEditor
 			{settings}
-			onsave={(s) => save(s, 'Auth helper settings saved', 'Failed to save auth helper settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.authSaved'), i18n.t('settingsComp.authSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

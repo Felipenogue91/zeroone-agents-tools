@@ -2,6 +2,7 @@
 	import type { MarketplaceDefinition, MarketplaceSource, MarketplaceSourceType } from '$lib/types';
 	import { MARKETPLACE_SOURCE_TYPES } from '$lib/types';
 	import { Save, X } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		name?: string;
@@ -98,7 +99,7 @@
 
 <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
 	<div>
-		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Marketplace Name</label>
+		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.marketplaceName')}</label>
 		<input
 			type="text"
 			bind:value={name}
@@ -109,7 +110,7 @@
 	</div>
 
 	<div>
-		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Source Type</label>
+		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.sourceType')}</label>
 		<select bind:value={sourceType} class="input text-sm w-full mt-1">
 			{#each MARKETPLACE_SOURCE_TYPES as type}
 				<option value={type.value}>{type.label}</option>
@@ -119,74 +120,74 @@
 
 	{#if sourceType === 'github'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Repository <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.repository')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={repo} placeholder="owner/repo" class="input text-sm w-full mt-1" />
 		</div>
 		<div class="grid grid-cols-2 gap-2">
 			<div>
-				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Ref (branch/tag)</label>
+				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.refLabel')}</label>
 				<input type="text" bind:value={ref} placeholder="main" class="input text-sm w-full mt-1" />
 			</div>
 			<div>
-				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Path</label>
+				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.pathLabel')}</label>
 				<input type="text" bind:value={path} placeholder="/" class="input text-sm w-full mt-1" />
 			</div>
 		</div>
 	{:else if sourceType === 'git'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Git URL <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.gitUrl')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={gitUrl} placeholder="https://github.com/..." class="input text-sm w-full mt-1" />
 		</div>
 		<div class="grid grid-cols-2 gap-2">
 			<div>
-				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Ref (branch/tag)</label>
+				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.refLabel')}</label>
 				<input type="text" bind:value={ref} placeholder="main" class="input text-sm w-full mt-1" />
 			</div>
 			<div>
-				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Path</label>
+				<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.pathLabel')}</label>
 				<input type="text" bind:value={path} placeholder="/" class="input text-sm w-full mt-1" />
 			</div>
 		</div>
 	{:else if sourceType === 'url'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">URL <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.url')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={url} placeholder="https://..." class="input text-sm w-full mt-1" />
 		</div>
 	{:else if sourceType === 'npm'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Package <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.package')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={npmPackage} placeholder="@scope/package" class="input text-sm w-full mt-1" />
 		</div>
 	{:else if sourceType === 'file'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">File Path <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.filePath')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={filePath} placeholder="/path/to/file" class="input text-sm w-full mt-1" />
 		</div>
 	{:else if sourceType === 'directory'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Directory Path <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.directoryPath')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={dirPath} placeholder="/path/to/dir" class="input text-sm w-full mt-1" />
 		</div>
 	{:else if sourceType === 'hostPattern'}
 		<div>
-			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Host Pattern <span class="text-red-500">*</span></label>
+			<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.hostPattern')} <span class="text-red-500">*</span></label>
 			<input type="text" bind:value={hostPattern} placeholder="*.example.com" class="input text-sm w-full mt-1" />
 		</div>
 	{/if}
 
 	<div>
-		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">Install Location (optional)</label>
+		<label class="text-xs font-medium text-gray-600 dark:text-gray-400">{i18n.t('pluginComp.installLocation')}</label>
 		<input type="text" bind:value={installLocation} placeholder="/path/to/install" class="input text-sm w-full mt-1" />
 	</div>
 
 	<div class="flex justify-end gap-2 pt-2">
 		<button onclick={oncancel} class="btn btn-ghost text-sm">
 			<X class="w-4 h-4 mr-1" />
-			Cancel
+			{i18n.t('common.cancel')}
 		</button>
 		<button onclick={handleSave} disabled={!isValid()} class="btn btn-primary text-sm">
 			<Save class="w-4 h-4 mr-1" />
-			{initialName ? 'Update' : 'Add'} Marketplace
+			{initialName ? i18n.t('pluginComp.updateMarketplace') : i18n.t('pluginComp.addMarketplace')}
 		</button>
 	</div>
 </div>

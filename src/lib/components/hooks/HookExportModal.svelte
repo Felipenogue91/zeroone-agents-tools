@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { hookLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { Hook } from '$lib/types';
 	import { Download, Copy, X, Check, FileJson, CheckSquare, Square } from 'lucide-svelte';
 	import { save } from '@tauri-apps/plugin-dialog';
@@ -64,12 +65,12 @@
 		try {
 			await hookLibrary.exportToClipboard(Array.from(selectedIds));
 			copiedToClipboard = true;
-			notifications.success('Copied to clipboard');
+			notifications.success(i18n.t('hookModal.copiedToClipboard'));
 			setTimeout(() => {
 				copiedToClipboard = false;
 			}, 2000);
 		} catch (e) {
-			notifications.error('Failed to copy to clipboard');
+			notifications.error(i18n.t('hookModal.copyFailed'));
 		}
 	}
 
@@ -87,11 +88,11 @@
 			if (filePath) {
 				const json = await hookLibrary.exportToJson(Array.from(selectedIds));
 				await writeTextFile(filePath, json);
-				notifications.success(`Exported ${selectedIds.size} hooks`);
+				notifications.success(i18n.t('hookModal.exportedCount', { count: selectedIds.size }));
 				onClose();
 			}
 		} catch (e) {
-			notifications.error('Failed to export hooks');
+			notifications.error(i18n.t('hookModal.exportFailed'));
 		} finally {
 			isExporting = false;
 		}
@@ -107,8 +108,8 @@
 					<FileJson class="w-5 h-5 text-blue-600 dark:text-blue-400" />
 				</div>
 				<div>
-					<h2 class="text-lg font-semibold text-gray-900 dark:text-white">Export Hooks</h2>
-					<p class="text-sm text-gray-500">Select hooks to export as JSON</p>
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-white">{i18n.t('hookModal.exportHooks')}</h2>
+					<p class="text-sm text-gray-500">{i18n.t('hookModal.selectHooksToExportDesc')}</p>
 				</div>
 			</div>
 			<button onclick={onClose} class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -122,15 +123,15 @@
 				<!-- Selection controls -->
 				<div class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
 					<span class="text-sm text-gray-600 dark:text-gray-400">
-						{selectedIds.size} of {availableHooks.length} selected
+						{i18n.t('hookModal.selectedCount', { selected: selectedIds.size, total: availableHooks.length })}
 					</span>
 					<div class="flex gap-2">
 						<button onclick={selectAll} class="text-sm text-orange-600 hover:text-orange-700">
-							Select all
+							{i18n.t('hookModal.selectAll')}
 						</button>
 						<span class="text-gray-300">|</span>
 						<button onclick={deselectAll} class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-							Clear
+							{i18n.t('hookModal.clear')}
 						</button>
 					</div>
 				</div>
@@ -139,7 +140,7 @@
 				<div class="flex-1 overflow-auto p-2">
 					{#if availableHooks.length === 0}
 						<div class="text-center py-8 text-gray-500">
-							<p>No hooks to export</p>
+							<p>{i18n.t('hookModal.noHooksToExport')}</p>
 						</div>
 					{:else}
 						<div class="space-y-1">
@@ -170,14 +171,14 @@
 			<!-- Right: Preview -->
 			<div class="w-1/2 flex flex-col">
 				<div class="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Preview</span>
+					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('common.preview')}</span>
 				</div>
 				<div class="flex-1 overflow-auto p-4">
 					{#if exportPreview}
 						<pre class="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all">{exportPreview}</pre>
 					{:else}
 						<div class="flex items-center justify-center h-full text-gray-400">
-							<p>Select hooks to preview export</p>
+							<p>{i18n.t('hookModal.selectHooksToPreview')}</p>
 						</div>
 					{/if}
 				</div>
@@ -187,7 +188,7 @@
 		<!-- Footer -->
 		<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
 			<button onclick={onClose} class="btn btn-secondary">
-				Cancel
+				{i18n.t('common.cancel')}
 			</button>
 			<button
 				onclick={copyToClipboard}
@@ -196,10 +197,10 @@
 			>
 				{#if copiedToClipboard}
 					<Check class="w-4 h-4 mr-2 text-green-600" />
-					Copied!
+					{i18n.t('hookModal.copiedExclamation')}
 				{:else}
 					<Copy class="w-4 h-4 mr-2" />
-					Copy to Clipboard
+					{i18n.t('hookModal.copyToClipboard')}
 				{/if}
 			</button>
 			<button
@@ -208,7 +209,7 @@
 				disabled={selectedIds.size === 0 || isExporting}
 			>
 				<Download class="w-4 h-4 mr-2" />
-				{isExporting ? 'Exporting...' : 'Export to File'}
+				{isExporting ? i18n.t('hookModal.exporting') : i18n.t('hookModal.exportToFile')}
 			</button>
 		</div>
 	</div>

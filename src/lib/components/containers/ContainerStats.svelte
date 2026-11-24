@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ContainerStats as Stats } from '$lib/types';
 
 	let { containerId }: { containerId: number } = $props();
@@ -40,11 +41,11 @@
 	{#if error}
 		<p class="text-sm text-red-500">{error}</p>
 	{:else if !stats}
-		<p class="text-sm text-gray-500">Loading stats...</p>
+		<p class="text-sm text-gray-500">{i18n.t('containerComp.loadingStats')}</p>
 	{:else}
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">CPU Usage</p>
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.cpuUsage')}</p>
 				<div class="flex items-center gap-2">
 					<div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
 						<div class="h-full bg-blue-500 rounded-full transition-all" style="width: {Math.min(stats.cpuPercent, 100)}%"></div>
@@ -53,7 +54,7 @@
 				</div>
 			</div>
 			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Memory</p>
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.memory')}</p>
 				<div class="flex items-center gap-2">
 					<div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
 						<div class="h-full bg-green-500 rounded-full transition-all" style="width: {Math.min(stats.memoryPercent, 100)}%"></div>
@@ -63,11 +64,11 @@
 				<p class="text-xs text-gray-400 mt-0.5">{formatBytes(stats.memoryUsage)} / {formatBytes(stats.memoryLimit)}</p>
 			</div>
 			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Network I/O</p>
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.networkIo')}</p>
 				<p class="text-sm text-gray-700 dark:text-gray-300">{formatBytes(stats.networkRxBytes)} / {formatBytes(stats.networkTxBytes)}</p>
 			</div>
 			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">PIDs</p>
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.pids')}</p>
 				<p class="text-sm text-gray-700 dark:text-gray-300">{stats.pids}</p>
 			</div>
 		</div>

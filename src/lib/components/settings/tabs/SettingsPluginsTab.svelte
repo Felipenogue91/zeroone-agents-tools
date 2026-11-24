@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { PluginListEditor, MarketplaceEditor } from '$lib/components/plugins';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -25,11 +26,11 @@
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<PluginListEditor
 				{settings}
-				onsave={(s) => save(s, 'Plugin settings saved', 'Failed to save plugin settings')}
+				onsave={(s) => save(s, i18n.t('settingsComp.pluginsSaved'), i18n.t('settingsComp.pluginsSaveFailed'))}
 			/>
 			<MarketplaceEditor
 				{settings}
-				onsave={(s) => save(s, 'Marketplace settings saved', 'Failed to save marketplace settings')}
+				onsave={(s) => save(s, i18n.t('settingsComp.marketplaceSaved'), i18n.t('settingsComp.marketplaceSaveFailed'))}
 			/>
 		</div>
 	{/snippet}

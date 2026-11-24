@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SandboxNetworkSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Plus, X } from 'lucide-svelte';
 
 	type Props = {
@@ -91,10 +92,10 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-				Allow All Unix Sockets
+				{i18n.t('settingsComp.allowAllUnixSockets')}
 			</label>
 			<p class="text-xs text-gray-500 dark:text-gray-400">
-				Allow connections to any Unix domain socket
+				{i18n.t('settingsComp.allowAllUnixSocketsDesc')}
 			</p>
 		</div>
 		<button
@@ -114,10 +115,10 @@
 	<!-- Allow Unix Sockets (specific paths) -->
 	<div class:opacity-50={allowAllUnixSockets}>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Allowed Unix Sockets
+			{i18n.t('settingsComp.allowedUnixSockets')}
 		</label>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-			Specific Unix socket paths to allow {allowAllUnixSockets ? '(disabled — all sockets allowed)' : ''}
+			{i18n.t('settingsComp.allowedUnixSocketsDesc')} {allowAllUnixSockets ? i18n.t('settingsComp.disabledAllSocketsAllowed') : ''}
 		</p>
 		<div class="flex gap-2 mb-2">
 			<input
@@ -160,10 +161,10 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-				Allow Local Binding
+				{i18n.t('settingsComp.allowLocalBinding')}
 			</label>
 			<p class="text-xs text-gray-500 dark:text-gray-400">
-				Allow binding to local ports (macOS only)
+				{i18n.t('settingsComp.allowLocalBindingDesc')}
 			</p>
 		</div>
 		<button
@@ -183,10 +184,10 @@
 	<!-- Allowed Domains -->
 	<div>
 		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Allowed Domains
+			{i18n.t('settingsComp.allowedDomains')}
 		</label>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-			Network domains the sandbox can access. Supports wildcards (e.g. <code>*.example.com</code>)
+			{i18n.t('settingsComp.allowedDomainsDesc')} <code>*.example.com</code>)
 		</p>
 		<div class="flex gap-2 mb-2">
 			<input
@@ -226,14 +227,14 @@
 	<!-- HTTP Proxy Port -->
 	<div>
 		<label for="http-proxy-port" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			HTTP Proxy Port
+			{i18n.t('settingsComp.httpProxyPort')}
 		</label>
 		<input
 			id="http-proxy-port"
 			type="number"
 			bind:value={httpProxyPort}
 			onchange={handlePortChange}
-			placeholder="e.g. 8080"
+			placeholder={i18n.t('settingsComp.httpProxyPlaceholder')}
 			min="1"
 			max="65535"
 			class="input text-sm w-full"
@@ -243,14 +244,14 @@
 	<!-- SOCKS Proxy Port -->
 	<div>
 		<label for="socks-proxy-port" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			SOCKS Proxy Port
+			{i18n.t('settingsComp.socksProxyPort')}
 		</label>
 		<input
 			id="socks-proxy-port"
 			type="number"
 			bind:value={socksProxyPort}
 			onchange={handlePortChange}
-			placeholder="e.g. 1080"
+			placeholder={i18n.t('settingsComp.socksProxyPlaceholder')}
 			min="1"
 			max="65535"
 			class="input text-sm w-full"

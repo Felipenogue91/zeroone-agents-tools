@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ModelUsageDetail } from '$lib/types';
 	import { getModelColor, formatModelName, formatCompactNumber, estimateModelCost, formatCost } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		modelUsage: Record<string, ModelUsageDetail>;
@@ -56,11 +57,11 @@
 <div
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 >
-	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Model Usage</h3>
+	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">{i18n.t('analyticsComp.modelUsage')}</h3>
 
 	{#if entries.length === 0}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			No model usage data
+			{i18n.t('analyticsComp.noModelUsageData')}
 		</div>
 	{:else}
 		<div class="flex flex-col items-center gap-4">
@@ -97,7 +98,7 @@
 					class="fill-gray-400 dark:fill-gray-500"
 					font-size="11"
 				>
-					total tokens
+					{i18n.t('analyticsComp.totalTokensLabel')}
 				</text>
 			</svg>
 
@@ -120,25 +121,25 @@
 					<thead>
 						<tr class="border-b border-gray-200 dark:border-gray-700">
 							<th class="text-left py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Model
+								{i18n.t('analyticsComp.model')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Input
+								{i18n.t('analyticsComp.input')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Output
+								{i18n.t('analyticsComp.output')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Cache Read
+								{i18n.t('analyticsComp.cacheRead')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Cache Write
+								{i18n.t('analyticsComp.cacheWrite')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Total
+								{i18n.t('analyticsComp.total')}
 							</th>
 							<th class="text-right py-2 px-1 font-medium text-gray-500 dark:text-gray-400">
-								Est. Cost
+								{i18n.t('analyticsComp.estCost')}
 							</th>
 						</tr>
 					</thead>

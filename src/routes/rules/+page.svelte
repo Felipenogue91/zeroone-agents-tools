@@ -3,6 +3,7 @@
 	import { RuleLibrary, RuleForm } from '$lib/components/rules';
 	import { ConfirmDialog } from '$lib/components/shared';
 	import { ruleLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { Rule } from '$lib/types';
 	import { Plus } from 'lucide-svelte';
 
@@ -14,9 +15,9 @@
 		try {
 			await ruleLibrary.create(values);
 			showAddRule = false;
-			notifications.success('Rule created successfully');
+			notifications.success(i18n.t('rule.created'));
 		} catch (err) {
-			notifications.error('Failed to create rule');
+			notifications.error(i18n.t('rule.createFailed'));
 		}
 	}
 
@@ -25,9 +26,9 @@
 		try {
 			await ruleLibrary.update(editingRule.id, values);
 			editingRule = null;
-			notifications.success('Rule updated successfully');
+			notifications.success(i18n.t('rule.updated'));
 		} catch (err) {
-			notifications.error('Failed to update rule');
+			notifications.error(i18n.t('rule.updateFailed'));
 		}
 	}
 
@@ -35,9 +36,9 @@
 		if (!deletingRule) return;
 		try {
 			await ruleLibrary.delete(deletingRule.id);
-			notifications.success('Rule deleted');
+			notifications.success(i18n.t('rule.deleted'));
 		} catch (err) {
-			notifications.error('Failed to delete rule');
+			notifications.error(i18n.t('rule.deleteFailed'));
 		} finally {
 			deletingRule = null;
 		}
@@ -45,15 +46,15 @@
 </script>
 
 <Header
-	title="Rules"
-	subtitle="Conditional instruction files loaded based on file context"
+	title={i18n.t('page.rules.title')}
+	subtitle={i18n.t('page.rules.subtitle')}
 />
 
 <div class="flex-1 overflow-auto p-6">
 	<div class="flex justify-end mb-6">
 		<button onclick={() => (showAddRule = true)} class="btn btn-primary">
 			<Plus class="w-4 h-4 mr-2" />
-			Add Rule
+			{i18n.t('rule.addRule')}
 		</button>
 	</div>
 
@@ -68,7 +69,7 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto">
 			<div class="p-6">
-				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Add New Rule</h2>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">{i18n.t('rule.addNew')}</h2>
 				<RuleForm onSubmit={handleCreateRule} onCancel={() => (showAddRule = false)} />
 			</div>
 		</div>
@@ -80,7 +81,7 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto">
 			<div class="p-6">
-				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Edit Rule</h2>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{i18n.t('rule.editRule')}</h2>
 				<RuleForm
 					initialValues={editingRule}
 					onSubmit={handleUpdateRule}
@@ -93,9 +94,9 @@
 
 <ConfirmDialog
 	open={!!deletingRule}
-	title="Delete Rule"
-	message="Are you sure you want to delete '{deletingRule?.name}'? This will remove it from all projects."
-	confirmText="Delete"
+	title={i18n.t('rule.deleteRule')}
+	message={i18n.t('rule.deleteConfirm', { name: deletingRule?.name ?? '' })}
+	confirmText={i18n.t('common.delete')}
 	onConfirm={handleDeleteRule}
 	onCancel={() => (deletingRule = null)}
 />

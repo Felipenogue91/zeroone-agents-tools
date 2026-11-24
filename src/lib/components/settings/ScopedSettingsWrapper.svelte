@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { claudeSettingsLibrary, projectsStore, notifications } from '$lib/stores';
+	import { i18n, type TranslationKey } from '$lib/i18n';
 	import type { ClaudeSettings, ClaudeSettingsScope } from '$lib/types';
 	import { CLAUDE_SETTINGS_SCOPE_LABELS } from '$lib/types';
 	import { RefreshCw, FolderOpen, User, FileText } from 'lucide-svelte';
@@ -27,7 +28,7 @@
 
 	async function handleRefresh() {
 		await claudeSettingsLibrary.load();
-		notifications.success('Settings refreshed');
+		notifications.success(i18n.t('settingsWrapper.refreshed'));
 	}
 
 	async function save(settings: ClaudeSettings, successMsg: string, errorMsg: string) {
@@ -39,10 +40,10 @@
 		}
 	}
 
-	const scopes: { key: ClaudeSettingsScope; icon: typeof User }[] = [
-		{ key: 'user', icon: User },
-		{ key: 'project', icon: FolderOpen },
-		{ key: 'local', icon: FileText }
+	const scopes: { key: ClaudeSettingsScope; icon: typeof User; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+		{ key: 'user', icon: User, labelKey: 'settingsWrapper.scopeUser', descKey: 'settingsWrapper.scopeUserDesc' },
+		{ key: 'project', icon: FolderOpen, labelKey: 'settingsWrapper.scopeProject', descKey: 'settingsWrapper.scopeProjectDesc' },
+		{ key: 'local', icon: FileText, labelKey: 'settingsWrapper.scopeLocal', descKey: 'settingsWrapper.scopeLocalDesc' }
 	];
 </script>
 
@@ -54,7 +55,7 @@
 			onchange={handleProjectChange}
 			class="input text-sm"
 		>
-			<option value="">No project</option>
+			<option value="">{i18n.t('common.noProject')}</option>
 			{#each projectsStore.projects as project}
 				<option value={project.path}>{project.name}</option>
 			{/each}
@@ -63,7 +64,7 @@
 
 	<div class="flex-1 min-w-[300px]">
 		<div class="flex gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1">
-			{#each scopes as { key, icon }}
+			{#each scopes as { key, icon, labelKey, descKey }}
 				{@const isDisabled = key !== 'user' && !claudeSettingsLibrary.projectPath}
 				{@const isActive = claudeSettingsLibrary.selectedScope === key}
 				{@const count = getSettingCount(key)}
@@ -76,10 +77,10 @@
 						: isDisabled
 							? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
 							: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-					title={CLAUDE_SETTINGS_SCOPE_LABELS[key].description}
+					title={i18n.t(descKey)}
 				>
 					<svelte:component this={icon} class="w-4 h-4" />
-					{CLAUDE_SETTINGS_SCOPE_LABELS[key].label}
+					{i18n.t(labelKey)}
 					{#if count > 0}
 						<span
 							class="ml-1 px-1.5 py-0.5 text-xs rounded-full
@@ -99,7 +100,7 @@
 		<button
 			onclick={handleRefresh}
 			class="btn btn-ghost"
-			title="Refresh from settings files"
+			title={i18n.t('settingsWrapper.refreshTitle')}
 		>
 			<RefreshCw class="w-4 h-4" />
 		</button>
@@ -122,6 +123,6 @@
 	{@render children({ settings: claudeSettingsLibrary.currentScopeSettings, save })}
 {:else}
 	<div class="text-center py-20 text-gray-400 dark:text-gray-500">
-		<p>Select a scope to view settings</p>
+		<p>{i18n.t('settingsWrapper.selectScope')}</p>
 	</div>
 {/if}

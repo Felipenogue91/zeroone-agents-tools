@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ProjectComparisonData } from '$lib/stores/comparisonStore.svelte';
 	import { formatCompactNumber, formatCost, formatModelName } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		data: ProjectComparisonData[];
@@ -24,35 +25,35 @@
 		if (data.length === 0) return [];
 
 		const sessions: MetricRow = {
-			label: 'Sessions',
+			label: i18n.t('compComp.sessions'),
 			values: data.map((d) => d.project.sessionCount.toLocaleString()),
 			raw: data.map((d) => d.project.sessionCount),
 			highlightMax: true
 		};
 
 		const totalTokens: MetricRow = {
-			label: 'Total Tokens',
+			label: i18n.t('compComp.totalTokens'),
 			values: data.map((d) => formatCompactNumber(d.totalTokens)),
 			raw: data.map((d) => d.totalTokens),
 			highlightMax: true
 		};
 
 		const inputTokens: MetricRow = {
-			label: 'Input Tokens',
+			label: i18n.t('compComp.inputTokens'),
 			values: data.map((d) => formatCompactNumber(d.project.totalInputTokens)),
 			raw: data.map((d) => d.project.totalInputTokens),
 			highlightMax: true
 		};
 
 		const outputTokens: MetricRow = {
-			label: 'Output Tokens',
+			label: i18n.t('compComp.outputTokens'),
 			values: data.map((d) => formatCompactNumber(d.project.totalOutputTokens)),
 			raw: data.map((d) => d.project.totalOutputTokens),
 			highlightMax: true
 		};
 
 		const cacheTokens: MetricRow = {
-			label: 'Cache Tokens',
+			label: i18n.t('compComp.cacheTokens'),
 			values: data.map((d) =>
 				formatCompactNumber(d.project.totalCacheReadTokens + d.project.totalCacheCreationTokens)
 			),
@@ -61,21 +62,21 @@
 		};
 
 		const cost: MetricRow = {
-			label: 'Est. Cost',
+			label: i18n.t('compComp.estCost'),
 			values: data.map((d) => formatCost(d.estimatedCost)),
 			raw: data.map((d) => d.estimatedCost),
 			highlightMax: true
 		};
 
 		const models: MetricRow = {
-			label: 'Models',
-			values: data.map((d) => d.project.modelsUsed.map(formatModelName).join(', ') || 'N/A'),
+			label: i18n.t('compComp.models'),
+			values: data.map((d) => d.project.modelsUsed.map(formatModelName).join(', ') || i18n.t('compComp.na')),
 			raw: data.map((d) => d.project.modelsUsed.length),
 			highlightMax: false
 		};
 
 		const dateRange: MetricRow = {
-			label: 'Date Range',
+			label: i18n.t('compComp.dateRange'),
 			values: data.map((d) => d.dateRange),
 			raw: data.map(() => 0),
 			highlightMax: false
@@ -92,14 +93,14 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Overview</h3>
+	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">{i18n.t('compComp.overview')}</h3>
 
 	<div class="overflow-x-auto">
 		<table class="w-full text-sm">
 			<thead>
 				<tr class="border-b border-gray-200 dark:border-gray-700">
 					<th class="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400 min-w-[120px]">
-						Metric
+						{i18n.t('compComp.metric')}
 					</th>
 					{#each data as d}
 						<th class="text-right py-2 px-3 font-medium min-w-[100px]">

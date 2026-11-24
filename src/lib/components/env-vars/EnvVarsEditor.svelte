@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save, Plus, X, BookOpen } from 'lucide-svelte';
 	import KnownEnvVarPicker from './KnownEnvVarPicker.svelte';
 
@@ -71,18 +72,18 @@
 <div class="space-y-6">
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
 		<div class="flex items-center justify-between mb-1">
-			<h3 class="text-base font-semibold text-gray-900 dark:text-white">Environment Variables</h3>
+			<h3 class="text-base font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.envVarsTitle')}</h3>
 			<button
 				onclick={() => (showPicker = !showPicker)}
 				class="btn btn-ghost text-xs"
-				title="Browse known Claude Code env vars"
+				title={i18n.t('settingsComp.browseKnownEnvVarsTitle')}
 			>
 				<BookOpen class="w-4 h-4 mr-1" />
-				{showPicker ? 'Hide' : 'Browse'} Known Vars
+				{showPicker ? i18n.t('settingsComp.hideKnownVars') : i18n.t('settingsComp.browseKnownVars')}
 			</button>
 		</div>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Set environment variables that Claude Code will use at runtime
+			{i18n.t('settingsComp.envVarsDesc')}
 		</p>
 
 		{#if showPicker}
@@ -110,7 +111,7 @@
 							value={value}
 							oninput={(e) => updateValue(i, (e.target as HTMLInputElement).value)}
 							class="input text-sm font-mono flex-1"
-							placeholder="value"
+							placeholder={i18n.t('settingsComp.envValuePlaceholder')}
 						/>
 						<button
 							onclick={() => removeEntry(i)}
@@ -123,7 +124,7 @@
 			</div>
 		{:else}
 			<p class="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
-				No environment variables configured
+				{i18n.t('settingsComp.noEnvVars')}
 			</p>
 		{/if}
 
@@ -141,7 +142,7 @@
 			<input
 				type="text"
 				bind:value={newValue}
-				placeholder="value"
+				placeholder={i18n.t('settingsComp.envValuePlaceholder')}
 				class="input text-sm font-mono flex-1"
 				onkeydown={(e) => e.key === 'Enter' && addEntry()}
 			/>
@@ -155,7 +156,7 @@
 		</div>
 		{#if newKey.trim() !== '' && !isValidKey(newKey.trim())}
 			<p class="text-xs text-red-500 mt-1">
-				Key must start with a letter or underscore and contain only letters, digits, and underscores
+				{i18n.t('settingsComp.envKeyValidation')}
 			</p>
 		{/if}
 	</div>
@@ -163,7 +164,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Environment Variables
+			{i18n.t('settingsComp.saveEnvVars')}
 		</button>
 	</div>
 </div>

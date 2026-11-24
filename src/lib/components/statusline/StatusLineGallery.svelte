@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { statuslineLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import StatusLineGalleryCard from './StatusLineGalleryCard.svelte';
 	import type { StatusLineGalleryEntry } from '$lib/types';
 	import { RefreshCw, Package } from 'lucide-svelte';
@@ -36,20 +37,20 @@
 <div>
 	<div class="flex items-center justify-between mb-4">
 		<p class="text-sm text-gray-500 dark:text-gray-400">
-			Pre-made status lines you can install with one click
+			{i18n.t('statuslineComp.galleryDesc')}
 		</p>
 		<button onclick={refresh} class="btn btn-secondary text-sm" disabled={statuslineLibrary.isGalleryLoading}>
 			<RefreshCw class="w-4 h-4 mr-1.5 {statuslineLibrary.isGalleryLoading ? 'animate-spin' : ''}" />
-			Refresh
+			{i18n.t('common.refresh')}
 		</button>
 	</div>
 
 	{#if statuslineLibrary.gallery.length === 0}
 		<div class="text-center py-12">
 			<Package class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-			<p class="text-gray-500 dark:text-gray-400">No gallery entries available</p>
+			<p class="text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.galleryEmpty')}</p>
 			<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
-				Try refreshing or check your gallery URL in settings
+				{i18n.t('statuslineComp.galleryEmptyHint')}
 			</p>
 		</div>
 	{:else}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatCompactNumber } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		toolUsage: Record<string, number>;
@@ -45,11 +46,11 @@
 <div
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full"
 >
-	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Tool Usage</h3>
+	<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{i18n.t('sessionComp.toolUsage')}</h3>
 
 	{#if sortedTools.length === 0}
 		<div class="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-			No tool usage data
+			{i18n.t('sessionComp.noToolUsageData')}
 		</div>
 	{:else}
 		<svg viewBox="0 0 {chartWidth} {chartHeight}" class="w-full" preserveAspectRatio="xMidYMid meet">

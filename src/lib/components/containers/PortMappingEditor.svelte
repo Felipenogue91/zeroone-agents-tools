@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Plus, Trash2 } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 	import type { PortMapping } from '$lib/types';
 
 	let { ports = $bindable<PortMapping[]>([]) }: { ports: PortMapping[] } = $props();
@@ -15,27 +16,27 @@
 
 <div class="space-y-2">
 	<div class="flex items-center justify-between">
-		<label class="text-sm font-medium text-gray-700 dark:text-gray-300">Port Mappings</label>
+		<label class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('containerComp.portMappings')}</label>
 		<button type="button" onclick={addPort}
 			class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1">
-			<Plus class="w-3 h-3" aria-hidden="true" /> Add Port
+			<Plus class="w-3 h-3" aria-hidden="true" /> {i18n.t('containerComp.addPort')}
 		</button>
 	</div>
 	{#if ports.length > 0}
 		<div class="space-y-2">
 			<div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-				<span class="flex-1">Host Port</span>
+				<span class="flex-1">{i18n.t('containerComp.hostPort')}</span>
 				<span class="w-3"></span>
-				<span class="flex-1">Container Port</span>
+				<span class="flex-1">{i18n.t('containerComp.containerPort')}</span>
 				<span class="w-[4.5rem]"></span>
 				<span class="w-8"></span>
 			</div>
 			{#each ports as port, i}
 				<div class="flex items-center gap-2">
-					<input type="number" bind:value={port.hostPort} placeholder="e.g. 3000"
+					<input type="number" bind:value={port.hostPort} placeholder={i18n.t('containerComp.portPlaceholder')}
 						class="input flex-1 py-1.5" />
 					<span class="text-gray-400">:</span>
-					<input type="number" bind:value={port.containerPort} placeholder="e.g. 3000"
+					<input type="number" bind:value={port.containerPort} placeholder={i18n.t('containerComp.portPlaceholder')}
 						class="input flex-1 py-1.5" />
 					<select bind:value={port.protocol}
 						class="input w-auto py-1.5">

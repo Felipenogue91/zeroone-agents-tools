@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { SegmentType, StatusLineSegment } from '$lib/types';
 	import { SEGMENT_TYPES } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Plus, GitBranch, BarChart3, Monitor, SeparatorVertical, WrapText } from 'lucide-svelte';
 
 	type Props = {
@@ -18,32 +19,55 @@
 		types: SegmentType[];
 	}
 
-	const groups: SegmentGroup[] = [
+	const groups: SegmentGroup[] = $derived([
 		{
 			key: 'model',
-			label: 'Model & Session',
+			label: i18n.t('statuslineComp.groupModel'),
 			icon: Monitor,
 			types: ['model', 'version', 'session_id', 'agent_name', 'vim_mode']
 		},
 		{
 			key: 'usage',
-			label: 'Usage & Cost',
+			label: i18n.t('statuslineComp.groupUsage'),
 			icon: BarChart3,
 			types: ['cost', 'context', 'context_remaining', 'tokens_in', 'tokens_out', 'five_hour_usage', 'weekly_usage', 'duration', 'api_duration', 'lines_changed']
 		},
 		{
 			key: 'git',
-			label: 'Git & Workspace',
+			label: i18n.t('statuslineComp.groupGit'),
 			icon: GitBranch,
 			types: ['git_branch', 'git_status', 'cwd', 'project_dir']
 		},
 		{
 			key: 'other',
-			label: 'Custom',
+			label: i18n.t('statuslineComp.groupCustom'),
 			icon: Plus,
 			types: ['custom_text']
 		}
-	];
+	]);
+
+	const segmentInfo = $derived<Partial<Record<SegmentType, { label: string; description: string }>>>({
+		model: { label: i18n.t('statuslineComp.segModel'), description: i18n.t('statuslineComp.segDescModel') },
+		cost: { label: i18n.t('statuslineComp.segCost'), description: i18n.t('statuslineComp.segDescCost') },
+		context: { label: i18n.t('statuslineComp.segContext'), description: i18n.t('statuslineComp.segDescContext') },
+		context_remaining: { label: i18n.t('statuslineComp.segContextRemaining'), description: i18n.t('statuslineComp.segDescContextRemaining') },
+		cwd: { label: i18n.t('statuslineComp.segCwd'), description: i18n.t('statuslineComp.segDescCwd') },
+		project_dir: { label: i18n.t('statuslineComp.segProjectDir'), description: i18n.t('statuslineComp.segDescProjectDir') },
+		tokens_in: { label: i18n.t('statuslineComp.segTokensIn'), description: i18n.t('statuslineComp.segDescTokensIn') },
+		tokens_out: { label: i18n.t('statuslineComp.segTokensOut'), description: i18n.t('statuslineComp.segDescTokensOut') },
+		duration: { label: i18n.t('statuslineComp.segDuration'), description: i18n.t('statuslineComp.segDescDuration') },
+		api_duration: { label: i18n.t('statuslineComp.segApiDuration'), description: i18n.t('statuslineComp.segDescApiDuration') },
+		lines_changed: { label: i18n.t('statuslineComp.segLinesChanged'), description: i18n.t('statuslineComp.segDescLinesChanged') },
+		git_branch: { label: i18n.t('statuslineComp.segGitBranch'), description: i18n.t('statuslineComp.segDescGitBranch') },
+		git_status: { label: i18n.t('statuslineComp.segGitStatus'), description: i18n.t('statuslineComp.segDescGitStatus') },
+		session_id: { label: i18n.t('statuslineComp.segSessionId'), description: i18n.t('statuslineComp.segDescSessionId') },
+		version: { label: i18n.t('statuslineComp.segVersion'), description: i18n.t('statuslineComp.segDescVersion') },
+		agent_name: { label: i18n.t('statuslineComp.segAgentName'), description: i18n.t('statuslineComp.segDescAgentName') },
+		five_hour_usage: { label: i18n.t('statuslineComp.segFiveHourUsage'), description: i18n.t('statuslineComp.segDescFiveHourUsage') },
+		weekly_usage: { label: i18n.t('statuslineComp.segWeeklyUsage'), description: i18n.t('statuslineComp.segDescWeeklyUsage') },
+		vim_mode: { label: i18n.t('statuslineComp.segVimMode'), description: i18n.t('statuslineComp.segDescVimMode') },
+		custom_text: { label: i18n.t('statuslineComp.segCustomText'), description: i18n.t('statuslineComp.segDescCustomText') }
+	});
 
 	function addSegment(type: SegmentType) {
 		const meta = SEGMENT_TYPES.find((t) => t.type === type);
@@ -92,13 +116,14 @@
 				<div class="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 max-h-72 overflow-auto">
 					{#each group.types as type}
 						{@const meta = getSegmentMeta(type)}
+						{@const info = segmentInfo[type]}
 						{#if meta}
 							<button
 								onclick={() => addSegment(type)}
 								class="w-full flex flex-col px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 							>
-								<span class="text-sm font-medium text-gray-700 dark:text-gray-300">{meta.label}</span>
-								<span class="text-xs text-gray-400 dark:text-gray-500">{meta.description}</span>
+								<span class="text-sm font-medium text-gray-700 dark:text-gray-300">{info?.label || meta.label}</span>
+								<span class="text-xs text-gray-400 dark:text-gray-500">{info?.description || meta.description}</span>
 							</button>
 						{/if}
 					{/each}
@@ -110,18 +135,18 @@
 	<button
 		onclick={addSeparator}
 		class="btn btn-secondary text-xs px-2.5 py-1.5"
-		title="Add separator ( | )"
+		title={i18n.t('statuslineComp.addSeparatorTitle')}
 	>
 		<SeparatorVertical class="w-3.5 h-3.5 mr-1" />
-		Separator
+		{i18n.t('statuslineComp.separator')}
 	</button>
 
 	<button
 		onclick={() => addSegment('line_break')}
 		class="btn btn-secondary text-xs px-2.5 py-1.5"
-		title="Add line break (new line)"
+		title={i18n.t('statuslineComp.addLineBreakTitle')}
 	>
 		<WrapText class="w-3.5 h-3.5 mr-1" />
-		Line Break
+		{i18n.t('statuslineComp.lineBreak')}
 	</button>
 </div>

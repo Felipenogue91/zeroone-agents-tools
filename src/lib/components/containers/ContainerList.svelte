@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { Container } from '$lib/types';
 	import ContainerCard from './ContainerCard.svelte';
 	import { Package } from 'lucide-svelte';
@@ -19,10 +20,10 @@
 	<div class="text-center py-12">
 		<Package class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" aria-hidden="true" />
 		<h3 class="text-lg font-medium text-gray-500 dark:text-gray-400">
-			{containerLibrary.searchQuery ? 'No matching containers' : 'No containers yet'}
+			{containerLibrary.searchQuery ? i18n.t('containerComp.noMatching') : i18n.t('containerComp.noContainers')}
 		</h3>
 		<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
-			{containerLibrary.searchQuery ? 'Try a different search term' : 'Create a container or use a template to get started'}
+			{containerLibrary.searchQuery ? i18n.t('containerComp.tryDifferentSearch') : i18n.t('containerComp.createOrTemplateHint')}
 		</p>
 	</div>
 {:else}

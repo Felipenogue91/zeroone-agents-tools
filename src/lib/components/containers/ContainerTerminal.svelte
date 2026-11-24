@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
+	import { i18n } from '$lib/i18n';
 	import type { UnlistenFn } from '@tauri-apps/api/event';
 
 	type Props = {
@@ -72,7 +73,7 @@
 
 			// Listen for exit
 			unlistenExit = await listen(`terminal-exit-${sessionId}`, () => {
-				terminal?.write('\r\n\x1b[33mSession ended.\x1b[0m\r\n');
+				terminal?.write(`\r\n\x1b[33m${i18n.t('containerComp.sessionEnded')}\x1b[0m\r\n`);
 				execId = null;
 			});
 
@@ -128,7 +129,7 @@
 	{#if isConnecting}
 		<div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
 			<div class="animate-spin w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full"></div>
-			Connecting to container shell...
+			{i18n.t('containerComp.connectingShell')}
 		</div>
 	{/if}
 

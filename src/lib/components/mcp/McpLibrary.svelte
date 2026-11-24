@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Mcp } from '$lib/types';
 	import { mcpLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import McpCard from './McpCard.svelte';
 	import { SearchBar, LoadingSpinner, EmptyState } from '$lib/components/shared';
 	import { Plug, Globe, Server, Package } from 'lucide-svelte';
@@ -27,12 +28,12 @@
 		}
 	}
 
-	const typeFilters: { value: 'all' | 'stdio' | 'sse' | 'http'; label: string; icon: typeof Package }[] = [
-		{ value: 'all', label: 'All', icon: Package },
+	const typeFilters = $derived<{ value: 'all' | 'stdio' | 'sse' | 'http'; label: string; icon: typeof Package }[]>([
+		{ value: 'all', label: i18n.t('mcpComp.filterAll'), icon: Package },
 		{ value: 'stdio', label: 'stdio', icon: Plug },
 		{ value: 'sse', label: 'SSE', icon: Globe },
 		{ value: 'http', label: 'HTTP', icon: Server }
-	];
+	]);
 </script>
 
 <div class="space-y-4">
@@ -41,7 +42,7 @@
 		<div class="flex-1 max-w-sm">
 			<SearchBar
 				bind:value={mcpLibrary.searchQuery}
-				placeholder="Search MCPs..."
+				placeholder={i18n.t('mcpComp.searchPlaceholder')}
 			/>
 		</div>
 
@@ -69,9 +70,9 @@
 		<LoadingSpinner />
 	{:else if mcpLibrary.filteredMcps.length === 0}
 		{#if mcpLibrary.searchQuery || mcpLibrary.selectedType !== 'all'}
-			<EmptyState icon={Package} title="No matching MCPs" description="Try adjusting your search or filters" />
+			<EmptyState icon={Package} title={i18n.t('mcpComp.noMatching')} description={i18n.t('mcpComp.tryAdjusting')} />
 		{:else}
-			<EmptyState icon={Package} title="No MCPs in library" description="Add your first MCP to get started" />
+			<EmptyState icon={Package} title={i18n.t('mcpComp.noMcps')} description={i18n.t('mcpComp.addFirst')} />
 		{/if}
 	{:else}
 		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

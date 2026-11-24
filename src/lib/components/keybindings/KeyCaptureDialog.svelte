@@ -3,6 +3,7 @@
 	import { formatKeystroke, RESERVED_KEYS, TERMINAL_CONFLICT_KEYS } from '$lib/types';
 	import type { KeyConflict, KeybindingContext } from '$lib/types';
 	import { keybindingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { AlertTriangle, X, Keyboard } from 'lucide-svelte';
 
 	interface Props {
@@ -134,7 +135,7 @@
 		<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
 			<div class="flex items-center gap-2">
 				<Keyboard class="w-5 h-5 text-primary-500" />
-				<h3 class="font-semibold text-gray-900 dark:text-white">Capture Keybinding</h3>
+				<h3 class="font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.captureKeybinding')}</h3>
 			</div>
 			<button onclick={oncancel} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
 				<X class="w-5 h-5" />
@@ -145,8 +146,8 @@
 		<div class="p-5 space-y-4">
 			<!-- Action info -->
 			<div class="text-sm text-gray-500 dark:text-gray-400">
-				Setting keybinding for <span class="font-medium text-gray-900 dark:text-white">{actionLabel}</span>
-				in <span class="font-medium text-gray-900 dark:text-white">{context}</span> context
+				{i18n.t('settingsComp.settingKeybindingFor')} <span class="font-medium text-gray-900 dark:text-white">{actionLabel}</span>
+				{i18n.t('settingsComp.inContextPrefix')} <span class="font-medium text-gray-900 dark:text-white">{context}</span> {i18n.t('settingsComp.inContextSuffix')}
 			</div>
 
 			<!-- Capture area -->
@@ -163,14 +164,14 @@
 						</div>
 						{#if isWaitingForChord}
 							<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 animate-pulse">
-								Press next key for chord, or wait to confirm...
+								{i18n.t('settingsComp.pressNextKeyChord')}
 							</div>
 						{/if}
 					</div>
 				{:else}
 					<div class="text-center text-gray-400 dark:text-gray-500">
-						<p class="text-sm font-medium">Press a key combination...</p>
-						<p class="text-xs mt-1">Supports modifier keys and chords</p>
+						<p class="text-sm font-medium">{i18n.t('settingsComp.pressKeyCombo')}</p>
+						<p class="text-xs mt-1">{i18n.t('settingsComp.supportsModifiersChords')}</p>
 					</div>
 				{/if}
 			</div>
@@ -178,7 +179,7 @@
 			<!-- Current keys -->
 			{#if currentKeys.length > 0}
 				<div class="text-xs text-gray-500 dark:text-gray-400">
-					Currently bound:
+					{i18n.t('settingsComp.currentlyBound')}
 					{#each currentKeys as key}
 						<span class="inline-block px-1.5 py-0.5 mx-0.5 rounded bg-gray-100 dark:bg-gray-700 font-mono text-gray-600 dark:text-gray-300">
 							{formatKeystroke(key)}
@@ -192,7 +193,7 @@
 				<div class="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
 					<AlertTriangle class="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
 					<div class="text-sm text-red-700 dark:text-red-400">
-						<span class="font-medium">{formatKeystroke(capturedKey)}</span> is a reserved key and cannot be rebound.
+						<span class="font-medium">{formatKeystroke(capturedKey)}</span> {i18n.t('settingsComp.reservedKeyError')}
 					</div>
 				</div>
 			{/if}
@@ -201,7 +202,7 @@
 				<div class="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
 					<AlertTriangle class="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
 					<div class="text-sm text-yellow-700 dark:text-yellow-400">
-						<span class="font-medium">{formatKeystroke(capturedKey)}</span> conflicts with common terminal shortcuts. It may not work as expected in all terminals.
+						<span class="font-medium">{formatKeystroke(capturedKey)}</span> {i18n.t('settingsComp.terminalConflictWarn')}
 					</div>
 				</div>
 			{/if}
@@ -210,12 +211,12 @@
 				<div class="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
 					<AlertTriangle class="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
 					<div class="text-sm text-yellow-700 dark:text-yellow-400">
-						<p class="font-medium mb-1">Key conflict detected:</p>
+						<p class="font-medium mb-1">{i18n.t('settingsComp.keyConflictDetected')}</p>
 						{#each conflicts as conflict}
 							<p>
-								<span class="font-mono">{formatKeystroke(conflict.key)}</span> is already bound to
+								<span class="font-mono">{formatKeystroke(conflict.key)}</span> {i18n.t('settingsComp.alreadyBoundTo')}
 								<span class="font-medium">{conflict.existingActionLabel}</span>
-								in {conflict.context} context
+								{i18n.t('settingsComp.inContextPrefix')} {conflict.context} {i18n.t('settingsComp.inContextSuffix')}
 							</p>
 						{/each}
 					</div>
@@ -226,18 +227,18 @@
 		<!-- Footer -->
 		<div class="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
 			<button onclick={handleClear} class="btn btn-ghost text-sm" disabled={!capturedKey}>
-				Clear
+				{i18n.t('settingsComp.clear')}
 			</button>
 			<div class="flex items-center gap-2">
 				<button onclick={oncancel} class="btn btn-ghost text-sm">
-					Cancel
+					{i18n.t('common.cancel')}
 				</button>
 				<button
 					onclick={handleConfirm}
 					class="btn btn-primary text-sm"
 					disabled={!capturedKey || isReserved || isWaitingForChord}
 				>
-					Confirm
+					{i18n.t('common.confirm')}
 				</button>
 			</div>
 		</div>

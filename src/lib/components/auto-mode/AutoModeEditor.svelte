@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save } from 'lucide-svelte';
 
 	type Props = {
@@ -34,19 +35,19 @@
 
 <div class="space-y-6">
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Auto Mode</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.autoModeTitle')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Configure the <code class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">auto</code> permission mode — what it can do, what it should avoid, and where it runs
+			{i18n.t('settingsComp.autoModeDescPrefix')} <code class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">auto</code> {i18n.t('settingsComp.autoModeDescSuffix')}
 		</p>
 
 		<div class="space-y-4">
 			<div class="flex items-center justify-between">
 				<div>
 					<label for="disable-auto" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Disable Auto Mode
+						{i18n.t('settingsComp.disableAutoMode')}
 					</label>
 					<p class="text-xs text-gray-500 dark:text-gray-400">
-						Prevent use of the auto permission mode entirely
+						{i18n.t('settingsComp.disableAutoModeDesc')}
 					</p>
 				</div>
 				<label class="relative inline-flex items-center cursor-pointer">
@@ -68,48 +69,48 @@
 
 			<div class="border-t border-gray-200 dark:border-gray-700 pt-4">
 				<label for="auto-mode-env" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Environment
+					{i18n.t('settingsComp.autoModeEnv')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					Describe the trusted infrastructure this runs on (e.g., CI server, development machine, staging environment)
+					{i18n.t('settingsComp.autoModeEnvDesc')}
 				</p>
 				<textarea
 					id="auto-mode-env"
 					bind:value={environment}
 					rows={3}
-					placeholder="e.g., This is a CI server running in a Docker container with no access to production data"
+					placeholder={i18n.t('settingsComp.autoModeEnvPlaceholder')}
 					class="input w-full resize-y text-sm"
 				></textarea>
 			</div>
 
 			<div>
 				<label for="auto-mode-allow" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Allow
+					{i18n.t('settingsComp.autoModeAllow')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					Describe what actions auto mode should allow without prompting
+					{i18n.t('settingsComp.autoModeAllowDesc')}
 				</p>
 				<textarea
 					id="auto-mode-allow"
 					bind:value={allow}
 					rows={3}
-					placeholder="e.g., File reads, git operations, running tests, installing npm packages"
+					placeholder={i18n.t('settingsComp.autoModeAllowPlaceholder')}
 					class="input w-full resize-y text-sm"
 				></textarea>
 			</div>
 
 			<div>
 				<label for="auto-mode-soft-deny" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Soft Deny
+					{i18n.t('settingsComp.autoModeSoftDeny')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					Describe what actions auto mode should block (user can still override)
+					{i18n.t('settingsComp.autoModeSoftDenyDesc')}
 				</p>
 				<textarea
 					id="auto-mode-soft-deny"
 					bind:value={softDeny}
 					rows={3}
-					placeholder="e.g., Network access to production APIs, deleting files outside the project, modifying system configs"
+					placeholder={i18n.t('settingsComp.autoModeSoftDenyPlaceholder')}
 					class="input w-full resize-y text-sm"
 				></textarea>
 			</div>
@@ -119,7 +120,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Auto Mode Settings
+			{i18n.t('settingsComp.saveAutoMode')}
 		</button>
 	</div>
 </div>

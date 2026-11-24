@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { MemoryScope, AllMemoryFiles } from '$lib/types';
-	import { MEMORY_SCOPE_LABELS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { User, FolderOpen, FileText } from 'lucide-svelte';
 
 	type Props = {
@@ -11,6 +11,21 @@
 	};
 
 	let { selectedScope, memoryFiles, hasProject, onselect }: Props = $props();
+
+	const scopeLabels = $derived<Record<MemoryScope, { label: string; description: string }>>({
+		user: {
+			label: i18n.t('settingsWrapper.scopeUser'),
+			description: i18n.t('memoryComp.scopeUserDesc')
+		},
+		project: {
+			label: i18n.t('settingsWrapper.scopeProject'),
+			description: i18n.t('memoryComp.scopeProjectDesc')
+		},
+		local: {
+			label: i18n.t('settingsWrapper.scopeLocal'),
+			description: i18n.t('memoryComp.scopeLocalDesc')
+		}
+	});
 
 	const scopes: { key: MemoryScope; icon: typeof User }[] = [
 		{ key: 'user', icon: User },
@@ -45,15 +60,15 @@
 				: isDisabled
 					? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
 					: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-			title={MEMORY_SCOPE_LABELS[key].description}
+			title={scopeLabels[key].description}
 		>
 			<svelte:component this={icon} class="w-4 h-4" />
-			{MEMORY_SCOPE_LABELS[key].label}
+			{scopeLabels[key].label}
 			<span
 				class="w-2 h-2 rounded-full {exists
 					? 'bg-green-500'
 					: 'bg-gray-300 dark:bg-gray-500'}"
-				title={exists ? 'File exists' : 'File does not exist'}
+				title={exists ? i18n.t('memoryComp.fileExists') : i18n.t('memoryComp.fileNotExists')}
 			></span>
 		</button>
 	{/each}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { MemoryFileInfo } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Copy, Check } from 'lucide-svelte';
 
 	type Props = {
@@ -17,10 +18,10 @@
 		const diffHours = Math.floor(diffMins / 60);
 		const diffDays = Math.floor(diffHours / 24);
 
-		if (diffMins < 1) return 'just now';
-		if (diffMins < 60) return `${diffMins}m ago`;
-		if (diffHours < 24) return `${diffHours}h ago`;
-		if (diffDays < 30) return `${diffDays}d ago`;
+		if (diffMins < 1) return i18n.t('memoryComp.justNow');
+		if (diffMins < 60) return i18n.t('memoryComp.minsAgo', { count: diffMins });
+		if (diffHours < 24) return i18n.t('memoryComp.hoursAgo', { count: diffHours });
+		if (diffDays < 30) return i18n.t('memoryComp.daysAgo', { count: diffDays });
 		return date.toLocaleDateString();
 	}
 
@@ -48,7 +49,7 @@
 		<button
 			onclick={copyPath}
 			class="flex-shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-			title="Copy path"
+			title={i18n.t('memoryComp.copyPath')}
 		>
 			{#if copied}
 				<Check class="w-3.5 h-3.5 text-green-500" />
@@ -65,13 +66,13 @@
 			? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
 			: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}"
 	>
-		{file.exists ? 'Exists' : 'Not created'}
+		{file.exists ? i18n.t('memoryComp.exists') : i18n.t('memoryComp.notCreated')}
 	</span>
 
 	<!-- Last modified -->
 	{#if file.lastModified}
 		<span class="text-gray-400 dark:text-gray-500 text-xs">
-			Modified: {formatRelativeTime(file.lastModified)}
+			{i18n.t('memoryComp.modified', { time: formatRelativeTime(file.lastModified) })}
 		</span>
 	{/if}
 

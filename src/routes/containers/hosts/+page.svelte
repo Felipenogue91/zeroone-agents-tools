@@ -2,6 +2,7 @@
 	import { Header } from '$lib/components/layout';
 	import { DockerHostList, DockerHostForm } from '$lib/components/containers';
 	import { containerLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { CreateDockerHostRequest } from '$lib/types';
 	import { Plus } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -16,16 +17,16 @@
 		try {
 			await containerLibrary.createDockerHost(values);
 			showAddHost = false;
-			notifications.success('Docker host added');
+			notifications.success(i18n.t('containers.hostAdded'));
 		} catch (err) {
-			notifications.error(`Failed to add host: ${err}`);
+			notifications.error(i18n.t('containers.hostAddFailed', { err: String(err) }));
 		}
 	}
 </script>
 
 <Header
-	title="Docker Hosts"
-	subtitle="Manage Docker daemon connections (local and remote)"
+	title={i18n.t('containers.hostsTitle')}
+	subtitle={i18n.t('containers.hostsSubtitle')}
 />
 
 <div class="flex-1 overflow-auto p-6">
@@ -33,7 +34,7 @@
 		<button onclick={() => showAddHost = true}
 			class="btn btn-primary gap-2">
 			<Plus class="w-4 h-4" aria-hidden="true" />
-			Add Host
+			{i18n.t('containers.addHost')}
 		</button>
 	</div>
 
@@ -47,7 +48,7 @@
 		onclick={(e) => e.target === e.currentTarget && (showAddHost = false)}>
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4">
 			<div class="p-6">
-				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Add Docker Host</h2>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">{i18n.t('containers.addDockerHost')}</h2>
 				<DockerHostForm onSubmit={handleCreate} onCancel={() => showAddHost = false} />
 			</div>
 		</div>

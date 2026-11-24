@@ -6,7 +6,7 @@
 	import { SETTINGS_CATEGORIES } from '$lib/components/settings';
 	import { onboarding } from '$lib/stores/onboarding.svelte';
 	import type { Component } from 'svelte';
-	import { i18n } from '$lib/i18n';
+	import { i18n, type TranslationKey } from '$lib/i18n';
 
 	onMount(() => {
 		onboarding.completeStep('explore-settings');
@@ -44,25 +44,25 @@
 		}
 	}
 
-	const TAB_SUBTITLES: Record<string, string> = {
-		'models': 'Configure model defaults, output behavior, and git attribution',
-		'security': 'Configure bash command isolation, network access, and security settings',
-		'plugins': 'Manage enabled plugins and custom marketplace sources',
-		'environment': 'Configure environment variables for Claude Code runtime',
-		'interface': 'Control visual and interaction preferences for Claude Code',
-		'files': 'Configure custom @ file autocomplete suggestions',
-		'session': 'Configure session cleanup, update channels, and plans directory',
-		'auto-mode': 'Configure auto permission mode behavior and trust boundaries',
-		'authentication': 'Configure scripts that provide authentication credentials and API keys',
-		'agent-teams': 'Configure team members, models, and display mode for agent teams',
-		'mcp-approval': 'Control which project-level MCP servers are automatically approved',
-		'keybindings': 'Customize keyboard shortcuts for Claude Code',
-		'spinner-verbs': 'Customize the action verbs shown in Claude Code\'s spinner',
-		'admin': 'View enterprise managed settings deployed by your IT administrator',
-		'cli': 'CLI startup flags reference and scheduling commands',
-		'cloud-sync': 'Sync your Claude Code config across machines via GitHub',
-		'editor-sync': 'Configure editors, servers, tokens, paths, and backups',
-		'containers': 'Configure Claude Code integration for dev containers'
+	const TAB_SUBTITLE_KEYS: Record<string, TranslationKey> = {
+		'models': 'settings.tab.models',
+		'security': 'settings.tab.security',
+		'plugins': 'settings.tab.plugins',
+		'environment': 'settings.tab.env',
+		'interface': 'settings.tab.preferences',
+		'files': 'settings.tab.mentions',
+		'session': 'settings.tab.advanced',
+		'auto-mode': 'settings.tab.autoMode',
+		'authentication': 'settings.tab.credentials',
+		'agent-teams': 'settings.tab.agentTeams',
+		'mcp-approval': 'settings.tab.approvedMcps',
+		'keybindings': 'settings.tab.keybindings',
+		'spinner-verbs': 'settings.tab.spinnerVerbs',
+		'admin': 'settings.tab.managed',
+		'cli': 'settings.tab.cli',
+		'cloud-sync': 'settings.tab.cloudSync',
+		'editor-sync': 'settings.tab.system',
+		'containers': 'settings.tab.containers'
 	};
 
 	// Lazy-load tab components — only the active tab's code is fetched
@@ -92,7 +92,7 @@
 
 <Header
 	title={i18n.t('page.settings.title')}
-	subtitle={TAB_SUBTITLES[activeTab] ?? i18n.t('page.settings.subtitle')}
+	subtitle={TAB_SUBTITLE_KEYS[activeTab] ? i18n.t(TAB_SUBTITLE_KEYS[activeTab]) : i18n.t('page.settings.subtitle')}
 />
 
 <div class="flex-1 overflow-hidden flex">
@@ -119,7 +119,7 @@
 								: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'}"
 					>
 						<category.icon class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-						{category.label}
+						{i18n.t(category.labelKey)}
 					</button>
 				{/each}
 			</div>
@@ -146,7 +146,7 @@
 								: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'}"
 					>
 						<category.icon class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-						{category.label}
+						{i18n.t(category.labelKey)}
 					</button>
 				{/each}
 			</div>

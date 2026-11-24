@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onboarding } from '$lib/stores/onboarding.svelte';
+	import { i18n } from '$lib/i18n';
 	import { FolderOpen, Plug, X, Check, Settings, ChevronRight } from 'lucide-svelte';
 	import type { OnboardingStep } from '$lib/stores/onboarding.svelte';
 
@@ -25,36 +26,36 @@
 		icon: any;
 	}
 
-	const steps: Step[] = [
+	const steps: Step[] = $derived([
 		{
 			id: 'add-project',
-			label: 'Add a project',
-			description: 'Point to a folder where you use Claude Code',
+			label: i18n.t('welcome.stepAddProject'),
+			description: i18n.t('welcome.stepAddProjectDesc'),
 			href: '/projects',
 			icon: FolderOpen
 		},
 		{
 			id: 'add-mcp',
-			label: 'Add an MCP server',
-			description: 'Create or import an MCP to your library',
+			label: i18n.t('welcome.stepAddMcp'),
+			description: i18n.t('welcome.stepAddMcpDesc'),
 			href: '/library',
 			icon: Plug
 		},
 		{
 			id: 'assign-mcp',
-			label: 'Enable a global MCP',
-			description: 'Turn on an MCP across all projects',
+			label: i18n.t('welcome.stepGlobalMcp'),
+			description: i18n.t('welcome.stepGlobalMcpDesc'),
 			href: '/library',
 			icon: Check
 		},
 		{
 			id: 'explore-settings',
-			label: 'Explore settings',
-			description: 'Configure themes, keybindings, and more',
+			label: i18n.t('welcome.stepSettings'),
+			description: i18n.t('welcome.stepSettingsDesc'),
 			href: '/settings',
 			icon: Settings
 		}
-	];
+	]);
 
 	function isStepComplete(stepId: OnboardingStep): boolean {
 		return onboarding.completedSteps.includes(stepId);
@@ -75,7 +76,7 @@
 		<button
 			onclick={handleDismiss}
 			class="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-white/60 dark:hover:bg-gray-700/60 transition-colors"
-			aria-label="Dismiss getting started guide"
+			aria-label={i18n.t('welcome.dismissLabel')}
 		>
 			<X class="w-4 h-4" />
 		</button>
@@ -84,20 +85,20 @@
 			<img src="/brand/zeroone-horizontal-fundo-claro.svg" alt="ZeroOne" class="h-6 w-auto mb-3 dark:hidden select-none" draggable="false" />
 			<img src="/brand/zeroone-horizontal-fundo-escuro.svg" alt="ZeroOne" class="h-6 w-auto mb-3 hidden dark:block select-none" draggable="false" />
 			{#if onboarding.isFirstRun}
-				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">Welcome to ZeroOne Agents Tools</p>
+				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">{i18n.t('welcome.firstRunEyebrow')}</p>
 				<h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-					Manage your AI coding agents visually
+					{i18n.t('welcome.firstRunTitle')}
 				</h2>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">
-					Add your project folders, configure MCP servers, and keep everything in sync — no more editing JSON by hand.
+					{i18n.t('welcome.firstRunDesc')}
 				</p>
 			{:else}
-				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">Getting started</p>
+				<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mb-1">{i18n.t('welcome.gettingStarted')}</p>
 				<h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-					Finish setting up
+					{i18n.t('welcome.finishSetup')}
 				</h2>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1.5">
-					Complete these steps to get the most out of ZeroOne Agents Tools.
+					{i18n.t('welcome.finishSetupDesc')}
 				</p>
 			{/if}
 		</div>
@@ -110,7 +111,7 @@
 				aria-valuenow={onboarding.completedSteps.length}
 				aria-valuemin={0}
 				aria-valuemax={steps.length}
-				aria-label="Setup progress"
+				aria-label={i18n.t('welcome.progressLabel')}
 			>
 				<div
 					class="h-full bg-primary-500 rounded-full transition-all duration-500 ease-out"

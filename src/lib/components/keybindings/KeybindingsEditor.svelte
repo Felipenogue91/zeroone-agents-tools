@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { keybindingsLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import {
 		KEYBINDING_CONTEXTS,
 		formatKeystroke
@@ -85,9 +86,9 @@
 	async function handleSave() {
 		try {
 			await keybindingsLibrary.save();
-			notifications.success('Keybindings saved to ~/.claude/keybindings.json');
+			notifications.success(i18n.t('settingsComp.keybindingsSaved'));
 		} catch {
-			notifications.error('Failed to save keybindings');
+			notifications.error(i18n.t('settingsComp.keybindingsSaveFailed'));
 		}
 	}
 
@@ -110,7 +111,7 @@
 			<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
 			<input
 				type="text"
-				placeholder="Search actions, keys..."
+				placeholder={i18n.t('settingsComp.searchKeybindingsPlaceholder')}
 				bind:value={keybindingsLibrary.searchQuery}
 				class="input text-sm pl-9 w-full"
 			/>
@@ -120,33 +121,33 @@
 		<div class="flex items-center gap-2">
 			{#if keybindingsLibrary.overrideCount > 0}
 				<span class="px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300">
-					{keybindingsLibrary.overrideCount} override{keybindingsLibrary.overrideCount !== 1 ? 's' : ''}
+					{i18n.t(keybindingsLibrary.overrideCount === 1 ? 'settingsComp.overrideCount' : 'settingsComp.overrideCountPlural', { count: keybindingsLibrary.overrideCount })}
 				</span>
 			{/if}
 
 			<button
 				onclick={() => keybindingsLibrary.expandAll()}
 				class="btn btn-ghost text-xs"
-				title="Expand all"
+				title={i18n.t('settingsComp.expandAllTitle')}
 			>
-				Expand All
+				{i18n.t('settingsComp.expandAll')}
 			</button>
 			<button
 				onclick={() => keybindingsLibrary.collapseAll()}
 				class="btn btn-ghost text-xs"
-				title="Collapse all"
+				title={i18n.t('settingsComp.collapseAllTitle')}
 			>
-				Collapse All
+				{i18n.t('settingsComp.collapseAll')}
 			</button>
 
 			{#if keybindingsLibrary.overrideCount > 0}
 				<button
 					onclick={resetAll}
 					class="btn btn-ghost text-xs text-red-500 hover:text-red-700"
-					title="Reset all overrides"
+					title={i18n.t('settingsComp.resetAllTitle')}
 				>
 					<RotateCcw class="w-3.5 h-3.5 mr-1" />
-					Reset All
+					{i18n.t('settingsComp.resetAll')}
 				</button>
 			{/if}
 		</div>
@@ -182,9 +183,9 @@
 						<button
 							onclick={(e) => { e.stopPropagation(); resetContext(ctxInfo.context); }}
 							class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
-							title="Reset context overrides"
+							title={i18n.t('settingsComp.resetContextTitle')}
 						>
-							Reset
+							{i18n.t('settingsComp.reset')}
 						</button>
 					{/if}
 				</button>
@@ -205,7 +206,7 @@
 											{binding.label}
 										</span>
 										{#if hasModification}
-											<span class="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" title="Modified"></span>
+											<span class="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" title={i18n.t('settingsComp.modified')}></span>
 										{/if}
 									</div>
 									<div class="text-xs text-gray-400 dark:text-gray-500 truncate">
@@ -223,7 +224,7 @@
 													{isUnbound
 													? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 line-through'
 													: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}"
-												title={isUnbound ? 'Unbound (default was ' + formatKeystroke(key) + ')' : 'Default: ' + formatKeystroke(key)}
+												title={isUnbound ? i18n.t('settingsComp.unboundDefaultTitle', { key: formatKeystroke(key) }) : i18n.t('settingsComp.defaultKeyTitle', { key: formatKeystroke(key) })}
 											>
 												{formatKeystroke(key)}
 											</span>
@@ -236,13 +237,13 @@
 									{#each binding.addedKeys as key}
 										<span
 											class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300"
-											title="Custom binding"
+											title={i18n.t('settingsComp.customBindingTitle')}
 										>
 											{formatKeystroke(key)}
 											<button
 												onclick={() => removeKeyFromAction(binding.context, key, binding)}
 												class="hover:text-red-500"
-												title="Remove this binding"
+												title={i18n.t('settingsComp.removeBindingTitle')}
 											>
 												<X class="w-3 h-3" />
 											</button>
@@ -255,7 +256,7 @@
 									<button
 										onclick={() => openCapture(binding)}
 										class="p-1 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"
-										title="Add keybinding"
+										title={i18n.t('settingsComp.addKeybindingTitle')}
 									>
 										<Plus class="w-4 h-4" />
 									</button>
@@ -263,7 +264,7 @@
 										<button
 											onclick={() => resetBinding(binding)}
 											class="p-1 rounded text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-											title="Reset to default"
+											title={i18n.t('settingsComp.resetToDefaultTitle')}
 										>
 											<Undo2 class="w-4 h-4" />
 										</button>
@@ -281,7 +282,7 @@
 	<div class="flex justify-end pt-2">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Keybindings
+			{i18n.t('settingsComp.saveKeybindings')}
 		</button>
 	</div>
 </div>

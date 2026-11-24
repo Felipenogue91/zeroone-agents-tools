@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DailyCost } from '$lib/stores/usageStore.svelte';
 	import { getModelColor, formatModelName, formatCost } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		data: DailyCost[];
@@ -64,7 +65,11 @@
 		tooltip = {
 			x: e.clientX - rect.left,
 			y: e.clientY - rect.top - 10,
-			label: `${formatDateLabel(entry.date)} — ${parts} (Total: ${formatCost(entry.total)})`
+			label: i18n.t('analyticsComp.costTooltip', {
+				date: formatDateLabel(entry.date),
+				parts,
+				total: formatCost(entry.total)
+			})
 		};
 	}
 
@@ -77,7 +82,7 @@
 	class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
 >
 	<div class="flex items-center justify-between mb-4">
-		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daily Cost</h3>
+		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{i18n.t('analyticsComp.dailyCost')}</h3>
 		<!-- Legend -->
 		<div class="flex flex-wrap gap-3">
 			{#each models as m}
@@ -91,7 +96,7 @@
 
 	{#if data.length === 0}
 		<div class="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-			No cost data available
+			{i18n.t('analyticsComp.noCostData')}
 		</div>
 	{:else}
 		<div class="relative">

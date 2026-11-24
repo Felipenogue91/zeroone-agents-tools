@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Container, CreateContainerRequest, PortMapping, VolumeMapping, ContainerType } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import PortMappingEditor from './PortMappingEditor.svelte';
 	import VolumeMappingEditor from './VolumeMappingEditor.svelte';
 
@@ -65,35 +66,35 @@
 <form onsubmit={handleSubmit} class="space-y-4">
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.nameRequired')}</label>
 			<input type="text" bind:value={name} required
 				class="input" />
 		</div>
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.type')}</label>
 			<select bind:value={containerType}
 				class="input">
-				<option value="docker">Docker</option>
-				<option value="devcontainer">Dev Container</option>
-				<option value="custom">Custom</option>
+				<option value="docker">{i18n.t('containerComp.typeDocker')}</option>
+				<option value="devcontainer">{i18n.t('containerComp.typeDevContainer')}</option>
+				<option value="custom">{i18n.t('containerComp.typeCustom')}</option>
 			</select>
 		</div>
 	</div>
 
 	<div>
-		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('common.description')}</label>
 		<input type="text" bind:value={description}
 			class="input" />
 	</div>
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image</label>
-			<input type="text" bind:value={image} placeholder="e.g. node:20-bookworm"
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.image')}</label>
+			<input type="text" bind:value={image} placeholder={i18n.t('containerComp.imagePlaceholder')}
 				class="input" />
 		</div>
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Working Directory</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.workingDirectory')}</label>
 			<input type="text" bind:value={workingDir}
 				class="input" />
 		</div>
@@ -117,19 +118,19 @@
 	<VolumeMappingEditor bind:volumes />
 
 	<div>
-		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Environment Variables</label>
-		<textarea bind:value={envText} rows={3} placeholder="KEY=value (one per line)"
+		<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containers.envVars')}</label>
+		<textarea bind:value={envText} rows={3} placeholder={i18n.t('containerComp.envPlaceholder')}
 			class="input font-mono"></textarea>
 	</div>
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Post Create Command</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.postCreateCommand')}</label>
 			<input type="text" bind:value={postCreateCommand}
 				class="input" />
 		</div>
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Post Start Command</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.postStartCommand')}</label>
 			<input type="text" bind:value={postStartCommand}
 				class="input" />
 		</div>
@@ -137,12 +138,12 @@
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon (emoji)</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('containerComp.iconEmoji')}</label>
 			<input type="text" bind:value={icon} placeholder="📦"
 				class="input" />
 		</div>
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('common.tags')}</label>
 			<input type="text" bind:value={tagsText} placeholder="node, web, dev"
 				class="input" />
 		</div>
@@ -151,14 +152,14 @@
 	<div class="flex justify-end gap-3 pt-2">
 		<button type="button" onclick={onCancel}
 			class="btn btn-secondary">
-			Cancel
+			{i18n.t('common.cancel')}
 		</button>
 		<button type="submit" disabled={!name || submitting}
 			class="btn btn-primary">
 			{#if submitting}
-				Saving...
+				{i18n.t('containerComp.saving')}
 			{:else}
-				{container ? 'Update' : 'Create'} Container
+				{container ? i18n.t('containerComp.updateContainer') : i18n.t('containers.createContainer')}
 			{/if}
 		</button>
 	</div>

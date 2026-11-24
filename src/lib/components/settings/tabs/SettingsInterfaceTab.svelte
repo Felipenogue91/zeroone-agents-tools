@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { UITogglesEditor } from '$lib/components/ui-toggles';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -27,7 +28,7 @@
 	{#snippet children({ settings, save })}
 		<UITogglesEditor
 			{settings}
-			onsave={(s) => save(s, 'UI toggle settings saved', 'Failed to save UI toggle settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.uiSaved'), i18n.t('settingsComp.uiSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

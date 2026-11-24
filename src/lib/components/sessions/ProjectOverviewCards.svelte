@@ -3,6 +3,7 @@
 	import { projectTotalTokens } from '$lib/types/session';
 	import { formatCompactNumber, estimateSessionCost, formatCost } from '$lib/types/usage';
 	import { FolderOpen, Hash, MessageSquare, Cpu, DollarSign } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		projects: ProjectSummary[];
@@ -32,33 +33,33 @@
 
 	const cards = $derived([
 		{
-			label: 'Projects',
+			label: i18n.t('sessionComp.projects'),
 			value: projects.length.toString(),
 			icon: FolderOpen,
 			color: 'bg-blue-500'
 		},
 		{
-			label: 'Total Sessions',
+			label: i18n.t('sessionComp.totalSessions'),
 			value: formatCompactNumber(totalSessions),
 			icon: Hash,
 			color: 'bg-purple-500'
 		},
 		{
-			label: 'Total Tokens',
+			label: i18n.t('sessionComp.totalTokens'),
 			value: formatCompactNumber(totalTokensAll),
 			icon: MessageSquare,
 			color: 'bg-amber-500'
 		},
 		{
-			label: 'Models Used',
+			label: i18n.t('sessionComp.modelsUsed'),
 			value: totalModels.toString(),
 			icon: Cpu,
 			color: 'bg-green-500'
 		},
 		{
-			label: 'Est. API Cost',
+			label: i18n.t('sessionComp.estApiCost'),
 			value: formatCost(totalEstCost),
-			subtitle: 'if billed at API rates',
+			subtitle: i18n.t('sessionComp.ifBilledAtApiRates'),
 			icon: DollarSign,
 			color: 'bg-emerald-500'
 		}

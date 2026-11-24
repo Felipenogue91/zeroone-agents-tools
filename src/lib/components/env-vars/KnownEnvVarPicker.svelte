@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { KNOWN_ENV_VARS, ENV_VAR_CATEGORIES } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Plus, Search } from 'lucide-svelte';
 
 	type Props = {
@@ -25,7 +26,7 @@
 </script>
 
 <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-	<h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Known Environment Variables</h4>
+	<h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{i18n.t('settingsComp.knownEnvVarsTitle')}</h4>
 
 	<div class="flex flex-wrap gap-2 mb-3">
 		<div class="relative flex-1 min-w-[200px]">
@@ -33,7 +34,7 @@
 			<input
 				type="text"
 				bind:value={searchQuery}
-				placeholder="Search variables..."
+				placeholder={i18n.t('settingsComp.searchVariablesPlaceholder')}
 				class="input text-sm pl-8 w-full"
 			/>
 		</div>
@@ -41,7 +42,7 @@
 			bind:value={selectedCategory}
 			class="input text-sm"
 		>
-			<option value="">All categories</option>
+			<option value="">{i18n.t('settingsComp.allCategories')}</option>
 			{#each ENV_VAR_CATEGORIES as category}
 				<option value={category}>{category}</option>
 			{/each}
@@ -66,14 +67,14 @@
 					disabled={isExisting}
 					class="btn btn-ghost text-xs ml-2 shrink-0"
 					class:opacity-50={isExisting}
-					title={isExisting ? 'Already added' : `Add ${envVar.key}`}
+					title={isExisting ? i18n.t('settingsComp.alreadyAdded') : i18n.t('settingsComp.addKey', { key: envVar.key })}
 				>
 					<Plus class="w-3.5 h-3.5" />
 				</button>
 			</div>
 		{/each}
 		{#if filteredVars().length === 0}
-			<p class="text-xs text-gray-400 dark:text-gray-500 italic text-center py-4">No matching variables found</p>
+			<p class="text-xs text-gray-400 dark:text-gray-500 italic text-center py-4">{i18n.t('settingsComp.noMatchingVars')}</p>
 		{/if}
 	</div>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { StatusLine } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { PanelBottom, Play, Edit, Trash2, MoreVertical, X, ExternalLink } from 'lucide-svelte';
 
 	type Props = {
@@ -20,11 +21,11 @@
 		raw: 'bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-400'
 	};
 
-	const typeLabel: Record<string, string> = {
-		custom: 'Custom',
-		premade: 'Premade',
-		raw: 'Raw'
-	};
+	const typeLabel = $derived<Record<string, string>>({
+		custom: i18n.t('statuslineComp.typeCustom'),
+		premade: i18n.t('statuslineComp.typePremade'),
+		raw: i18n.t('statuslineComp.typeRaw')
+	});
 </script>
 
 <div
@@ -52,7 +53,7 @@
 						</span>
 						{#if statusline.isActive}
 							<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400">
-								Active
+								{i18n.t('statuslineComp.active')}
 							</span>
 						{/if}
 					</div>
@@ -63,7 +64,7 @@
 					{/if}
 					{#if statusline.author}
 						<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-							by {statusline.author}
+							{i18n.t('statuslineComp.byAuthor', { author: statusline.author })}
 						</p>
 					{/if}
 				</div>
@@ -87,7 +88,7 @@
 							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						>
 							<Edit class="w-4 h-4" />
-							Edit
+							{i18n.t('common.edit')}
 						</button>
 						{#if statusline.homepageUrl}
 							<a
@@ -98,7 +99,7 @@
 								onclick={() => (showMenu = false)}
 							>
 								<ExternalLink class="w-4 h-4" />
-								Homepage
+								{i18n.t('statuslineComp.homepage')}
 							</a>
 						{/if}
 						<hr class="my-1 border-gray-200 dark:border-gray-700" />
@@ -107,7 +108,7 @@
 							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
 						>
 							<Trash2 class="w-4 h-4" />
-							Delete
+							{i18n.t('common.delete')}
 						</button>
 					</div>
 				{/if}
@@ -121,7 +122,7 @@
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 				>
 					<X class="w-3.5 h-3.5" />
-					Deactivate
+					{i18n.t('statuslineComp.deactivate')}
 				</button>
 			{:else}
 				<button
@@ -129,7 +130,7 @@
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
 				>
 					<Play class="w-3.5 h-3.5" />
-					Activate
+					{i18n.t('statuslineComp.activate')}
 				</button>
 			{/if}
 		</div>

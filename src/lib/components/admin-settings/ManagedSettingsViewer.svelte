@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ManagedSettingsInfo, ClaudeSettings } from '$lib/types';
 	import { MANAGED_SETTINGS_FIELDS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Lock, CheckCircle, XCircle, FileWarning, Shield } from 'lucide-svelte';
 
 	type Props = {
@@ -10,26 +11,26 @@
 	let { info }: Props = $props();
 
 	// Standard (non-managed-only) fields to display when set
-	const STANDARD_FIELDS: { key: keyof ClaudeSettings; label: string }[] = [
-		{ key: 'model', label: 'Model' },
-		{ key: 'availableModels', label: 'Available Models' },
-		{ key: 'outputStyle', label: 'Output Style' },
-		{ key: 'language', label: 'Language' },
-		{ key: 'alwaysThinkingEnabled', label: 'Always Thinking Enabled' },
-		{ key: 'sandbox', label: 'Sandbox' },
-		{ key: 'enabledPlugins', label: 'Enabled Plugins' },
-		{ key: 'extraKnownMarketplaces', label: 'Extra Known Marketplaces' },
-		{ key: 'env', label: 'Environment Variables' },
-		{ key: 'showTurnDuration', label: 'Show Turn Duration' },
-		{ key: 'spinnerTipsEnabled', label: 'Spinner Tips Enabled' },
-		{ key: 'terminalProgressBarEnabled', label: 'Terminal Progress Bar' },
-		{ key: 'prefersReducedMotion', label: 'Prefers Reduced Motion' },
-		{ key: 'respectGitignore', label: 'Respect .gitignore' },
-		{ key: 'cleanupPeriodDays', label: 'Cleanup Period (days)' },
-		{ key: 'autoUpdatesChannel', label: 'Auto-Updates Channel' },
-		{ key: 'teammateMode', label: 'Teammate Mode' },
-		{ key: 'enableAllProjectMcpServers', label: 'Enable All Project MCP Servers' }
-	];
+	const STANDARD_FIELDS = $derived<{ key: keyof ClaudeSettings; label: string }[]>([
+		{ key: 'model', label: i18n.t('subagentForm.model') },
+		{ key: 'availableModels', label: i18n.t('settingsComp.availableModels') },
+		{ key: 'outputStyle', label: i18n.t('settingsComp.outputStyle') },
+		{ key: 'language', label: i18n.t('settingsComp.language') },
+		{ key: 'alwaysThinkingEnabled', label: i18n.t('settingsComp.alwaysThinkingEnabled') },
+		{ key: 'sandbox', label: i18n.t('settingsComp.sandbox') },
+		{ key: 'enabledPlugins', label: i18n.t('settingsComp.enabledPlugins') },
+		{ key: 'extraKnownMarketplaces', label: i18n.t('settingsComp.extraKnownMarketplaces') },
+		{ key: 'env', label: i18n.t('settingsComp.envVarsTitle') },
+		{ key: 'showTurnDuration', label: i18n.t('settingsComp.showTurnDuration') },
+		{ key: 'spinnerTipsEnabled', label: i18n.t('settingsComp.spinnerTipsEnabled') },
+		{ key: 'terminalProgressBarEnabled', label: i18n.t('settingsComp.terminalProgressBar') },
+		{ key: 'prefersReducedMotion', label: i18n.t('settingsComp.prefersReducedMotion') },
+		{ key: 'respectGitignore', label: i18n.t('settingsComp.respectGitignore') },
+		{ key: 'cleanupPeriodDays', label: i18n.t('settingsComp.cleanupPeriodDays') },
+		{ key: 'autoUpdatesChannel', label: i18n.t('settingsComp.autoUpdatesChannelHyphen') },
+		{ key: 'teammateMode', label: i18n.t('settingsComp.teammateMode') },
+		{ key: 'enableAllProjectMcpServers', label: i18n.t('settingsComp.enableAllProjectMcps') }
+	]);
 
 	function hasValue(val: unknown): boolean {
 		if (val === undefined || val === null) return false;
@@ -39,7 +40,7 @@
 	}
 
 	function formatValue(val: unknown): string {
-		if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+		if (typeof val === 'boolean') return val ? i18n.t('settingsComp.yes') : i18n.t('settingsComp.no');
 		if (typeof val === 'number') return String(val);
 		if (typeof val === 'string') return val;
 		if (typeof val === 'object') return JSON.stringify(val, null, 2);
@@ -60,7 +61,7 @@
 	<div class="flex items-center gap-3">
 		<Shield class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
 		<div class="flex-1 min-w-0">
-			<h3 class="text-sm font-semibold text-gray-900 dark:text-white">Managed Settings File</h3>
+			<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{i18n.t('settingsComp.managedSettingsFile')}</h3>
 			<p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate mt-0.5">
 				{info.filePath}
 			</p>
@@ -70,14 +71,14 @@
 				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
 			>
 				<CheckCircle class="w-3.5 h-3.5" />
-				Found
+				{i18n.t('settingsComp.found')}
 			</span>
 		{:else}
 			<span
 				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600"
 			>
 				<XCircle class="w-3.5 h-3.5" />
-				Not Found
+				{i18n.t('settingsComp.notFound')}
 			</span>
 		{/if}
 	</div>
@@ -90,14 +91,13 @@
 	>
 		<FileWarning class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
 		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-			No Managed Settings Found
+			{i18n.t('settingsComp.noManagedSettingsTitle')}
 		</h3>
 		<p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-			Managed settings are deployed by IT administrators to enforce organization-wide
-			policies. They are read-only and cannot be modified by users.
+			{i18n.t('settingsComp.noManagedSettingsDesc')}
 		</p>
 		<p class="text-xs text-gray-400 dark:text-gray-500 mt-3">
-			Expected location: <code class="font-mono">{info.filePath}</code>
+			{i18n.t('settingsComp.expectedLocation')} <code class="font-mono">{info.filePath}</code>
 		</p>
 	</div>
 {:else if info.settings}
@@ -112,11 +112,11 @@
 			<div class="flex items-center gap-2 mb-4">
 				<Lock class="w-4 h-4 text-amber-500" />
 				<h3 class="text-base font-semibold text-gray-900 dark:text-white">
-					Managed-Only Policies
+					{i18n.t('settingsComp.managedOnlyPolicies')}
 				</h3>
 			</div>
 			<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-				These fields can only be set via the managed settings file. They enforce enterprise policies and cannot be overridden.
+				{i18n.t('settingsComp.managedOnlyPoliciesDesc')}
 			</p>
 
 			<div class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -133,7 +133,7 @@
 									<span
 										class="text-xs text-gray-400 dark:text-gray-500 italic"
 									>
-										Not set
+										{i18n.t('settingsComp.notSet')}
 									</span>
 								{/if}
 							</div>
@@ -147,7 +147,7 @@
 											class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
 												{val ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}"
 										>
-											{val ? 'Yes' : 'No'}
+											{val ? i18n.t('settingsComp.yes') : i18n.t('settingsComp.no')}
 										</span>
 									{:else if field.type === 'stringArray' && Array.isArray(val)}
 										<div class="flex flex-wrap gap-1.5">
@@ -180,10 +180,10 @@
 				class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5"
 			>
 				<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">
-					Managed Standard Settings
+					{i18n.t('settingsComp.managedStandardSettings')}
 				</h3>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-					These regular settings are being enforced through the managed configuration file.
+					{i18n.t('settingsComp.managedStandardSettingsDesc')}
 				</p>
 
 				<div class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -201,7 +201,7 @@
 										class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
 											{val ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}"
 									>
-										{val ? 'Yes' : 'No'}
+										{val ? i18n.t('settingsComp.yes') : i18n.t('settingsComp.no')}
 									</span>
 								{:else if Array.isArray(val)}
 									<div class="flex flex-wrap gap-1.5">

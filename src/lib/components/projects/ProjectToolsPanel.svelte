@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Project, Mcp, Skill, SubAgent, Command, Hook, ProjectSkill, ProjectSubAgent, ProjectCommand, ProjectHook } from '$lib/types';
 	import { mcpLibrary, projectsStore, notifications, skillLibrary, subagentLibrary, commandLibrary, hookLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { Plus, Minus, Plug, Globe, Server, Radio, Sparkles, Bot, Terminal, Search, Zap, SquareCheck, Square, Power, PowerOff, Trash2 } from 'lucide-svelte';
 
 	type Props = {
@@ -60,10 +61,14 @@
 			}
 			await projectsStore.syncProjectConfig(project.id);
 			if (activeTab !== 'mcps') await loadProjectData();
-			notifications.success(`${enabled ? 'Enabled' : 'Disabled'} ${ids.length} item${ids.length > 1 ? 's' : ''}`);
+			notifications.success(
+				enabled
+					? (ids.length === 1 ? i18n.t('projComp.enabledOne') : i18n.t('projComp.enabledMany', { count: ids.length }))
+					: (ids.length === 1 ? i18n.t('projComp.disabledOne') : i18n.t('projComp.disabledMany', { count: ids.length }))
+			);
 			clearSelection();
 		} catch (err) {
-			notifications.error(`Failed to ${enabled ? 'enable' : 'disable'} items`);
+			notifications.error(i18n.t(enabled ? 'projComp.enableItemsFailed' : 'projComp.disableItemsFailed'));
 			console.error(err);
 		} finally {
 			bulkLoading = false;
@@ -103,10 +108,12 @@
 			}
 			await projectsStore.syncProjectConfig(project.id);
 			if (activeTab !== 'mcps') await loadProjectData();
-			notifications.success(`Removed ${ids.length} item${ids.length > 1 ? 's' : ''}`);
+			notifications.success(
+				ids.length === 1 ? i18n.t('projComp.removedOne') : i18n.t('projComp.removedMany', { count: ids.length })
+			);
 			clearSelection();
 		} catch (err) {
-			notifications.error('Failed to remove items');
+			notifications.error(i18n.t('projComp.removeItemsFailed'));
 			console.error(err);
 		} finally {
 			bulkLoading = false;
@@ -270,9 +277,9 @@
 		try {
 			await projectsStore.assignMcpToProject(project.id, mcp.id);
 			await projectsStore.syncProjectConfig(project.id);
-			notifications.success(`Added ${mcp.name} to ${project.name}`);
+			notifications.success(i18n.t('projComp.addedItem', { name: mcp.name, project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to add MCP');
+			notifications.error(i18n.t('global.addMcpFailed'));
 			console.error(err);
 		}
 	}
@@ -282,9 +289,9 @@
 			const mcp = mcpLibrary.getMcpById(mcpId);
 			await projectsStore.removeMcpFromProject(project.id, mcpId);
 			await projectsStore.syncProjectConfig(project.id);
-			notifications.success(`Removed ${mcp?.name || 'MCP'} from ${project.name}`);
+			notifications.success(i18n.t('projComp.removedItem', { name: mcp?.name || 'MCP', project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to remove MCP');
+			notifications.error(i18n.t('global.removeMcpFailed'));
 			console.error(err);
 		}
 	}
@@ -294,7 +301,7 @@
 			await projectsStore.toggleProjectMcp(assignmentId, enabled);
 			await projectsStore.syncProjectConfig(project.id);
 		} catch (err) {
-			notifications.error('Failed to toggle MCP');
+			notifications.error(i18n.t('global.toggleMcpFailed'));
 			console.error(err);
 		}
 	}
@@ -305,9 +312,9 @@
 			await skillLibrary.assignToProject(project.id, skill.id);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Added ${skill.name} to ${project.name}`);
+			notifications.success(i18n.t('projComp.addedItem', { name: skill.name, project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to add skill');
+			notifications.error(i18n.t('global.addSkillFailed'));
 			console.error(err);
 		}
 	}
@@ -318,9 +325,9 @@
 			await skillLibrary.removeFromProject(project.id, skillId);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Removed ${skill?.name || 'Skill'} from ${project.name}`);
+			notifications.success(i18n.t('projComp.removedItem', { name: skill?.name || 'Skill', project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to remove skill');
+			notifications.error(i18n.t('global.removeSkillFailed'));
 			console.error(err);
 		}
 	}
@@ -331,7 +338,7 @@
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
 		} catch (err) {
-			notifications.error('Failed to toggle skill');
+			notifications.error(i18n.t('global.toggleSkillFailed'));
 			console.error(err);
 		}
 	}
@@ -342,9 +349,9 @@
 			await subagentLibrary.assignToProject(project.id, agent.id);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Added ${agent.name} to ${project.name}`);
+			notifications.success(i18n.t('projComp.addedItem', { name: agent.name, project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to add agent');
+			notifications.error(i18n.t('global.addAgentFailed'));
 			console.error(err);
 		}
 	}
@@ -355,9 +362,9 @@
 			await subagentLibrary.removeFromProject(project.id, agentId);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Removed ${agent?.name || 'Agent'} from ${project.name}`);
+			notifications.success(i18n.t('projComp.removedItem', { name: agent?.name || i18n.t('projComp.agent'), project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to remove agent');
+			notifications.error(i18n.t('global.removeAgentFailed'));
 			console.error(err);
 		}
 	}
@@ -368,7 +375,7 @@
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
 		} catch (err) {
-			notifications.error('Failed to toggle agent');
+			notifications.error(i18n.t('global.toggleAgentFailed'));
 			console.error(err);
 		}
 	}
@@ -379,9 +386,9 @@
 			await commandLibrary.assignToProject(project.id, command.id);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Added ${command.name} to ${project.name}`);
+			notifications.success(i18n.t('projComp.addedItem', { name: command.name, project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to add command');
+			notifications.error(i18n.t('global.addCommandFailed'));
 			console.error(err);
 		}
 	}
@@ -392,9 +399,9 @@
 			await commandLibrary.removeFromProject(project.id, commandId);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Removed ${command?.name || 'Command'} from ${project.name}`);
+			notifications.success(i18n.t('projComp.removedItem', { name: command?.name || i18n.t('hook.command'), project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to remove command');
+			notifications.error(i18n.t('global.removeCommandFailed'));
 			console.error(err);
 		}
 	}
@@ -405,7 +412,7 @@
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
 		} catch (err) {
-			notifications.error('Failed to toggle command');
+			notifications.error(i18n.t('global.toggleCommandFailed'));
 			console.error(err);
 		}
 	}
@@ -416,9 +423,9 @@
 			await hookLibrary.assignToProject(project.id, hook.id);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Added ${hook.name} to ${project.name}`);
+			notifications.success(i18n.t('projComp.addedItem', { name: hook.name, project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to add hook');
+			notifications.error(i18n.t('projComp.addHookFailed'));
 			console.error(err);
 		}
 	}
@@ -429,9 +436,9 @@
 			await hookLibrary.removeFromProject(project.id, hookId);
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
-			notifications.success(`Removed ${hook?.name || 'Hook'} from ${project.name}`);
+			notifications.success(i18n.t('projComp.removedItem', { name: hook?.name || i18n.t('projComp.hook'), project: project.name }));
 		} catch (err) {
-			notifications.error('Failed to remove hook');
+			notifications.error(i18n.t('projComp.removeHookFailed'));
 			console.error(err);
 		}
 	}
@@ -442,7 +449,7 @@
 			await projectsStore.syncProjectConfig(project.id);
 			await loadProjectData();
 		} catch (err) {
-			notifications.error('Failed to toggle hook');
+			notifications.error(i18n.t('projComp.toggleHookFailed'));
 			console.error(err);
 		}
 	}
@@ -456,11 +463,11 @@
 
 	function getSearchPlaceholder(): string {
 		switch (activeTab) {
-			case 'mcps': return 'Search available MCPs...';
-			case 'skills': return 'Search available skills...';
-			case 'agents': return 'Search available agents...';
-			case 'commands': return 'Search available commands...';
-			case 'hooks': return 'Search available hooks...';
+			case 'mcps': return i18n.t('projComp.searchAvailableMcps');
+			case 'skills': return i18n.t('projComp.searchAvailableSkills');
+			case 'agents': return i18n.t('projComp.searchAvailableAgents');
+			case 'commands': return i18n.t('projComp.searchAvailableCommands');
+			case 'hooks': return i18n.t('projComp.searchAvailableHooks');
 		}
 	}
 
@@ -477,35 +484,35 @@
 		class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'mcps' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 	>
 		<Plug class="w-4 h-4" />
-		MCPs ({project.assignedMcps.length}{inheritedGlobalMcps.length > 0 ? ` + ${inheritedGlobalMcps.length} global` : ''})
+		{i18n.t('global.tabMcps')} ({project.assignedMcps.length}{inheritedGlobalMcps.length > 0 ? ` + ${inheritedGlobalMcps.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 	<button
 		onclick={() => handleTabChange('skills')}
 		class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'skills' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 	>
 		<Sparkles class="w-4 h-4" />
-		Skills ({projectSkills.length}{inheritedGlobalSkills.length > 0 ? ` + ${inheritedGlobalSkills.length} global` : ''})
+		{i18n.t('global.tabSkills')} ({projectSkills.length}{inheritedGlobalSkills.length > 0 ? ` + ${inheritedGlobalSkills.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 	<button
 		onclick={() => handleTabChange('agents')}
 		class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'agents' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 	>
 		<Bot class="w-4 h-4" />
-		Agents ({projectSubAgents.length}{inheritedGlobalSubAgents.length > 0 ? ` + ${inheritedGlobalSubAgents.length} global` : ''})
+		{i18n.t('global.tabAgents')} ({projectSubAgents.length}{inheritedGlobalSubAgents.length > 0 ? ` + ${inheritedGlobalSubAgents.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 	<button
 		onclick={() => handleTabChange('commands')}
 		class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'commands' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 	>
 		<Terminal class="w-4 h-4" />
-		Commands ({projectCommands.length}{inheritedGlobalCommands.length > 0 ? ` + ${inheritedGlobalCommands.length} global` : ''})
+		{i18n.t('global.tabCommands')} ({projectCommands.length}{inheritedGlobalCommands.length > 0 ? ` + ${inheritedGlobalCommands.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 	<button
 		onclick={() => handleTabChange('hooks')}
 		class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab === 'hooks' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 	>
 		<Zap class="w-4 h-4" />
-		Hooks ({projectHooks.length}{inheritedGlobalHooks.length > 0 ? ` + ${inheritedGlobalHooks.length} global` : ''})
+		{i18n.t('dashboard.hooks')} ({projectHooks.length}{inheritedGlobalHooks.length > 0 ? ` + ${inheritedGlobalHooks.length} ${i18n.t('dashboard.global')}` : ''})
 	</button>
 </div>
 
@@ -513,7 +520,7 @@
 {#if selectedCount > 0}
 	<div class="sticky top-0 z-10 mx-6 mt-4 flex items-center justify-between gap-3 px-4 py-2.5 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl">
 		<span class="text-sm font-medium text-primary-700 dark:text-primary-300">
-			{selectedCount} selected
+			{i18n.t('projComp.selectedCount', { count: selectedCount })}
 		</span>
 		<div class="flex items-center gap-2">
 			<button
@@ -522,7 +529,7 @@
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
 			>
 				<Power class="w-3.5 h-3.5" />
-				Enable
+				{i18n.t('common.enable')}
 			</button>
 			<button
 				onclick={() => bulkToggle(false)}
@@ -530,7 +537,7 @@
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
 			>
 				<PowerOff class="w-3.5 h-3.5" />
-				Disable
+				{i18n.t('common.disable')}
 			</button>
 			<button
 				onclick={bulkRemove}
@@ -538,13 +545,13 @@
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
 			>
 				<Trash2 class="w-3.5 h-3.5" />
-				Remove
+				{i18n.t('common.remove')}
 			</button>
 			<button
 				onclick={clearSelection}
 				class="ml-1 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded transition-colors"
 			>
-				Cancel
+				{i18n.t('common.cancel')}
 			</button>
 		</div>
 	</div>
@@ -558,9 +565,9 @@
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
 						<Globe class="w-4 h-4 text-primary-500" />
-						Global (Inherited) ({inheritedGlobalMcps.length})
+						{i18n.t('projComp.globalInherited', { count: inheritedGlobalMcps.length })}
 					</h3>
-					<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('projComp.activeViaGlobal')}</span>
 				</div>
 				<div class="space-y-2">
 					{#each inheritedGlobalMcps as globalItem (globalItem.id)}
@@ -576,7 +583,7 @@
 								</div>
 							</div>
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-								Global
+								{i18n.t('projComp.globalBadge')}
 							</span>
 						</div>
 					{/each}
@@ -591,7 +598,7 @@
 					<button
 						onclick={() => toggleSelectAll(project.assignedMcps.map(a => a.id))}
 						class="p-0.5 text-gray-400 hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 rounded transition-colors"
-						title={allSelected ? 'Deselect all' : 'Select all'}
+						title={i18n.t(allSelected ? 'projComp.deselectAll' : 'projComp.selectAll')}
 					>
 						{#if allSelected}
 							<SquareCheck class="w-4 h-4 text-primary-500" />
@@ -601,7 +608,7 @@
 					</button>
 				{/if}
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Assigned MCPs ({project.assignedMcps.length})
+					{i18n.t('projComp.assignedMcps', { count: project.assignedMcps.length })}
 				</h3>
 			</div>
 			{#if project.assignedMcps.length > 0}
@@ -636,14 +643,14 @@
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
 									aria-checked={assignment.isEnabled}
-									title={assignment.isEnabled ? 'Disable' : 'Enable'}
+									title={i18n.t(assignment.isEnabled ? 'common.disable' : 'common.enable')}
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 								<button
 									onclick={() => handleRemoveMcp(assignment.mcpId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-									title="Remove from project"
+									title={i18n.t('projComp.removeFromProject')}
 								>
 									<Minus class="w-4 h-4" />
 								</button>
@@ -653,8 +660,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">No MCPs assigned yet</p>
-					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add MCPs from the library below</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.noMcpsAssigned')}</p>
+					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{i18n.t('projComp.addMcpsHint')}</p>
 				</div>
 			{/if}
 		</div>
@@ -663,7 +670,7 @@
 		<div>
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Available MCPs ({availableMcps.length})
+					{i18n.t('projComp.availableMcps', { count: availableMcps.length })}
 				</h3>
 				{#if availableMcps.length > 3}
 					<div class="relative w-48">
@@ -694,7 +701,7 @@
 								<button
 									onclick={() => handleAddMcp(mcp)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-									title="Add to project"
+									title={i18n.t('projComp.addToProject')}
 								>
 									<Plus class="w-4 h-4" />
 								</button>
@@ -703,12 +710,12 @@
 					</div>
 				{:else}
 					<div class="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-						No MCPs match "{searchQuery}"
+						{i18n.t('projComp.noMcpsMatch', { query: searchQuery })}
 					</div>
 				{/if}
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">All MCPs are assigned</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.allMcpsAssigned')}</p>
 				</div>
 			{/if}
 		</div>
@@ -718,9 +725,9 @@
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
 						<Globe class="w-4 h-4 text-primary-500" />
-						Global (Inherited) ({inheritedGlobalSkills.length})
+						{i18n.t('projComp.globalInherited', { count: inheritedGlobalSkills.length })}
 					</h3>
-					<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('projComp.activeViaGlobal')}</span>
 				</div>
 				<div class="space-y-2">
 					{#each inheritedGlobalSkills as globalItem (globalItem.id)}
@@ -738,7 +745,7 @@
 								</div>
 							</div>
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
-								Global
+								{i18n.t('projComp.globalBadge')}
 							</span>
 						</div>
 					{/each}
@@ -753,7 +760,7 @@
 					<button
 						onclick={() => toggleSelectAll(projectSkills.map(a => a.id))}
 						class="p-0.5 text-gray-400 hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 rounded transition-colors"
-						title={allSelected ? 'Deselect all' : 'Select all'}
+						title={i18n.t(allSelected ? 'projComp.deselectAll' : 'projComp.selectAll')}
 					>
 						{#if allSelected}
 							<SquareCheck class="w-4 h-4 text-primary-500" />
@@ -763,7 +770,7 @@
 					</button>
 				{/if}
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Assigned Skills ({projectSkills.length})
+					{i18n.t('projComp.assignedSkills', { count: projectSkills.length })}
 				</h3>
 			</div>
 			{#if projectSkills.length > 0}
@@ -800,14 +807,14 @@
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
 									aria-checked={assignment.isEnabled}
-									title={assignment.isEnabled ? 'Disable' : 'Enable'}
+									title={i18n.t(assignment.isEnabled ? 'common.disable' : 'common.enable')}
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 								<button
 									onclick={() => handleRemoveSkill(assignment.skillId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-									title="Remove from project"
+									title={i18n.t('projComp.removeFromProject')}
 								>
 									<Minus class="w-4 h-4" />
 								</button>
@@ -817,8 +824,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">No skills assigned yet</p>
-					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add skills from the library below</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.noSkillsAssigned')}</p>
+					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{i18n.t('projComp.addSkillsHint')}</p>
 				</div>
 			{/if}
 		</div>
@@ -827,7 +834,7 @@
 		<div>
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Available Skills ({availableSkills.length})
+					{i18n.t('projComp.availableSkills', { count: availableSkills.length })}
 				</h3>
 				{#if availableSkills.length > 3}
 					<div class="relative w-48">
@@ -860,7 +867,7 @@
 								<button
 									onclick={() => handleAddSkill(skill)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
-									title="Add to project"
+									title={i18n.t('projComp.addToProject')}
 								>
 									<Plus class="w-4 h-4" />
 								</button>
@@ -869,12 +876,12 @@
 					</div>
 				{:else}
 					<div class="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-						No skills match "{searchQuery}"
+						{i18n.t('projComp.noSkillsMatch', { query: searchQuery })}
 					</div>
 				{/if}
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">All skills are assigned</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.allSkillsAssigned')}</p>
 				</div>
 			{/if}
 		</div>
@@ -884,9 +891,9 @@
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
 						<Globe class="w-4 h-4 text-primary-500" />
-						Global (Inherited) ({inheritedGlobalSubAgents.length})
+						{i18n.t('projComp.globalInherited', { count: inheritedGlobalSubAgents.length })}
 					</h3>
-					<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('projComp.activeViaGlobal')}</span>
 				</div>
 				<div class="space-y-2">
 					{#each inheritedGlobalSubAgents as globalItem (globalItem.id)}
@@ -904,7 +911,7 @@
 								</div>
 							</div>
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
-								Global
+								{i18n.t('projComp.globalBadge')}
 							</span>
 						</div>
 					{/each}
@@ -919,7 +926,7 @@
 					<button
 						onclick={() => toggleSelectAll(projectSubAgents.map(a => a.id))}
 						class="p-0.5 text-gray-400 hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 rounded transition-colors"
-						title={allSelected ? 'Deselect all' : 'Select all'}
+						title={i18n.t(allSelected ? 'projComp.deselectAll' : 'projComp.selectAll')}
 					>
 						{#if allSelected}
 							<SquareCheck class="w-4 h-4 text-primary-500" />
@@ -929,7 +936,7 @@
 					</button>
 				{/if}
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Assigned Agents ({projectSubAgents.length})
+					{i18n.t('projComp.assignedAgents', { count: projectSubAgents.length })}
 				</h3>
 			</div>
 			{#if projectSubAgents.length > 0}
@@ -966,14 +973,14 @@
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
 									aria-checked={assignment.isEnabled}
-									title={assignment.isEnabled ? 'Disable' : 'Enable'}
+									title={i18n.t(assignment.isEnabled ? 'common.disable' : 'common.enable')}
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 								<button
 									onclick={() => handleRemoveSubAgent(assignment.subagentId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-									title="Remove from project"
+									title={i18n.t('projComp.removeFromProject')}
 								>
 									<Minus class="w-4 h-4" />
 								</button>
@@ -983,8 +990,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">No agents assigned yet</p>
-					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add agents from the library below</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.noAgentsAssigned')}</p>
+					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{i18n.t('projComp.addAgentsHint')}</p>
 				</div>
 			{/if}
 		</div>
@@ -993,7 +1000,7 @@
 		<div>
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Available Agents ({availableSubAgents.length})
+					{i18n.t('projComp.availableAgents', { count: availableSubAgents.length })}
 				</h3>
 				{#if availableSubAgents.length > 3}
 					<div class="relative w-48">
@@ -1026,7 +1033,7 @@
 								<button
 									onclick={() => handleAddSubAgent(agent)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
-									title="Add to project"
+									title={i18n.t('projComp.addToProject')}
 								>
 									<Plus class="w-4 h-4" />
 								</button>
@@ -1035,12 +1042,12 @@
 					</div>
 				{:else}
 					<div class="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-						No agents match "{searchQuery}"
+						{i18n.t('projComp.noAgentsMatch', { query: searchQuery })}
 					</div>
 				{/if}
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">All agents are assigned</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.allAgentsAssigned')}</p>
 				</div>
 			{/if}
 		</div>
@@ -1050,9 +1057,9 @@
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
 						<Globe class="w-4 h-4 text-primary-500" />
-						Global (Inherited) ({inheritedGlobalCommands.length})
+						{i18n.t('projComp.globalInherited', { count: inheritedGlobalCommands.length })}
 					</h3>
-					<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('projComp.activeViaGlobal')}</span>
 				</div>
 				<div class="space-y-2">
 					{#each inheritedGlobalCommands as globalItem (globalItem.id)}
@@ -1070,7 +1077,7 @@
 								</div>
 							</div>
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
-								Global
+								{i18n.t('projComp.globalBadge')}
 							</span>
 						</div>
 					{/each}
@@ -1085,7 +1092,7 @@
 					<button
 						onclick={() => toggleSelectAll(projectCommands.map(a => a.id))}
 						class="p-0.5 text-gray-400 hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 rounded transition-colors"
-						title={allSelected ? 'Deselect all' : 'Select all'}
+						title={i18n.t(allSelected ? 'projComp.deselectAll' : 'projComp.selectAll')}
 					>
 						{#if allSelected}
 							<SquareCheck class="w-4 h-4 text-primary-500" />
@@ -1095,7 +1102,7 @@
 					</button>
 				{/if}
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Assigned Commands ({projectCommands.length})
+					{i18n.t('projComp.assignedCommands', { count: projectCommands.length })}
 				</h3>
 			</div>
 			{#if projectCommands.length > 0}
@@ -1132,14 +1139,14 @@
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
 									aria-checked={assignment.isEnabled}
-									title={assignment.isEnabled ? 'Disable' : 'Enable'}
+									title={i18n.t(assignment.isEnabled ? 'common.disable' : 'common.enable')}
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 								<button
 									onclick={() => handleRemoveCommand(assignment.commandId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-									title="Remove from project"
+									title={i18n.t('projComp.removeFromProject')}
 								>
 									<Minus class="w-4 h-4" />
 								</button>
@@ -1149,8 +1156,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">No commands assigned yet</p>
-					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add commands from the library below</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.noCommandsAssigned')}</p>
+					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{i18n.t('projComp.addCommandsHint')}</p>
 				</div>
 			{/if}
 		</div>
@@ -1159,7 +1166,7 @@
 		<div>
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Available Commands ({availableCommands.length})
+					{i18n.t('projComp.availableCommands', { count: availableCommands.length })}
 				</h3>
 				{#if availableCommands.length > 3}
 					<div class="relative w-48">
@@ -1192,7 +1199,7 @@
 								<button
 									onclick={() => handleAddCommand(command)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
-									title="Add to project"
+									title={i18n.t('projComp.addToProject')}
 								>
 									<Plus class="w-4 h-4" />
 								</button>
@@ -1201,12 +1208,12 @@
 					</div>
 				{:else}
 					<div class="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-						No commands match "{searchQuery}"
+						{i18n.t('projComp.noCommandsMatch', { query: searchQuery })}
 					</div>
 				{/if}
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">All commands are assigned</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.allCommandsAssigned')}</p>
 				</div>
 			{/if}
 		</div>
@@ -1216,9 +1223,9 @@
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
 						<Globe class="w-4 h-4 text-primary-500" />
-						Global (Inherited) ({inheritedGlobalHooks.length})
+						{i18n.t('projComp.globalInherited', { count: inheritedGlobalHooks.length })}
 					</h3>
-					<span class="text-xs text-gray-400 dark:text-gray-500">Active via Global Settings</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('projComp.activeViaGlobal')}</span>
 				</div>
 				<div class="space-y-2">
 					{#each inheritedGlobalHooks as globalItem (globalItem.id)}
@@ -1236,7 +1243,7 @@
 								</div>
 							</div>
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 flex-shrink-0">
-								Global
+								{i18n.t('projComp.globalBadge')}
 							</span>
 						</div>
 					{/each}
@@ -1251,7 +1258,7 @@
 					<button
 						onclick={() => toggleSelectAll(projectHooks.map(a => a.id))}
 						class="p-0.5 text-gray-400 hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 rounded transition-colors"
-						title={allSelected ? 'Deselect all' : 'Select all'}
+						title={i18n.t(allSelected ? 'projComp.deselectAll' : 'projComp.selectAll')}
 					>
 						{#if allSelected}
 							<SquareCheck class="w-4 h-4 text-primary-500" />
@@ -1261,7 +1268,7 @@
 					</button>
 				{/if}
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Assigned Hooks ({projectHooks.length})
+					{i18n.t('projComp.assignedHooks', { count: projectHooks.length })}
 				</h3>
 			</div>
 			{#if projectHooks.length > 0}
@@ -1298,14 +1305,14 @@
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
 									aria-checked={assignment.isEnabled}
-									title={assignment.isEnabled ? 'Disable' : 'Enable'}
+									title={i18n.t(assignment.isEnabled ? 'common.disable' : 'common.enable')}
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 								<button
 									onclick={() => handleRemoveHook(assignment.hookId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-									title="Remove from project"
+									title={i18n.t('projComp.removeFromProject')}
 								>
 									<Minus class="w-4 h-4" />
 								</button>
@@ -1315,8 +1322,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">No hooks assigned yet</p>
-					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add hooks from the library below</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.noHooksAssigned')}</p>
+					<p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{i18n.t('projComp.addHooksHint')}</p>
 				</div>
 			{/if}
 		</div>
@@ -1325,7 +1332,7 @@
 		<div>
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Available Hooks ({availableHooks.length})
+					{i18n.t('projComp.availableHooks', { count: availableHooks.length })}
 				</h3>
 				{#if availableHooks.length > 3}
 					<div class="relative w-48">
@@ -1358,7 +1365,7 @@
 								<button
 									onclick={() => handleAddHook(hook)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
-									title="Add to project"
+									title={i18n.t('projComp.addToProject')}
 								>
 									<Plus class="w-4 h-4" />
 								</button>
@@ -1367,12 +1374,12 @@
 					</div>
 				{:else}
 					<div class="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-						No hooks match "{searchQuery}"
+						{i18n.t('projComp.noHooksMatch', { query: searchQuery })}
 					</div>
 				{/if}
 			{:else}
 				<div class="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-					<p class="text-gray-500 dark:text-gray-400">All hooks are assigned</p>
+					<p class="text-gray-500 dark:text-gray-400">{i18n.t('projComp.allHooksAssigned')}</p>
 				</div>
 			{/if}
 		</div>

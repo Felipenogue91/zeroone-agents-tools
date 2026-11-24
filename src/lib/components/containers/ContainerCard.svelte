@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Heart, Pencil, Trash2 } from 'lucide-svelte';
 	import { containerLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { Container, ContainerStatus } from '$lib/types';
 	import ContainerStatusBadge from './ContainerStatus.svelte';
 	import ContainerActions from './ContainerActions.svelte';
@@ -15,11 +16,11 @@
 	const status = $derived(containerLibrary.getStatus(container.id));
 	const dockerStatus = $derived(status?.dockerStatus || 'not_created');
 
-	const typeLabels: Record<string, string> = {
-		docker: 'Docker',
-		devcontainer: 'Dev Container',
-		custom: 'Custom'
-	};
+	const typeLabels = $derived<Record<string, string>>({
+		docker: i18n.t('containerComp.typeDocker'),
+		devcontainer: i18n.t('containerComp.typeDevContainer'),
+		custom: i18n.t('containerComp.typeCustom')
+	});
 	let actionInProgress = $state(false);
 	let actionMessage = $state('');
 
@@ -33,53 +34,53 @@
 	async function handleBuild() {
 		await withAction(async () => {
 			await containerLibrary.buildImage(container.id);
-			notifications.success(`Image built for ${container.name}`);
-		}, 'Building image...');
+			notifications.success(i18n.t('containerComp.imageBuilt', { name: container.name }));
+		}, i18n.t('containerComp.buildingImage'));
 	}
 
 	async function handleStart() {
 		const isFirstStart = !container.dockerContainerId;
-		const msg = isFirstStart ? 'Pulling image & creating container...' : 'Starting...';
+		const msg = isFirstStart ? i18n.t('containerComp.pullingAndCreating') : i18n.t('containerComp.starting');
 		await withAction(async () => {
 			await containerLibrary.startContainer(container.id);
-			notifications.success(`${container.name} started`);
+			notifications.success(i18n.t('containerComp.containerStarted', { name: container.name }));
 		}, msg);
 	}
 
 	async function handleStop() {
 		await withAction(async () => {
 			await containerLibrary.stopContainer(container.id);
-			notifications.success(`${container.name} stopped`);
-		}, 'Stopping...');
+			notifications.success(i18n.t('containerComp.containerStopped', { name: container.name }));
+		}, i18n.t('containerComp.stopping'));
 	}
 
 	async function handleRestart() {
 		await withAction(async () => {
 			await containerLibrary.restartContainer(container.id);
-			notifications.success(`${container.name} restarted`);
-		}, 'Restarting...');
+			notifications.success(i18n.t('containerComp.containerRestarted', { name: container.name }));
+		}, i18n.t('containerComp.restarting'));
 	}
 
 	async function handleRemove() {
 		await withAction(async () => {
 			await containerLibrary.removeContainer(container.id);
-			notifications.success(`Docker container removed for ${container.name}`);
-		}, 'Removing...');
+			notifications.success(i18n.t('containerComp.containerRemovedFor', { name: container.name }));
+		}, i18n.t('containerComp.removing'));
 	}
 
 	async function handleRecreate() {
 		await withAction(async () => {
 			await containerLibrary.removeContainer(container.id);
 			await containerLibrary.startContainer(container.id);
-			notifications.success(`${container.name} recreated with updated settings`);
-		}, 'Recreating container...');
+			notifications.success(i18n.t('containerComp.containerRecreated', { name: container.name }));
+		}, i18n.t('containerComp.recreating'));
 	}
 
 	async function handleToggleFavorite() {
 		try {
 			await containerLibrary.toggleFavorite(container.id);
 		} catch (e) {
-			notifications.error(`Failed to toggle favorite: ${e}`);
+			notifications.error(i18n.t('containerComp.toggleFavoriteFailed', { error: String(e) }));
 		}
 	}
 </script>
@@ -127,14 +128,14 @@
 			/>
 			<button onclick={handleToggleFavorite}
 				class="p-1.5 rounded-lg transition-colors {container.isFavorite ? 'text-rose-500 hover:text-rose-600' : 'text-gray-300 hover:text-rose-400 dark:text-gray-600 dark:hover:text-rose-400'}"
-				aria-label={container.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+				aria-label={container.isFavorite ? i18n.t('containerComp.removeFromFavorites') : i18n.t('containerComp.addToFavorites')}
 				aria-pressed={container.isFavorite}>
 				<Heart class="w-4 h-4" fill={container.isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
 			</button>
-			<button onclick={() => onEdit(container)} class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" aria-label="Edit container">
+			<button onclick={() => onEdit(container)} class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" aria-label={i18n.t('containerComp.editContainer')}>
 				<Pencil class="w-4 h-4" aria-hidden="true" />
 			</button>
-			<button onclick={() => onDelete(container)} class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" aria-label="Delete container">
+			<button onclick={() => onDelete(container)} class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" aria-label={i18n.t('containerComp.deleteContainer')}>
 				<Trash2 class="w-4 h-4" aria-hidden="true" />
 			</button>
 		</div>

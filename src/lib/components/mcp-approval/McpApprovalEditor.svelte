@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClaudeSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save, Plus, X } from 'lucide-svelte';
 
 	type Props = {
@@ -26,8 +27,8 @@
 	}
 
 	function getTriStateLabel(value: boolean | undefined): string {
-		if (value === undefined) return 'Not set';
-		return value ? 'Enabled' : 'Disabled';
+		if (value === undefined) return i18n.t('settingsComp.notSet');
+		return value ? i18n.t('settingsComp.enabledLabel') : i18n.t('settingsComp.disabledLabel');
 	}
 
 	function getTriStateColor(value: boolean | undefined): string {
@@ -90,9 +91,9 @@
 
 <div class="space-y-6">
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">MCP Server Approval</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.mcpApprovalTitle')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Control which project-level MCP servers are automatically approved
+			{i18n.t('settingsComp.mcpApprovalDesc')}
 		</p>
 
 		<div class="space-y-6">
@@ -100,10 +101,10 @@
 			<div class="flex items-center justify-between">
 				<div>
 					<label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Enable All Project MCP Servers
+						{i18n.t('settingsComp.enableAllProjectMcps')}
 					</label>
 					<p class="text-xs text-gray-500 dark:text-gray-400">
-						Automatically approve all MCP servers defined in project settings
+						{i18n.t('settingsComp.enableAllProjectMcpsDesc')}
 					</p>
 				</div>
 				<div class="flex items-center gap-2">
@@ -113,7 +114,7 @@
 					<button
 						onclick={handleToggleEnableAll}
 						class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {getTriStateColor(enableAll)}"
-						title="Click to cycle: Not set → Enabled → Disabled → Not set"
+						title={i18n.t('settingsComp.triStateCycleTitle')}
 					>
 						<span
 							class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {getTriStatePosition(enableAll)}"
@@ -125,10 +126,10 @@
 			<!-- Enabled servers list -->
 			<div>
 				<label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Enabled MCP Servers
+					{i18n.t('settingsComp.enabledMcpServers')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					Specific MCP servers to enable from .mcp.json
+					{i18n.t('settingsComp.enabledMcpServersDesc')}
 				</p>
 				<div class="flex gap-2 mb-2">
 					<input
@@ -138,7 +139,7 @@
 						placeholder="server-name"
 						class="input flex-1"
 					/>
-					<button onclick={addEnabled} class="btn btn-ghost" title="Add server">
+					<button onclick={addEnabled} class="btn btn-ghost" title={i18n.t('settingsComp.addServer')}>
 						<Plus class="w-4 h-4" />
 					</button>
 				</div>
@@ -150,7 +151,7 @@
 								<button
 									onclick={() => removeEnabled(i)}
 									class="hover:text-red-500 transition-colors"
-									title="Remove"
+									title={i18n.t('common.remove')}
 								>
 									<X class="w-3 h-3" />
 								</button>
@@ -163,10 +164,10 @@
 			<!-- Disabled servers list -->
 			<div>
 				<label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Disabled MCP Servers
+					{i18n.t('settingsComp.disabledMcpServers')}
 				</label>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-					Specific MCP servers to disable from .mcp.json
+					{i18n.t('settingsComp.disabledMcpServersDesc')}
 				</p>
 				<div class="flex gap-2 mb-2">
 					<input
@@ -176,7 +177,7 @@
 						placeholder="server-name"
 						class="input flex-1"
 					/>
-					<button onclick={addDisabled} class="btn btn-ghost" title="Add server">
+					<button onclick={addDisabled} class="btn btn-ghost" title={i18n.t('settingsComp.addServer')}>
 						<Plus class="w-4 h-4" />
 					</button>
 				</div>
@@ -188,7 +189,7 @@
 								<button
 									onclick={() => removeDisabled(i)}
 									class="hover:text-red-500 transition-colors"
-									title="Remove"
+									title={i18n.t('common.remove')}
 								>
 									<X class="w-3 h-3" />
 								</button>
@@ -203,7 +204,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save MCP Approval Settings
+			{i18n.t('settingsComp.saveMcpApproval')}
 		</button>
 	</div>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PermissionCategory } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { GripVertical, X, Plus, ShieldAlert, ShieldQuestion, ShieldCheck } from 'lucide-svelte';
 
 	type Props = {
@@ -15,9 +16,11 @@
 	let dragIndex = $state<number | null>(null);
 	let dropIndex = $state<number | null>(null);
 
-	const categoryConfig = {
+	const categoryConfig = $derived({
 		deny: {
-			label: 'Deny',
+			label: i18n.t('permComp.deny'),
+			emptyText: i18n.t('permComp.noDenyRules'),
+			addText: i18n.t('permComp.addDenyRule'),
 			icon: ShieldAlert,
 			borderColor: 'border-red-200 dark:border-red-800/50',
 			headerBg: 'bg-red-50 dark:bg-red-900/20',
@@ -28,7 +31,9 @@
 			btnClass: 'text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
 		},
 		ask: {
-			label: 'Ask',
+			label: i18n.t('permComp.ask'),
+			emptyText: i18n.t('permComp.noAskRules'),
+			addText: i18n.t('permComp.addAskRule'),
 			icon: ShieldQuestion,
 			borderColor: 'border-amber-200 dark:border-amber-800/50',
 			headerBg: 'bg-amber-50 dark:bg-amber-900/20',
@@ -39,7 +44,9 @@
 			btnClass: 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
 		},
 		allow: {
-			label: 'Allow',
+			label: i18n.t('permComp.allow'),
+			emptyText: i18n.t('permComp.noAllowRules'),
+			addText: i18n.t('permComp.addAllowRule'),
 			icon: ShieldCheck,
 			borderColor: 'border-green-200 dark:border-green-800/50',
 			headerBg: 'bg-green-50 dark:bg-green-900/20',
@@ -49,7 +56,7 @@
 			hoverBg: 'hover:bg-green-50 dark:hover:bg-green-900/10',
 			btnClass: 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
 		}
-	};
+	});
 
 	const config = $derived(categoryConfig[category]);
 
@@ -111,7 +118,7 @@
 			>
 				<button
 					class="cursor-grab text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
-					title="Drag to reorder"
+					title={i18n.t('permComp.dragToReorder')}
 				>
 					<GripVertical class="w-4 h-4" />
 				</button>
@@ -123,7 +130,7 @@
 				<button
 					onclick={() => onremove(index)}
 					class="p-1 rounded text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-					title="Remove rule"
+					title={i18n.t('permComp.removeRule')}
 				>
 					<X class="w-4 h-4" />
 				</button>
@@ -132,7 +139,7 @@
 
 		{#if rules.length === 0}
 			<div class="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">
-				No {category} rules configured
+				{config.emptyText}
 			</div>
 		{/if}
 	</div>
@@ -144,7 +151,7 @@
 			class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors {config.btnClass}"
 		>
 			<Plus class="w-4 h-4" />
-			Add {config.label} Rule
+			{config.addText}
 		</button>
 	</div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SubAgent } from '$lib/types';
-	import { agentMemoryLibrary } from '$lib/stores';
-	import { projectsStore } from '$lib/stores';
+	import { agentMemoryLibrary, projectsStore } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { Save, Trash2, X, FolderOpen, Plus } from 'lucide-svelte';
 
 	type Props = {
@@ -58,10 +58,10 @@
 		<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
 			<div>
 				<h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-					Agent Memory — {subagent.name}
+					{i18n.t('subagentComp.agentMemoryTitle', { name: subagent.name })}
 				</h2>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-					Persistent memory for this agent (MEMORY.md)
+					{i18n.t('subagentComp.agentMemoryDesc')}
 				</p>
 			</div>
 			<button
@@ -80,7 +80,7 @@
 					? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium'
 					: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}"
 			>
-				User (~/.claude/)
+				{i18n.t('subagentComp.scopeUser')}
 			</button>
 			{#if projectPath}
 				<button
@@ -89,7 +89,7 @@
 						? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium'
 						: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}"
 				>
-					Project (.claude/)
+					{i18n.t('subagentComp.scopeProject')}
 				</button>
 			{/if}
 		</div>
@@ -104,13 +104,13 @@
 				<!-- No memory file exists yet -->
 				<div class="text-center py-12">
 					<FolderOpen class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-					<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No memory file</h3>
+					<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{i18n.t('subagentComp.noMemoryFile')}</h3>
 					<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-						This agent doesn't have a MEMORY.md file in the {selectedScope} scope yet.
+						{selectedScope === 'user' ? i18n.t('subagentComp.noMemoryFileUser') : i18n.t('subagentComp.noMemoryFileProject')}
 					</p>
 					<button onclick={handleCreate} class="btn btn-primary">
 						<Plus class="w-4 h-4 mr-2" />
-						Create MEMORY.md
+						{i18n.t('subagentComp.createMemoryMd')}
 					</button>
 				</div>
 			{:else}
@@ -134,7 +134,7 @@
 						oninput={(e) => agentMemoryLibrary.setContent(e.currentTarget.value)}
 						class="input w-full font-mono text-sm resize-y"
 						rows={16}
-						placeholder="# Agent Memory&#10;&#10;- [task](task.md) — description"
+						placeholder={i18n.t('subagentComp.memoryPlaceholder')}
 					></textarea>
 				</div>
 			{/if}
@@ -146,25 +146,25 @@
 				<div>
 					{#if showDeleteConfirm}
 						<div class="flex items-center gap-2">
-							<span class="text-sm text-red-600 dark:text-red-400">Delete this memory file?</span>
+							<span class="text-sm text-red-600 dark:text-red-400">{i18n.t('subagentComp.deleteMemoryConfirm')}</span>
 							<button
 								onclick={handleDelete}
 								class="btn btn-sm bg-red-600 hover:bg-red-700 text-white"
 							>
-								Confirm
+								{i18n.t('common.confirm')}
 							</button>
 							<button
 								onclick={() => (showDeleteConfirm = false)}
 								class="btn btn-sm"
 							>
-								Cancel
+								{i18n.t('common.cancel')}
 							</button>
 						</div>
 					{:else}
 						<button
 							onclick={() => (showDeleteConfirm = true)}
 							class="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-							title="Delete memory file"
+							title={i18n.t('subagentComp.deleteMemoryTitle')}
 						>
 							<Trash2 class="w-4 h-4" />
 						</button>
@@ -177,7 +177,7 @@
 							onclick={() => agentMemoryLibrary.discardChanges()}
 							class="btn btn-sm"
 						>
-							Discard
+							{i18n.t('common.discard')}
 						</button>
 					{/if}
 					<button
@@ -186,7 +186,7 @@
 						class="btn btn-primary btn-sm"
 					>
 						<Save class="w-4 h-4 mr-1.5" />
-						Save
+						{i18n.t('common.save')}
 					</button>
 				</div>
 			</div>

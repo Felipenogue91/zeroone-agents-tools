@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ClaudeSettings, MarketplaceDefinition } from '$lib/types';
 	import { Save, Plus, Pencil, Trash2 } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 	import MarketplaceSourceForm from './MarketplaceSourceForm.svelte';
 
 	type Props = {
@@ -74,9 +75,9 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Extra Marketplaces</h3>
+	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('pluginComp.extraMarketplaces')}</h3>
 	<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-		Add custom marketplace sources for discovering and installing plugins
+		{i18n.t('pluginComp.extraMarketplacesDesc')}
 	</p>
 
 	{#if marketplaces.length > 0}
@@ -120,7 +121,7 @@
 		</div>
 	{:else if !addingNew}
 		<p class="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
-			No extra marketplaces configured
+			{i18n.t('pluginComp.noExtraMarketplaces')}
 		</p>
 	{/if}
 
@@ -137,14 +138,14 @@
 			class="btn btn-ghost text-sm mb-4"
 		>
 			<Plus class="w-4 h-4 mr-1" />
-			Add Marketplace
+			{i18n.t('pluginComp.addMarketplace')}
 		</button>
 	{/if}
 
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Marketplaces
+			{i18n.t('pluginComp.saveMarketplaces')}
 		</button>
 	</div>
 </div>

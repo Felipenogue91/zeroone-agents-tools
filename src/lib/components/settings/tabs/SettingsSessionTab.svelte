@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { SessionCleanupEditor } from '$lib/components/session-cleanup';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -25,7 +26,7 @@
 	{#snippet children({ settings, save })}
 		<SessionCleanupEditor
 			{settings}
-			onsave={(s) => save(s, 'Session & cleanup settings saved', 'Failed to save session & cleanup settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.sessionSaved'), i18n.t('settingsComp.sessionSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { Container } from '$lib/types';
 	import ContainerStatusBadge from './ContainerStatus.svelte';
 	import ContainerActions from './ContainerActions.svelte';
@@ -22,6 +23,12 @@
 	const dockerStatus = $derived(status?.dockerStatus || 'not_created');
 
 	const tabs = ['overview', 'logs', 'stats', 'exec'] as const;
+	const tabLabels = $derived<Record<(typeof tabs)[number], string>>({
+		overview: i18n.t('containerComp.tabOverview'),
+		logs: i18n.t('containerComp.tabLogs'),
+		stats: i18n.t('containerComp.tabStats'),
+		exec: i18n.t('containerComp.tabExec')
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onClose();
@@ -57,7 +64,7 @@
 			const result = await containerLibrary.exec(container.id, ['sh', '-c', cmd]);
 			execOutput += `$ ${cmd}\n${result.stdout}${result.stderr}\n`;
 		} catch (e) {
-			execOutput += `$ ${cmd}\nError: ${e}\n`;
+			execOutput += `$ ${cmd}\n${i18n.t('containerComp.execError', { error: String(e) })}\n`;
 		} finally {
 			execRunning = false;
 		}
@@ -69,12 +76,12 @@
 		try { await fn(); } finally { actionInProgress = false; }
 	}
 
-	async function handleStart() { await withAction(async () => { await containerLibrary.startContainer(container.id); notifications.success('Started'); }); }
-	async function handleStop() { await withAction(async () => { await containerLibrary.stopContainer(container.id); notifications.success('Stopped'); }); }
-	async function handleRestart() { await withAction(async () => { await containerLibrary.restartContainer(container.id); notifications.success('Restarted'); }); }
-	async function handleRemove() { await withAction(async () => { await containerLibrary.removeContainer(container.id); notifications.success('Removed'); }); }
-	async function handleBuild() { await withAction(async () => { await containerLibrary.buildImage(container.id); notifications.success('Built'); }); }
-	async function handleRecreate() { await withAction(async () => { await containerLibrary.removeContainer(container.id); await containerLibrary.startContainer(container.id); notifications.success('Recreated'); }); }
+	async function handleStart() { await withAction(async () => { await containerLibrary.startContainer(container.id); notifications.success(i18n.t('containerComp.started')); }); }
+	async function handleStop() { await withAction(async () => { await containerLibrary.stopContainer(container.id); notifications.success(i18n.t('containerComp.stopped')); }); }
+	async function handleRestart() { await withAction(async () => { await containerLibrary.restartContainer(container.id); notifications.success(i18n.t('containerComp.restarted')); }); }
+	async function handleRemove() { await withAction(async () => { await containerLibrary.removeContainer(container.id); notifications.success(i18n.t('containerComp.removed')); }); }
+	async function handleBuild() { await withAction(async () => { await containerLibrary.buildImage(container.id); notifications.success(i18n.t('containerComp.built')); }); }
+	async function handleRecreate() { await withAction(async () => { await containerLibrary.removeContainer(container.id); await containerLibrary.startContainer(container.id); notifications.success(i18n.t('containerComp.recreated')); }); }
 
 	let copiedCommand = $state<string | null>(null);
 	const containerName = $derived(`cctm-${container.name.toLowerCase().replace(/\s+/g, '-')}`);
@@ -111,13 +118,13 @@
 					onBuild={container.dockerfile ? handleBuild : undefined}
 					onStart={handleStart} onStop={handleStop} onRestart={handleRestart} onRemove={handleRemove}
 					onRecreate={container.dockerContainerId ? handleRecreate : undefined} />
-				<button onclick={onClose} class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors" aria-label="Close">
+				<button onclick={onClose} class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors" aria-label={i18n.t('common.close')}>
 					<X class="w-5 h-5" aria-hidden="true" />
 				</button>
 			</div>
 		</div>
 
-		<div class="flex border-b border-gray-200 dark:border-gray-700" role="tablist" aria-label="Container details">
+		<div class="flex border-b border-gray-200 dark:border-gray-700" role="tablist" aria-label={i18n.t('containerComp.containerDetails')}>
 			{#each tabs as tab}
 				{@const isActive = activeTab === tab}
 				<button
@@ -130,7 +137,7 @@
 					onkeydown={handleTabKeydown}
 					class="px-4 py-2 text-sm font-medium border-b-2 transition-colors
 						{isActive ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
-					{tab.charAt(0).toUpperCase() + tab.slice(1)}
+					{tabLabels[tab]}
 				</button>
 			{/each}
 		</div>
@@ -139,14 +146,14 @@
 			{#if activeTab === 'overview'}
 				<div class="p-4 space-y-3">
 					<div class="grid grid-cols-2 gap-4 text-sm">
-						<div><span class="text-gray-500 dark:text-gray-400">Type:</span> <span class="text-gray-900 dark:text-white">{container.containerType}</span></div>
-						<div><span class="text-gray-500 dark:text-gray-400">Image:</span> <span class="text-gray-900 dark:text-white">{container.image || 'N/A'}</span></div>
-						<div><span class="text-gray-500 dark:text-gray-400">Working Dir:</span> <span class="text-gray-900 dark:text-white">{container.workingDir || 'N/A'}</span></div>
-						<div class="min-w-0"><span class="text-gray-500 dark:text-gray-400">Docker ID:</span> <span class="text-gray-900 dark:text-white font-mono text-xs break-all">{container.dockerContainerId || 'N/A'}</span></div>
+						<div><span class="text-gray-500 dark:text-gray-400">{i18n.t('containerComp.typeLabel')}</span> <span class="text-gray-900 dark:text-white">{container.containerType}</span></div>
+						<div><span class="text-gray-500 dark:text-gray-400">{i18n.t('containerComp.imageLabel')}</span> <span class="text-gray-900 dark:text-white">{container.image || i18n.t('containerComp.na')}</span></div>
+						<div><span class="text-gray-500 dark:text-gray-400">{i18n.t('containerComp.workingDirLabel')}</span> <span class="text-gray-900 dark:text-white">{container.workingDir || i18n.t('containerComp.na')}</span></div>
+						<div class="min-w-0"><span class="text-gray-500 dark:text-gray-400">{i18n.t('containerComp.dockerIdLabel')}</span> <span class="text-gray-900 dark:text-white font-mono text-xs break-all">{container.dockerContainerId || i18n.t('containerComp.na')}</span></div>
 					</div>
 					{#if container.ports && container.ports.length > 0}
 						<div>
-							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Ports</p>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.ports')}</p>
 							<div class="flex flex-wrap gap-2">
 								{#each container.ports as port}
 									<span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{port.hostPort}:{port.containerPort}/{port.protocol || 'tcp'}</span>
@@ -156,7 +163,7 @@
 					{/if}
 					{#if container.env && Object.keys(container.env).length > 0}
 						<div>
-							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Environment</p>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{i18n.t('containerComp.environment')}</p>
 							<div class="font-mono text-xs space-y-0.5">
 								{#each Object.entries(container.env) as [key, value]}
 									<div><span class="text-blue-600 dark:text-blue-400">{key}</span>=<span class="text-gray-600 dark:text-gray-400">{value}</span></div>
@@ -166,12 +173,12 @@
 					{/if}
 					{#if dockerStatus === 'running'}
 						<div>
-							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Connect from terminal</p>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{i18n.t('containerComp.connectFromTerminal')}</p>
 							<div class="space-y-2">
 								<div class="flex items-center gap-2 bg-gray-950 rounded-lg px-3 py-2">
 									<code class="text-xs text-gray-300 flex-1 select-all truncate">{execCommand_shell}</code>
 									<button onclick={() => copyToClipboard(execCommand_shell, 'shell')}
-										class="p-1 rounded text-gray-500 hover:text-white transition-colors shrink-0" title="Copy to clipboard">
+										class="p-1 rounded text-gray-500 hover:text-white transition-colors shrink-0" title={i18n.t('containerComp.copyToClipboard')}>
 										{#if copiedCommand === 'shell'}
 											<Check class="w-3.5 h-3.5 text-green-400" />
 										{:else}
@@ -182,7 +189,7 @@
 								<div class="flex items-center gap-2 bg-gray-950 rounded-lg px-3 py-2">
 									<code class="text-xs text-gray-300 flex-1 select-all truncate">{execCommand_claude}</code>
 									<button onclick={() => copyToClipboard(execCommand_claude, 'claude')}
-										class="p-1 rounded text-gray-500 hover:text-white transition-colors shrink-0" title="Copy to clipboard">
+										class="p-1 rounded text-gray-500 hover:text-white transition-colors shrink-0" title={i18n.t('containerComp.copyToClipboard')}>
 										{#if copiedCommand === 'claude'}
 											<Check class="w-3.5 h-3.5 text-green-400" />
 										{:else}
@@ -202,9 +209,9 @@
 				<ContainerStats containerId={container.id} />
 			{:else if activeTab === 'exec'}
 				<div class="p-4 flex flex-col h-96">
-					<div class="flex-1 bg-gray-950 rounded-lg p-3 font-mono text-xs text-gray-300 overflow-auto mb-2 whitespace-pre break-all">{#if execOutput}{execOutput}{:else}<span class="text-gray-600 italic">Run a command...</span>{/if}</div>
+					<div class="flex-1 bg-gray-950 rounded-lg p-3 font-mono text-xs text-gray-300 overflow-auto mb-2 whitespace-pre break-all">{#if execOutput}{execOutput}{:else}<span class="text-gray-600 italic">{i18n.t('containerComp.runCommandPlaceholder')}</span>{/if}</div>
 					<div class="flex gap-2">
-						<input type="text" bind:value={execCommand} placeholder="Enter command..."
+						<input type="text" bind:value={execCommand} placeholder={i18n.t('containerComp.enterCommandPlaceholder')}
 							disabled={execRunning || dockerStatus !== 'running'}
 							onkeydown={(e) => e.key === 'Enter' && handleExec()}
 							class="input flex-1 min-w-0 font-mono" />
@@ -214,7 +221,7 @@
 						</button>
 					</div>
 					{#if dockerStatus !== 'running'}
-						<p class="text-xs text-gray-500 mt-1">Container must be running to execute commands</p>
+						<p class="text-xs text-gray-500 mt-1">{i18n.t('containerComp.mustBeRunningToExec')}</p>
 					{/if}
 				</div>
 			{/if}

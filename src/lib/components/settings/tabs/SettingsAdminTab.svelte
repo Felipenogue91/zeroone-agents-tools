@@ -3,6 +3,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { ManagedSettingsViewer } from '$lib/components/admin-settings';
 	import { notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ManagedSettingsInfo } from '$lib/types';
 	import { RefreshCw } from 'lucide-svelte';
 
@@ -24,7 +25,7 @@
 
 	async function handleRefresh() {
 		await load();
-		notifications.success('Managed settings refreshed');
+		notifications.success(i18n.t('settingsComp.adminRefreshed'));
 	}
 
 	onMount(() => {
@@ -36,7 +37,7 @@
 	<button
 		onclick={handleRefresh}
 		class="btn btn-ghost"
-		title="Refresh managed settings"
+		title={i18n.t('settingsComp.adminRefreshTitle')}
 		disabled={isLoading}
 	>
 		<RefreshCw class="w-4 h-4" />

@@ -2,6 +2,7 @@
 	import { Hash, MessageSquare, Wrench, Calendar, Clock, DollarSign } from 'lucide-svelte';
 	import type { LongestSession } from '$lib/types';
 	import { formatCompactNumber, formatDuration, formatCost } from '$lib/types/usage';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		totalSessions: number | null;
@@ -24,7 +25,7 @@
 	}: Props = $props();
 
 	function formatDate(iso: string | null): string {
-		if (!iso) return 'N/A';
+		if (!iso) return i18n.t('analyticsComp.na');
 		try {
 			return new Date(iso).toLocaleDateString(undefined, {
 				year: 'numeric',
@@ -38,42 +39,42 @@
 
 	const cards = $derived([
 		{
-			label: 'Total Sessions',
+			label: i18n.t('analyticsComp.totalSessions'),
 			value: totalSessions != null ? formatCompactNumber(totalSessions) : '0',
 			icon: Hash,
 			color: 'bg-blue-500'
 		},
 		{
-			label: 'Total Messages',
+			label: i18n.t('analyticsComp.totalMessages'),
 			value: totalMessages != null ? formatCompactNumber(totalMessages) : '0',
 			icon: MessageSquare,
 			color: 'bg-purple-500'
 		},
 		{
-			label: 'Tool Calls',
+			label: i18n.t('analyticsComp.toolCalls'),
 			value: formatCompactNumber(totalToolCalls),
 			icon: Wrench,
 			color: 'bg-amber-500'
 		},
 		{
-			label: 'First Session',
+			label: i18n.t('analyticsComp.firstSession'),
 			value: formatDate(firstSessionDate),
 			icon: Calendar,
 			color: 'bg-green-500'
 		},
 		{
-			label: 'Longest Session',
-			value: longestSession ? formatDuration(longestSession.duration) : 'N/A',
-			subtitle: longestSession ? `${longestSession.messageCount} messages` : undefined,
+			label: i18n.t('analyticsComp.longestSession'),
+			value: longestSession ? formatDuration(longestSession.duration) : i18n.t('analyticsComp.na'),
+			subtitle: longestSession ? i18n.t('analyticsComp.messagesCount', { count: longestSession.messageCount }) : undefined,
 			icon: Clock,
 			color: 'bg-rose-500'
 		},
 		...(totalCostUSD != null
 			? [
 					{
-						label: 'Est. API Cost',
+						label: i18n.t('analyticsComp.estApiCost'),
 						value: formatCost(totalCostUSD),
-						subtitle: 'if billed at API rates',
+						subtitle: i18n.t('analyticsComp.ifBilledAtApiRates'),
 						icon: DollarSign,
 						color: 'bg-emerald-500'
 					}
@@ -105,6 +106,6 @@
 
 {#if lastComputedDate}
 	<p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-		Last updated: {formatDate(lastComputedDate)}
+		{i18n.t('analyticsComp.lastUpdated', { date: formatDate(lastComputedDate) })}
 	</p>
 {/if}

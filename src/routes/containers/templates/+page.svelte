@@ -2,6 +2,7 @@
 	import { Header } from '$lib/components/layout';
 	import { TemplateBrowser, PortMappingEditor } from '$lib/components/containers';
 	import { containerLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ContainerTemplate, PortMapping } from '$lib/types';
 	import { Plus, Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -52,17 +53,17 @@
 				});
 			}
 
-			notifications.success(`Container '${containerName}' created from template`);
+			notifications.success(i18n.t('containers.createdFromTemplate', { name: containerName }));
 			goto('/containers');
 		} catch (err) {
-			notifications.error(`Failed to create container: ${err}`);
+			notifications.error(i18n.t('containers.createFailed', { err: String(err) }));
 		}
 	}
 </script>
 
 <Header
-	title="Container Templates"
-	subtitle="Quick-start templates for common development environments"
+	title={i18n.t('containers.templatesTitle')}
+	subtitle={i18n.t('containers.templatesSubtitle')}
 />
 
 <div class="flex-1 overflow-auto p-6">
@@ -74,13 +75,13 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[85vh] overflow-auto">
 			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-				Create from "{selectedTemplate?.name}"
+				{i18n.t('containers.createFromTemplate', { name: selectedTemplate?.name ?? '' })}
 			</h3>
-			<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Configure your container before creating.</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{i18n.t('containers.configureBeforeCreating')}</p>
 
 			<div class="space-y-4">
 				<div>
-					<label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Container Name</label>
+					<label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">{i18n.t('containers.containerName')}</label>
 					<input
 						type="text"
 						bind:value={containerName}
@@ -93,17 +94,17 @@
 
 				<div class="space-y-2">
 					<div class="flex items-center justify-between">
-						<label class="text-sm font-medium text-gray-700 dark:text-gray-300">Environment Variables</label>
+						<label class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('containers.envVars')}</label>
 						<button type="button" onclick={addEnvVar}
 							class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1">
-							<Plus class="w-3 h-3" aria-hidden="true" /> Add Variable
+							<Plus class="w-3 h-3" aria-hidden="true" /> {i18n.t('containers.addVariable')}
 						</button>
 					</div>
 					{#if envVars.length > 0}
 						<div class="space-y-2">
 							<div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-								<span class="flex-1">Key</span>
-								<span class="flex-1">Value</span>
+								<span class="flex-1">{i18n.t('containers.key')}</span>
+								<span class="flex-1">{i18n.t('containers.value')}</span>
 								<span class="w-8"></span>
 							</div>
 							{#each envVars as env, i}
@@ -125,11 +126,11 @@
 			<div class="flex justify-end gap-3 mt-6">
 				<button onclick={() => showConfigDialog = false}
 					class="btn btn-secondary">
-					Cancel
+					{i18n.t('common.cancel')}
 				</button>
 				<button onclick={handleCreate} disabled={!containerName}
 					class="btn btn-primary">
-					Create Container
+					{i18n.t('containers.createContainer')}
 				</button>
 			</div>
 		</div>

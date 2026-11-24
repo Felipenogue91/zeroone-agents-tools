@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PermissionTemplate, PermissionCategory } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import {
 		X,
 		ShieldAlert,
@@ -30,29 +31,31 @@
 		return groups;
 	});
 
-	const categoryConfig: Record<
-		PermissionCategory,
-		{ label: string; icon: typeof ShieldAlert; color: string; badgeColor: string }
-	> = {
+	const categoryConfig = $derived<
+		Record<
+			PermissionCategory,
+			{ label: string; icon: typeof ShieldAlert; color: string; badgeColor: string }
+		>
+	>({
 		deny: {
-			label: 'Deny',
+			label: i18n.t('permComp.deny'),
 			icon: ShieldAlert,
 			color: 'text-red-600 dark:text-red-400',
 			badgeColor: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
 		},
 		ask: {
-			label: 'Ask',
+			label: i18n.t('permComp.ask'),
 			icon: ShieldQuestion,
 			color: 'text-amber-600 dark:text-amber-400',
 			badgeColor: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
 		},
 		allow: {
-			label: 'Allow',
+			label: i18n.t('permComp.allow'),
 			icon: ShieldCheck,
 			color: 'text-green-600 dark:text-green-400',
 			badgeColor: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
 		}
-	};
+	});
 
 	const categories: PermissionCategory[] = ['deny', 'ask', 'allow'];
 </script>
@@ -72,7 +75,7 @@
 		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="w-5 h-5 text-primary-500" />
-				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Rule Templates</h3>
+				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">{i18n.t('permComp.ruleTemplates')}</h3>
 			</div>
 			<button
 				onclick={onclose}
@@ -124,7 +127,7 @@
 
 			{#if templates.length === 0}
 				<div class="text-center py-8 text-gray-400 dark:text-gray-500">
-					<p class="text-sm">No templates available</p>
+					<p class="text-sm">{i18n.t('permComp.noTemplates')}</p>
 				</div>
 			{/if}
 		</div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { StatusLineGalleryEntry } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Download, ExternalLink, Package } from 'lucide-svelte';
 
 	type Props = {
@@ -38,7 +39,7 @@
 					</p>
 				{/if}
 				{#if entry.author}
-					<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">by {entry.author}</p>
+					<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{i18n.t('statuslineComp.byAuthor', { author: entry.author })}</p>
 				{/if}
 			</div>
 		</div>
@@ -68,7 +69,7 @@
 					disabled
 					class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
 				>
-					Installed
+					{i18n.t('statuslineComp.installed')}
 				</button>
 			{:else}
 				<button
@@ -77,7 +78,7 @@
 					class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50"
 				>
 					<Download class="w-3.5 h-3.5" />
-					{isInstalling ? 'Installing...' : 'Add to Library'}
+					{isInstalling ? i18n.t('statuslineComp.installing') : i18n.t('statuslineComp.addToLibrary')}
 				</button>
 			{/if}
 		</div>

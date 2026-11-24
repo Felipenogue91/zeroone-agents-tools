@@ -2,6 +2,7 @@
 	import type { SessionDetail } from '$lib/types';
 	import { formatCompactNumber, formatModelName } from '$lib/types/usage';
 	import { X, User, Bot, Wrench } from 'lucide-svelte';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		detail: SessionDetail;
@@ -44,9 +45,9 @@
 	}
 
 	function roleLabel(role: string): string {
-		if (role === 'user') return 'User';
-		if (role === 'assistant') return 'Assistant';
-		if (role === 'tool_result') return 'Tool Result';
+		if (role === 'user') return i18n.t('sessionComp.roleUser');
+		if (role === 'assistant') return i18n.t('sessionComp.roleAssistant');
+		if (role === 'tool_result') return i18n.t('sessionComp.roleToolResult');
 		return role;
 	}
 </script>
@@ -58,9 +59,9 @@
 		class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10"
 	>
 		<div>
-			<h3 class="text-sm font-semibold text-gray-900 dark:text-white">Session Transcript</h3>
+			<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{i18n.t('sessionComp.sessionTranscript')}</h3>
 			<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-				{detail.messages.length} messages
+				{i18n.t('sessionComp.messagesCount', { count: detail.messages.length })}
 			</p>
 		</div>
 		<button
@@ -116,10 +117,10 @@
 
 				{#if message.usage}
 					<div class="flex items-center gap-3 mt-2 text-xs text-gray-400 dark:text-gray-500">
-						<span>In: {formatCompactNumber(message.usage.inputTokens)}</span>
-						<span>Out: {formatCompactNumber(message.usage.outputTokens)}</span>
+						<span>{i18n.t('sessionComp.usageIn', { count: formatCompactNumber(message.usage.inputTokens) })}</span>
+						<span>{i18n.t('sessionComp.usageOut', { count: formatCompactNumber(message.usage.outputTokens) })}</span>
 						{#if message.usage.cacheReadInputTokens > 0}
-							<span>Cache: {formatCompactNumber(message.usage.cacheReadInputTokens)}</span>
+							<span>{i18n.t('sessionComp.usageCache', { count: formatCompactNumber(message.usage.cacheReadInputTokens) })}</span>
 						{/if}
 					</div>
 				{/if}

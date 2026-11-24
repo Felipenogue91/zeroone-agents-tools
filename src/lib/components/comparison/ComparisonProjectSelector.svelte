@@ -3,6 +3,7 @@
 	import { projectTotalTokens } from '$lib/types/session';
 	import { formatCompactNumber } from '$lib/types/usage';
 	import { comparisonStore, PROJECT_COLORS } from '$lib/stores/comparisonStore.svelte';
+	import { i18n } from '$lib/i18n';
 
 	type Props = {
 		projects: ProjectSummary[];
@@ -28,14 +29,14 @@
 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 	<div class="flex items-center justify-between mb-3">
 		<h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-			Select Projects ({selectedCount}/5 selected)
+			{i18n.t('compComp.selectProjectsCount', { count: selectedCount })}
 		</h3>
 		{#if selectedCount > 0}
 			<button
 				onclick={() => comparisonStore.clearSelection()}
 				class="text-xs text-primary-500 hover:text-primary-600 font-medium"
 			>
-				Clear all
+				{i18n.t('compComp.clearAll')}
 			</button>
 		{/if}
 	</div>
@@ -75,8 +76,8 @@
 						{shortPath(project.inferredPath)}
 					</p>
 					<div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-						<span>{project.sessionCount} sessions</span>
-						<span>{formatCompactNumber(projectTotalTokens(project))} tokens</span>
+						<span>{i18n.t('compComp.sessionsCount', { count: project.sessionCount })}</span>
+						<span>{i18n.t('compComp.tokensCount', { count: formatCompactNumber(projectTotalTokens(project)) })}</span>
 					</div>
 				</div>
 			</button>

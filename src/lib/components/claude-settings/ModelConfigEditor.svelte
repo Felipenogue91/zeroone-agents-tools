@@ -6,6 +6,7 @@
 		COMMON_LANGUAGES
 	} from '$lib/types';
 	import type { ClaudeSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save } from 'lucide-svelte';
 
 	type Props = {
@@ -106,7 +107,7 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Model & Output</h3>
+	<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">{i18n.t('settingsComp.modelOutputTitle')}</h3>
 
 	<div class="space-y-4">
 		<!-- Model -->
@@ -115,40 +116,39 @@
 				for="model-select"
 				class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 			>
-				Default Model
+				{i18n.t('settingsComp.defaultModel')}
 			</label>
 			<select
 				id="model-select"
 				bind:value={modelChoice}
 				class="input text-sm w-full"
 			>
-				<option value="">Not set (use default)</option>
+				<option value="">{i18n.t('settingsComp.notSetUseDefault')}</option>
 				{#each CLAUDE_MODELS as m}
 					<option value={m.value}>{m.label} — {m.description}</option>
 				{/each}
-				<option value="__custom__">Other (custom model ID)…</option>
+				<option value="__custom__">{i18n.t('settingsComp.otherCustomModel')}</option>
 			</select>
 			{#if modelChoice === '__custom__'}
 				<input
 					type="text"
 					bind:value={customModel}
-					placeholder="e.g. claude-opus-4-7 or arn:aws:bedrock:…"
+					placeholder={i18n.t('settingsComp.customModelPlaceholder')}
 					class="input text-sm w-full mt-2"
-					aria-label="Custom model ID"
+					aria-label={i18n.t('settingsComp.customModelAria')}
 				/>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-					Enter any model ID, alias, or provider-specific identifier. Append <code>[1m]</code>
-					yourself if not using the toggle below.
+					{i18n.t('settingsComp.customModelHelpPrefix')} <code>[1m]</code>
+					{i18n.t('settingsComp.customModelHelpSuffix')}
 				</p>
 			{/if}
 			<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-				Aliases like <code>opus</code>, <code>sonnet</code>, <code>haiku</code> auto-resolve
-				to the latest version. See
+				{i18n.t('settingsComp.aliasesHelpPrefix')} <code>opus</code>, <code>sonnet</code>, <code>haiku</code> {i18n.t('settingsComp.aliasesHelpMiddle')}
 				<a
 					href="https://code.claude.com/docs/en/model-config#available-models"
 					target="_blank"
 					rel="noopener"
-					class="underline hover:text-primary-600">model configuration docs</a>.
+					class="underline hover:text-primary-600">{i18n.t('settingsComp.modelConfigDocsLink')}</a>.
 			</p>
 		</div>
 
@@ -162,27 +162,26 @@
 					class="rounded border-gray-300 dark:border-gray-600"
 				/>
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					Use 1M token context window
+					{i18n.t('settingsComp.use1mContext')}
 				</span>
 			</label>
 			<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-				Appends the <code>[1m]</code> suffix to the model ID. Supported on Opus and Sonnet
-				(not Haiku). Standard pricing — no premium beyond 200K tokens.
+				{i18n.t('settingsComp.use1mHelpPrefix')} <code>[1m]</code> {i18n.t('settingsComp.use1mHelpSuffix')}
 				<a
 					href="https://code.claude.com/docs/en/model-config#extended-context"
 					target="_blank"
 					rel="noopener"
-					class="underline hover:text-primary-600">Docs</a>.
+					class="underline hover:text-primary-600">{i18n.t('settingsComp.docsLink')}</a>.
 			</p>
 		</div>
 
 		<!-- Available Models -->
 		<div>
 			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-				Available Models
+				{i18n.t('settingsComp.availableModels')}
 			</label>
 			<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-				Restrict which models can be selected. Leave empty for no restriction.
+				{i18n.t('settingsComp.availableModelsDesc')}
 			</p>
 			<div class="flex flex-wrap gap-2">
 				{#each AVAILABLE_MODEL_SHORTCUTS as shortcut}
@@ -206,7 +205,7 @@
 				for="output-style-select"
 				class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 			>
-				Output Style
+				{i18n.t('settingsComp.outputStyle')}
 			</label>
 			<select
 				id="output-style-select"
@@ -225,7 +224,7 @@
 				for="language-select"
 				class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 			>
-				Response Language
+				{i18n.t('settingsComp.responseLanguage')}
 			</label>
 			<select
 				id="language-select"
@@ -244,7 +243,7 @@
 				for="thinking-select"
 				class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 			>
-				Extended Thinking
+				{i18n.t('settingsComp.extendedThinking')}
 			</label>
 			<select
 				id="thinking-select"
@@ -252,9 +251,9 @@
 				onchange={handleThinkingChange}
 				class="input text-sm w-full"
 			>
-				<option value="">Not set (use default)</option>
-				<option value="true">Always enabled</option>
-				<option value="false">Disabled</option>
+				<option value="">{i18n.t('settingsComp.notSetUseDefault')}</option>
+				<option value="true">{i18n.t('settingsComp.alwaysEnabled')}</option>
+				<option value="false">{i18n.t('settingsComp.disabledLabel')}</option>
 			</select>
 		</div>
 	</div>
@@ -262,7 +261,7 @@
 	<div class="mt-5 flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Model Settings
+			{i18n.t('settingsComp.saveModelSettings')}
 		</button>
 	</div>
 </div>

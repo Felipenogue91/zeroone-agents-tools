@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { AutoModeEditor } from '$lib/components/auto-mode';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -26,7 +27,7 @@
 	{#snippet children({ settings, save })}
 		<AutoModeEditor
 			{settings}
-			onsave={(s) => save(s, 'Auto mode settings saved', 'Failed to save auto mode settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.autoModeSaved'), i18n.t('settingsComp.autoModeSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

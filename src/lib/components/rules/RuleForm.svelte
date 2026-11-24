@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CreateRuleRequest, Rule } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Clipboard, Check, AlertCircle, FileUp } from 'lucide-svelte';
 
 	const MAX_NAME_LENGTH = 64;
@@ -71,19 +72,19 @@
 					content = parsed.content;
 					if (parsed.paths) pathsInput = parsed.paths.join(', ');
 					importStatus = 'success';
-					importMessage = parsed.name ? `Imported "${parsed.name}"` : 'Content imported';
+					importMessage = parsed.name ? i18n.t('ruleForm.imported', { name: parsed.name }) : i18n.t('ruleForm.contentImported');
 				} else {
 					// No frontmatter — use filename as name, whole content as body
 					name = file.name.replace(/\.(md|markdown|txt)$/, '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
 					content = text;
 					importStatus = 'success';
-					importMessage = 'Content imported (no frontmatter)';
+					importMessage = i18n.t('ruleForm.importedNoFm');
 				}
 
 				setTimeout(() => { importStatus = 'idle'; importMessage = ''; }, 3000);
 			} catch {
 				importStatus = 'error';
-				importMessage = 'Could not read file';
+				importMessage = i18n.t('ruleForm.fileReadError');
 				setTimeout(() => { importStatus = 'idle'; importMessage = ''; }, 3000);
 			}
 		};
@@ -101,17 +102,17 @@
 				content = parsed.content;
 				if (parsed.paths) pathsInput = parsed.paths.join(', ');
 				importStatus = 'success';
-				importMessage = parsed.name ? `Imported "${parsed.name}"` : 'Content imported';
+				importMessage = parsed.name ? i18n.t('ruleForm.imported', { name: parsed.name }) : i18n.t('ruleForm.contentImported');
 			} else {
 				content = text;
 				importStatus = 'success';
-				importMessage = 'Content pasted (no frontmatter)';
+				importMessage = i18n.t('ruleForm.pastedNoFm');
 			}
 
 			setTimeout(() => { importStatus = 'idle'; importMessage = ''; }, 3000);
 		} catch {
 			importStatus = 'error';
-			importMessage = 'Could not access clipboard';
+			importMessage = i18n.t('ruleForm.clipboardError');
 			setTimeout(() => { importStatus = 'idle'; importMessage = ''; }, 3000);
 		}
 	}
@@ -122,15 +123,15 @@
 		const trimmedContent = content.trim();
 
 		if (!trimmedName) {
-			errors.name = 'Name is required';
+			errors.name = i18n.t('ruleForm.nameRequired');
 		} else if (trimmedName.length > MAX_NAME_LENGTH) {
-			errors.name = `Name must be ${MAX_NAME_LENGTH} characters or less`;
+			errors.name = i18n.t('ruleForm.nameTooLong', { max: MAX_NAME_LENGTH });
 		} else if (!NAME_PATTERN.test(trimmedName)) {
-			errors.name = 'Name must contain only lowercase letters, numbers, and hyphens';
+			errors.name = i18n.t('ruleForm.nameInvalid');
 		}
 
 		if (!trimmedContent) {
-			errors.content = 'Content is required';
+			errors.content = i18n.t('ruleForm.contentRequired');
 		}
 
 		return Object.keys(errors).length === 0;
@@ -190,10 +191,10 @@
 						</p>
 					{:else}
 						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-							Import from Markdown
+							{i18n.t('ruleForm.importTitle')}
 						</p>
 						<p class="text-xs text-gray-500 dark:text-gray-400">
-							Paste or import a <code class="px-1 bg-gray-200 dark:bg-gray-700 rounded">.md</code> rule file
+							{i18n.t('ruleForm.importDesc')}
 						</p>
 					{/if}
 				</div>
@@ -201,11 +202,11 @@
 			<div class="flex items-center gap-2">
 				<button type="button" onclick={handleFileImport} class="btn btn-secondary text-sm">
 					<FileUp class="w-4 h-4 mr-1.5" />
-					File
+					{i18n.t('common.file')}
 				</button>
 				<button type="button" onclick={handlePasteFromClipboard} class="btn btn-secondary text-sm">
 					<Clipboard class="w-4 h-4 mr-1.5" />
-					Paste
+					{i18n.t('common.paste')}
 				</button>
 			</div>
 		</div>
@@ -214,7 +215,7 @@
 	<!-- Name -->
 	<div>
 		<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Name <span class="text-red-500">*</span>
+			{i18n.t('common.name')} <span class="text-red-500">*</span>
 		</label>
 		<input
 			type="text"
@@ -228,8 +229,8 @@
 			<p class="mt-1 text-sm text-red-500">{errors.name}</p>
 		{:else}
 			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-				Will be saved to <code class="px-1 bg-gray-100 dark:bg-gray-700 rounded">.claude/rules/{name || 'name'}.md</code>
-				<span class="text-gray-400 dark:text-gray-500">&nbsp;&middot;&nbsp;Lowercase letters, numbers, and hyphens only</span>
+				{i18n.t('ruleForm.nameHelp', { name: name || 'name' })}
+				<span class="text-gray-400 dark:text-gray-500">&nbsp;&middot;&nbsp;{i18n.t('ruleForm.nameChars')}</span>
 			</p>
 		{/if}
 	</div>
@@ -237,24 +238,24 @@
 	<!-- Description -->
 	<div>
 		<label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Description
+			{i18n.t('common.description')}
 		</label>
 		<input
 			type="text"
 			id="description"
 			bind:value={description}
 			class="input mt-1"
-			placeholder="When and why this rule applies"
+			placeholder={i18n.t('ruleForm.descPlaceholder')}
 		/>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Human-readable summary of what this rule enforces
+			{i18n.t('ruleForm.descHelp')}
 		</p>
 	</div>
 
 	<!-- Paths (glob patterns) -->
 	<div>
 		<label for="paths" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			File Patterns
+			{i18n.t('ruleForm.filePatterns')}
 		</label>
 		<input
 			type="text"
@@ -264,14 +265,14 @@
 			placeholder="src/**/*.ts, tests/**/*.ts"
 		/>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Comma-separated glob patterns. Rule loads only when working with matching files. Leave empty for always-active rules.
+			{i18n.t('ruleForm.filePatternsHelp')}
 		</p>
 	</div>
 
 	<!-- Content -->
 	<div>
 		<label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Rule Instructions <span class="text-red-500">*</span>
+			{i18n.t('ruleForm.instructions')} <span class="text-red-500">*</span>
 		</label>
 		<textarea
 			id="content"
@@ -279,18 +280,13 @@
 			rows={10}
 			class="input mt-1 font-mono text-sm resize-y"
 			class:border-red-500={errors.content}
-			placeholder={`Instructions that Claude will follow when this rule is active.
-
-Example:
-- Always use strict TypeScript (no \`any\` types)
-- Prefer named exports over default exports
-- Use kebab-case for file names`}
+			placeholder={i18n.t('ruleForm.instructionsPlaceholder')}
 		></textarea>
 		{#if errors.content}
 			<p class="mt-1 text-sm text-red-500">{errors.content}</p>
 		{:else}
 			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-				Markdown instructions loaded into Claude's context when the rule is active
+				{i18n.t('ruleForm.instructionsHelp')}
 			</p>
 		{/if}
 	</div>
@@ -298,27 +294,27 @@ Example:
 	<!-- Tags -->
 	<div>
 		<label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-			Tags
+			{i18n.t('common.tags')}
 		</label>
 		<input
 			type="text"
 			id="tags"
 			bind:value={tagsInput}
 			class="input mt-1"
-			placeholder="typescript, quality, style"
+			placeholder={i18n.t('ruleForm.tagsPlaceholder')}
 		/>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Comma-separated tags for organization
+			{i18n.t('ruleForm.tagsHelp')}
 		</p>
 	</div>
 
 	<!-- Actions -->
 	<div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
 		<button type="button" onclick={onCancel} class="btn btn-secondary">
-			Cancel
+			{i18n.t('common.cancel')}
 		</button>
 		<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
-			{initialValues.name ? 'Update Rule' : 'Create Rule'}
+			{initialValues.name ? i18n.t('ruleForm.updateRule') : i18n.t('ruleForm.createRule')}
 		</button>
 	</div>
 </form>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PermissionScope, AllPermissions } from '$lib/types';
-	import { PERMISSION_SCOPE_LABELS } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { User, FolderOpen, FileText } from 'lucide-svelte';
 
 	type Props = {
@@ -11,6 +11,21 @@
 	};
 
 	let { selectedScope, permissions, hasProject, onselect }: Props = $props();
+
+	const scopeLabels = $derived<Record<PermissionScope, { label: string; description: string }>>({
+		user: {
+			label: i18n.t('settingsWrapper.scopeUser'),
+			description: i18n.t('permComp.scopeUserDesc')
+		},
+		project: {
+			label: i18n.t('settingsWrapper.scopeProject'),
+			description: i18n.t('permComp.scopeProjectDesc')
+		},
+		local: {
+			label: i18n.t('settingsWrapper.scopeLocal'),
+			description: i18n.t('permComp.scopeLocalDesc')
+		}
+	});
 
 	const scopes: { key: PermissionScope; icon: typeof User }[] = [
 		{ key: 'user', icon: User },
@@ -45,10 +60,10 @@
 				: isDisabled
 					? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
 					: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-			title={PERMISSION_SCOPE_LABELS[key].description}
+			title={scopeLabels[key].description}
 		>
 			<svelte:component this={icon} class="w-4 h-4" />
-			{PERMISSION_SCOPE_LABELS[key].label}
+			{scopeLabels[key].label}
 			{#if count > 0}
 				<span
 					class="ml-1 px-1.5 py-0.5 text-xs rounded-full

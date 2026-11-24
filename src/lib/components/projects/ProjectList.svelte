@@ -2,6 +2,7 @@
 	import type { Project, ProjectSkill, ProjectSubAgent } from '$lib/types';
 	import { goto } from '$app/navigation';
 	import { projectsStore, skillLibrary, subagentLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import ProjectCard from './ProjectCard.svelte';
 	import { SearchBar, LoadingSpinner, EmptyState } from '$lib/components/shared';
 	import { FolderOpen, Plus } from 'lucide-svelte';
@@ -69,15 +70,15 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Projects</h3>
+			<h3 class="text-lg font-semibold text-gray-900 dark:text-white">{i18n.t('page.projects.title')}</h3>
 			<p class="text-sm text-gray-500 dark:text-gray-400">
-				Click a project to open its dashboard
+				{i18n.t('projComp.listSubtitle')}
 			</p>
 		</div>
 		{#if onAddProject}
 			<button onclick={onAddProject} class="btn btn-primary">
 				<Plus class="w-4 h-4 mr-2" />
-				Add Project
+				{i18n.t('projComp.addProject')}
 			</button>
 		{/if}
 	</div>
@@ -85,7 +86,7 @@
 	<!-- Search Bar -->
 	{#if projectsStore.projects.length > 0}
 		<div class="max-w-md">
-			<SearchBar bind:value={searchQuery} placeholder="Search projects..." />
+			<SearchBar bind:value={searchQuery} placeholder={i18n.t('projComp.searchPlaceholder')} />
 		</div>
 	{/if}
 
@@ -94,18 +95,18 @@
 		<LoadingSpinner />
 	{:else if projectsStore.projects.length === 0}
 		<div class="card">
-			<EmptyState icon={FolderOpen} title="No projects added" description="Add a project folder to start managing MCPs">
+			<EmptyState icon={FolderOpen} title={i18n.t('projComp.noProjects')} description={i18n.t('projComp.noProjectsDesc')}>
 				{#if onAddProject}
 					<button onclick={onAddProject} class="btn btn-primary">
 						<Plus class="w-4 h-4 mr-2" />
-						Add Your First Project
+						{i18n.t('projComp.addFirstProject')}
 					</button>
 				{/if}
 			</EmptyState>
 		</div>
 	{:else if filteredProjects.length === 0}
 		<div class="card">
-			<EmptyState icon={FolderOpen} title="No projects found" description='No projects match "{searchQuery}"' />
+			<EmptyState icon={FolderOpen} title={i18n.t('projComp.noMatching')} description={i18n.t('projComp.noMatchDesc', { query: searchQuery })} />
 		</div>
 	{:else}
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">

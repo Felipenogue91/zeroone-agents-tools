@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Project, ProjectSkill, ProjectSubAgent } from '$lib/types';
 	import { projectsStore, notifications, skillLibrary, subagentLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { FolderOpen, Trash2, RefreshCw, ExternalLink, Plug, Sparkles, Bot } from 'lucide-svelte';
 	import { open } from '@tauri-apps/plugin-shell';
 	import { ActionMenu, ActionMenuItem, FavoriteButton, Badge } from '$lib/components/shared';
@@ -112,26 +113,26 @@
 					onclick={() => onFavoriteToggle(project, !project.isFavorite)}
 				/>
 			{/if}
-			<ActionMenu bind:this={actionMenu} label="Actions for {project.name}">
-				<ActionMenuItem icon={RefreshCw} label="Sync Config" onclick={async () => {
+			<ActionMenu bind:this={actionMenu} label={i18n.t('projComp.actionsFor', { name: project.name })}>
+				<ActionMenuItem icon={RefreshCw} label={i18n.t('projComp.syncConfig')} onclick={async () => {
 					try {
 						await projectsStore.syncProjectConfig(project.id);
-						notifications.success('Config synced');
+						notifications.success(i18n.t('projComp.configSynced'));
 					} catch {
-						notifications.error('Failed to sync config');
+						notifications.error(i18n.t('global.syncFailed'));
 					}
 					actionMenu.close();
 				}} />
-				<ActionMenuItem icon={ExternalLink} label="Open Folder" onclick={async () => {
+				<ActionMenuItem icon={ExternalLink} label={i18n.t('global.openFolder')} onclick={async () => {
 					try {
 						await open(project.path);
 					} catch {
-						notifications.error('Failed to open folder');
+						notifications.error(i18n.t('projComp.openFolderFailed'));
 					}
 					actionMenu.close();
 				}} />
 				{#if onRemove}
-					<ActionMenuItem icon={Trash2} label="Remove" variant="danger" onclick={() => {
+					<ActionMenuItem icon={Trash2} label={i18n.t('common.remove')} variant="danger" onclick={() => {
 						onRemove(project);
 						actionMenu.close();
 					}} />
@@ -145,7 +146,7 @@
 		<div class="flex items-center gap-1.5 text-sm">
 			<Plug class="w-4 h-4 text-purple-400" aria-hidden="true" />
 			{#if totalMcpCount > 0}
-				<span class="text-gray-600 dark:text-gray-300" aria-label="{enabledMcpCount} of {totalMcpCount} MCPs enabled">
+				<span class="text-gray-600 dark:text-gray-300" aria-label={i18n.t('projComp.mcpsEnabledAria', { enabled: enabledMcpCount, total: totalMcpCount })}>
 					{enabledMcpCount}/{totalMcpCount}
 				</span>
 			{:else}
@@ -156,7 +157,7 @@
 		<div class="flex items-center gap-1.5 text-sm">
 			<Sparkles class="w-4 h-4 text-yellow-400" aria-hidden="true" />
 			{#if totalSkillCount > 0}
-				<span class="text-gray-600 dark:text-gray-300" aria-label="{enabledSkillCount} of {totalSkillCount} skills enabled">
+				<span class="text-gray-600 dark:text-gray-300" aria-label={i18n.t('projComp.skillsEnabledAria', { enabled: enabledSkillCount, total: totalSkillCount })}>
 					{enabledSkillCount}/{totalSkillCount}
 				</span>
 			{:else}
@@ -167,7 +168,7 @@
 		<div class="flex items-center gap-1.5 text-sm">
 			<Bot class="w-4 h-4 text-cyan-400" aria-hidden="true" />
 			{#if totalAgentCount > 0}
-				<span class="text-gray-600 dark:text-gray-300" aria-label="{enabledAgentCount} of {totalAgentCount} agents enabled">
+				<span class="text-gray-600 dark:text-gray-300" aria-label={i18n.t('projComp.agentsEnabledAria', { enabled: enabledAgentCount, total: totalAgentCount })}>
 					{enabledAgentCount}/{totalAgentCount}
 				</span>
 			{:else}

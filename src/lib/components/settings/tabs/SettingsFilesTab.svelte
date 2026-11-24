@@ -2,6 +2,7 @@
 	import { ScopedSettingsWrapper } from '$lib/components/settings';
 	import { FileSuggestionEditor } from '$lib/components/file-suggestion';
 	import { claudeSettingsLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ClaudeSettingsScope } from '$lib/types';
 
 	function getSettingCount(scope: ClaudeSettingsScope): number {
@@ -23,7 +24,7 @@
 	{#snippet children({ settings, save })}
 		<FileSuggestionEditor
 			{settings}
-			onsave={(s) => save(s, 'File suggestion settings saved', 'Failed to save file suggestion settings')}
+			onsave={(s) => save(s, i18n.t('settingsComp.filesSaved'), i18n.t('settingsComp.filesSaveFailed'))}
 		/>
 	{/snippet}
 </ScopedSettingsWrapper>

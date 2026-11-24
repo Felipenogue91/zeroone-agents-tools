@@ -1,4 +1,5 @@
 import type { Translations } from '../types';
+import { en } from './en';
 
 // Simplified Chinese (zh-CN) translations.
 // Initial translation by mechanical conversion from zh-TW with TW→CN vocabulary
@@ -6,6 +7,7 @@ import type { Translations } from '../types';
 // 重新整理, 默认 vs 預設, 软件 vs 軟體, 视频 vs 影片, etc.). Native zh-CN
 // speakers are encouraged to open PRs for any awkward phrasing.
 export const zhCN: Translations = {
+	...en,
 	// ── 侧边栏 ──────────────────────────────────────────
 	'nav.core': '核心',
 	'nav.tools': '工具',

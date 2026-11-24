@@ -2,6 +2,7 @@
 	import type { StatusLineSegment, CreateStatusLineRequest, StatusLineTheme } from '$lib/types';
 	import { serializeSegmentsJson } from '$lib/types';
 	import { statuslineLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import SegmentPicker from './SegmentPicker.svelte';
 	import SegmentCard from './SegmentCard.svelte';
 	import SegmentConfig from './SegmentConfig.svelte';
@@ -86,7 +87,7 @@
 	function buildRequest(): CreateStatusLineRequest {
 		normalizePositions();
 		return {
-			name: name || 'Custom Status Line',
+			name: name || i18n.t('statuslineComp.defaultName'),
 			description: description || null,
 			statuslineType: 'custom',
 			segmentsJson: serializeSegmentsJson(segments, theme),
@@ -100,20 +101,20 @@
 	<!-- Name & Description -->
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('common.name')}</label>
 			<input
 				type="text"
 				bind:value={name}
-				placeholder="My Status Line"
+				placeholder={i18n.t('statuslineComp.namePlaceholder')}
 				class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
 			/>
 		</div>
 		<div>
-			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{i18n.t('common.description')}</label>
 			<input
 				type="text"
 				bind:value={description}
-				placeholder="Optional description"
+				placeholder={i18n.t('statuslineComp.descPlaceholder')}
 				class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
 			/>
 		</div>
@@ -121,15 +122,15 @@
 
 	<!-- Add Segments -->
 	<div class="space-y-2">
-		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Add Segments</h4>
+		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.addSegments')}</h4>
 		<SegmentPicker onAdd={addSegment} />
 	</div>
 
 	<!-- Segment List -->
 	<div class="space-y-2">
-		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Segments (drag to reorder)</h4>
+		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.segmentsHeading')}</h4>
 		{#if segments.length === 0}
-			<p class="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">No segments — click "Add Segment" to begin</p>
+			<p class="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">{i18n.t('statuslineComp.noSegmentsBuilder')}</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
@@ -160,16 +161,16 @@
 
 	<!-- Preview -->
 	<div>
-		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Preview</h4>
+		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{i18n.t('common.preview')}</h4>
 		<StatusLinePreview {segments} {theme} {padding} />
 	</div>
 
 	<!-- Actions -->
 	<div class="space-y-2">
-		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Settings & Actions</h4>
+		<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.settingsActions')}</h4>
 		<div class="flex flex-wrap items-center gap-2">
 			<div class="flex items-center gap-2">
-				<label class="text-xs text-gray-500 dark:text-gray-400">Theme:</label>
+				<label class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.themeLabel')}</label>
 				<div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
 					<button
 						onclick={() => (theme = 'default')}
@@ -177,7 +178,7 @@
 							{theme === 'default'
 								? 'bg-primary-500 text-white'
 								: 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}"
-					>Default</button>
+					>{i18n.t('common.default')}</button>
 					<button
 						onclick={() => (theme = 'powerline')}
 						class="px-2.5 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700
@@ -185,7 +186,7 @@
 								? 'bg-primary-500 text-white'
 								: 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 					>
-						<Zap class="w-3 h-3 inline -mt-0.5 mr-0.5" />Powerline
+						<Zap class="w-3 h-3 inline -mt-0.5 mr-0.5" />{i18n.t('statuslineComp.themePowerline')}
 					</button>
 					<button
 						onclick={() => (theme = 'powerline_round')}
@@ -194,12 +195,12 @@
 								? 'bg-primary-500 text-white'
 								: 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 					>
-						<Zap class="w-3 h-3 inline -mt-0.5 mr-0.5" />Round
+						<Zap class="w-3 h-3 inline -mt-0.5 mr-0.5" />{i18n.t('statuslineComp.themeRound')}
 					</button>
 				</div>
 			</div>
 			<div class="flex items-center gap-2">
-				<label class="text-xs text-gray-500 dark:text-gray-400">Padding:</label>
+				<label class="text-xs text-gray-500 dark:text-gray-400">{i18n.t('statuslineComp.paddingLabel')}</label>
 				<input
 					type="number"
 					min="0"
@@ -215,16 +216,16 @@
 				}
 			}} class="btn btn-secondary text-sm">
 				<FileCode class="w-4 h-4 mr-1.5" />
-				{showScript ? 'Hide' : 'Show'} Script
+				{showScript ? i18n.t('statuslineComp.hideScript') : i18n.t('statuslineComp.showScript')}
 			</button>
 			<div class="ml-auto flex items-center gap-2">
 				<button onclick={() => onSave?.(buildRequest())} class="btn btn-secondary text-sm" disabled={!name.trim()}>
 					<Save class="w-4 h-4 mr-1.5" />
-					Save
+					{i18n.t('common.save')}
 				</button>
 				<button onclick={() => onActivate?.(buildRequest())} class="btn btn-primary text-sm" disabled={!name.trim()}>
 					<Play class="w-4 h-4 mr-1.5" />
-					Save & Activate
+					{i18n.t('statuslineComp.saveActivate')}
 				</button>
 			</div>
 		</div>
@@ -233,16 +234,16 @@
 	<!-- Generated Script (toggleable) -->
 	{#if showScript}
 		<div>
-			<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Generated Python Script</h4>
+			<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{i18n.t('statuslineComp.generatedScript')}</h4>
 			<div class="flex justify-end mb-1">
 				<button
 					onclick={async () => { scriptContent = await statuslineLibrary.generatePreview(segments, theme); }}
 					class="text-xs text-primary-500 hover:text-primary-600"
 				>
-					Refresh
+					{i18n.t('common.refresh')}
 				</button>
 			</div>
-			<pre class="bg-gray-900 text-gray-300 rounded-lg p-4 text-xs overflow-auto max-h-64 font-mono">{scriptContent || 'Generating...'}</pre>
+			<pre class="bg-gray-900 text-gray-300 rounded-lg p-4 text-xs overflow-auto max-h-64 font-mono">{scriptContent || i18n.t('statuslineComp.generating')}</pre>
 		</div>
 	{/if}
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { McpType } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Plug, Globe, Server } from 'lucide-svelte';
 
 	type Props = {
@@ -8,31 +9,31 @@
 
 	let { value = $bindable('stdio') }: Props = $props();
 
-	const types: { value: McpType; label: string; icon: typeof Plug; description: string }[] = [
+	const types = $derived<{ value: McpType; label: string; icon: typeof Plug; description: string }[]>([
 		{
 			value: 'stdio',
-			label: 'Standard I/O',
+			label: i18n.t('mcpComp.typeStdioLabel'),
 			icon: Plug,
-			description: 'Local command-line tool (npx, python, etc.)'
+			description: i18n.t('mcpComp.typeStdioDesc')
 		},
 		{
 			value: 'sse',
-			label: 'Server-Sent Events',
+			label: i18n.t('mcpComp.typeSseLabel'),
 			icon: Globe,
-			description: 'Cloud service with SSE endpoint'
+			description: i18n.t('mcpComp.typeSseDesc')
 		},
 		{
 			value: 'http',
-			label: 'HTTP/REST',
+			label: i18n.t('mcpComp.typeHttpLabel'),
 			icon: Server,
-			description: 'REST API with token authentication'
+			description: i18n.t('mcpComp.typeHttpDesc')
 		}
-	];
+	]);
 </script>
 
 <div class="space-y-2">
 	<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-		Connection Type <span class="text-red-500">*</span>
+		{i18n.t('mcpComp.connectionType')} <span class="text-red-500">*</span>
 	</label>
 
 	<div class="grid grid-cols-3 gap-3">

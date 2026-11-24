@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { hookLibrary, soundLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { SOUND_HOOK_PRESETS, getDefaultSound, type HookEventType, type SoundMethod } from '$lib/types';
 	import { SoundPicker } from '$lib/components/sounds';
 	import {
@@ -97,24 +98,24 @@
 				selectedMethod
 			);
 
-			notifications.success(`Created ${hooks.length} sound notification hooks`);
+			notifications.success(i18n.t('hookModal.createdSoundHooks', { count: hooks.length }));
 			onComplete?.();
 			onClose();
 		} catch (e) {
-			notifications.error('Failed to create hooks');
+			notifications.error(i18n.t('hookModal.createHooksFailed'));
 			console.error(e);
 		} finally {
 			isCreating = false;
 		}
 	}
 
-	const allEvents: { event: HookEventType; label: string; description: string }[] = [
-		{ event: 'Stop', label: 'Task Complete', description: 'When Claude finishes responding' },
-		{ event: 'SubagentStop', label: 'Subagent Complete', description: 'When a background agent finishes' },
-		{ event: 'Notification', label: 'Notification', description: 'System notifications (permission, idle)' },
-		{ event: 'SessionStart', label: 'Session Start', description: 'When a new session begins' },
-		{ event: 'SessionEnd', label: 'Session End', description: 'When a session ends' }
-	];
+	const allEvents = $derived<{ event: HookEventType; label: string; description: string }[]>([
+		{ event: 'Stop', label: i18n.t('hookModal.eventTaskComplete'), description: i18n.t('hookModal.eventTaskCompleteDesc') },
+		{ event: 'SubagentStop', label: i18n.t('hookModal.eventSubagentComplete'), description: i18n.t('hookModal.eventSubagentCompleteDesc') },
+		{ event: 'Notification', label: i18n.t('hookModal.eventNotification'), description: i18n.t('hookModal.eventNotificationDesc') },
+		{ event: 'SessionStart', label: i18n.t('hookModal.eventSessionStart'), description: i18n.t('hookModal.eventSessionStartDesc') },
+		{ event: 'SessionEnd', label: i18n.t('hookModal.eventSessionEnd'), description: i18n.t('hookModal.eventSessionEndDesc') }
+	]);
 </script>
 
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -126,8 +127,8 @@
 					<Volume2 class="w-5 h-5 text-orange-600 dark:text-orange-400" />
 				</div>
 				<div>
-					<h2 class="text-lg font-semibold text-gray-900 dark:text-white">Sound Notifications Setup</h2>
-					<p class="text-sm text-gray-500">Step {step} of 3</p>
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-white">{i18n.t('hookModal.soundWizardTitle')}</h2>
+					<p class="text-sm text-gray-500">{i18n.t('hookModal.stepOfTotal', { step, total: 3 })}</p>
 				</div>
 			</div>
 			<button onclick={onClose} class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -149,13 +150,13 @@
 				<!-- Step 1: Choose events -->
 				<div class="space-y-6">
 					<div>
-						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Choose Events</h3>
-						<p class="text-sm text-gray-500">Select which events should trigger a sound notification</p>
+						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{i18n.t('hookModal.chooseEvents')}</h3>
+						<p class="text-sm text-gray-500">{i18n.t('hookModal.chooseEventsDesc')}</p>
 					</div>
 
 					<!-- Presets -->
 					<div>
-						<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Presets</p>
+						<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{i18n.t('hookModal.quickPresets')}</p>
 						<div class="grid grid-cols-3 gap-3">
 							{#each SOUND_HOOK_PRESETS as preset (preset.id)}
 								{@const Icon = getPresetIcon(preset.id)}
@@ -176,7 +177,7 @@
 
 					<!-- Individual events -->
 					<div>
-						<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Or Select Individual Events</p>
+						<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{i18n.t('hookModal.orSelectIndividualEvents')}</p>
 						<div class="space-y-2">
 							{#each allEvents as { event, label, description } (event)}
 								<button
@@ -207,8 +208,8 @@
 				<!-- Step 2: Choose sound -->
 				<div class="space-y-6">
 					<div>
-						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Choose Sound</h3>
-						<p class="text-sm text-gray-500">Select the sound to play when events trigger</p>
+						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{i18n.t('hookModal.chooseSound')}</h3>
+						<p class="text-sm text-gray-500">{i18n.t('hookModal.chooseSoundDesc')}</p>
 					</div>
 
 					<div>
@@ -221,7 +222,7 @@
 					{#if selectedSound}
 						<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 							<p class="text-sm text-gray-600 dark:text-gray-400">
-								<span class="font-medium">Selected:</span>
+								<span class="font-medium">{i18n.t('hookModal.selectedLabel')}</span>
 								<span class="font-mono text-xs ml-2">{selectedSound}</span>
 							</p>
 						</div>
@@ -231,8 +232,8 @@
 				<!-- Step 3: Choose method and review -->
 				<div class="space-y-6">
 					<div>
-						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Playback Method</h3>
-						<p class="text-sm text-gray-500">Choose how the sound should be played</p>
+						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{i18n.t('hookModal.playbackMethod')}</h3>
+						<p class="text-sm text-gray-500">{i18n.t('hookModal.playbackMethodDesc')}</p>
 					</div>
 
 					<div class="grid grid-cols-2 gap-4">
@@ -244,8 +245,8 @@
 								: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
 						>
 							<Terminal class="w-8 h-8 mb-2 {selectedMethod === 'shell' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'}" />
-							<span class="font-medium text-gray-900 dark:text-white">Shell Command</span>
-							<span class="text-xs text-gray-500 text-center mt-1">Direct OS command (afplay/paplay)</span>
+							<span class="font-medium text-gray-900 dark:text-white">{i18n.t('hookModal.shellCommand')}</span>
+							<span class="text-xs text-gray-500 text-center mt-1">{i18n.t('hookModal.shellCommandDesc')}</span>
 						</button>
 
 						<button
@@ -256,36 +257,36 @@
 								: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
 						>
 							<FileCode class="w-8 h-8 mb-2 {selectedMethod === 'python' ? 'text-violet-600' : 'text-gray-400'}" />
-							<span class="font-medium text-gray-900 dark:text-white">Python Script</span>
-							<span class="text-xs text-gray-500 text-center mt-1">Cross-platform notification script</span>
+							<span class="font-medium text-gray-900 dark:text-white">{i18n.t('hookModal.pythonScript')}</span>
+							<span class="text-xs text-gray-500 text-center mt-1">{i18n.t('hookModal.pythonScriptDesc')}</span>
 						</button>
 					</div>
 
 					<!-- Summary -->
 					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-3">
-						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Summary</p>
+						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('hookModal.summary')}</p>
 						<div class="space-y-2 text-sm">
 							<div class="flex justify-between">
-								<span class="text-gray-500">Events:</span>
+								<span class="text-gray-500">{i18n.t('hookModal.eventsLabel')}</span>
 								<span class="text-gray-900 dark:text-white">{selectedEvents.join(', ')}</span>
 							</div>
 							<div class="flex justify-between">
-								<span class="text-gray-500">Sound:</span>
+								<span class="text-gray-500">{i18n.t('hookModal.soundLabel')}</span>
 								<span class="text-gray-900 dark:text-white font-mono text-xs">
 									{selectedSound.split('/').pop()}
 								</span>
 							</div>
 							<div class="flex justify-between">
-								<span class="text-gray-500">Method:</span>
+								<span class="text-gray-500">{i18n.t('hookModal.methodLabel')}</span>
 								<span class="text-gray-900 dark:text-white">
-									{selectedMethod === 'shell' ? 'Shell Command' : 'Python Script'}
+									{selectedMethod === 'shell' ? i18n.t('hookModal.shellCommand') : i18n.t('hookModal.pythonScript')}
 								</span>
 							</div>
 						</div>
 					</div>
 
 					<p class="text-xs text-gray-500">
-						This will create {selectedEvents.length} hook{selectedEvents.length !== 1 ? 's' : ''} and enable them globally.
+						{i18n.t(selectedEvents.length === 1 ? 'hookModal.willCreateOne' : 'hookModal.willCreatePlural', { count: selectedEvents.length })}
 					</p>
 				</div>
 			{/if}
@@ -299,7 +300,7 @@
 				disabled={step === 1}
 			>
 				<ChevronLeft class="w-4 h-4 mr-1" />
-				Back
+				{i18n.t('hookModal.back')}
 			</button>
 
 			{#if step < 3}
@@ -308,7 +309,7 @@
 					class="btn btn-primary"
 					disabled={!canProceed()}
 				>
-					Next
+					{i18n.t('hookModal.next')}
 					<ChevronRight class="w-4 h-4 ml-1" />
 				</button>
 			{:else}
@@ -319,10 +320,10 @@
 				>
 					{#if isCreating}
 						<Loader2 class="w-4 h-4 mr-2 animate-spin" />
-						Creating...
+						{i18n.t('hookModal.creating')}
 					{:else}
 						<Check class="w-4 h-4 mr-2" />
-						Create Hooks
+						{i18n.t('hookModal.createHooks')}
 					{/if}
 				</button>
 			{/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ContainerTemplate } from '$lib/types';
 	import TemplateCard from './TemplateCard.svelte';
 
@@ -26,7 +27,7 @@
 			<button onclick={() => filterCategory = cat}
 				class="px-3 py-1 text-sm rounded-full transition-colors
 					{filterCategory === cat ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}">
-				{cat.charAt(0).toUpperCase() + cat.slice(1)}
+				{cat === 'all' ? i18n.t('containerComp.all') : cat.charAt(0).toUpperCase() + cat.slice(1)}
 			</button>
 		{/each}
 	</div>

@@ -3,6 +3,7 @@
 	import { SpinnerVerbList, SpinnerVerbForm } from '$lib/components/spinnerverbs';
 	import { ConfirmDialog } from '$lib/components/shared';
 	import { spinnerVerbLibrary, notifications } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { SpinnerVerb } from '$lib/types';
 	import { Plus, RefreshCw } from 'lucide-svelte';
 
@@ -19,9 +20,9 @@
 		try {
 			await spinnerVerbLibrary.create(verb);
 			showAddVerb = false;
-			notifications.success('Spinner verb added');
+			notifications.success(i18n.t('settingsComp.spinnerVerbAdded'));
 		} catch (err) {
-			notifications.error('Failed to add spinner verb: ' + String(err));
+			notifications.error(i18n.t('settingsComp.spinnerVerbAddFailed', { err: String(err) }));
 		}
 	}
 
@@ -30,9 +31,9 @@
 		try {
 			await spinnerVerbLibrary.update(editingVerb.id, verb, editingVerb.isEnabled);
 			editingVerb = null;
-			notifications.success('Spinner verb updated');
+			notifications.success(i18n.t('settingsComp.spinnerVerbUpdated'));
 		} catch (err) {
-			notifications.error('Failed to update spinner verb: ' + String(err));
+			notifications.error(i18n.t('settingsComp.spinnerVerbUpdateFailed', { err: String(err) }));
 		}
 	}
 
@@ -40,9 +41,9 @@
 		if (!deletingVerb) return;
 		try {
 			await spinnerVerbLibrary.delete(deletingVerb.id);
-			notifications.success('Spinner verb deleted');
+			notifications.success(i18n.t('settingsComp.spinnerVerbDeleted'));
 		} catch (err) {
-			notifications.error('Failed to delete spinner verb');
+			notifications.error(i18n.t('settingsComp.spinnerVerbDeleteFailed'));
 		} finally {
 			deletingVerb = null;
 		}
@@ -53,9 +54,9 @@
 		const mode = target.value as 'append' | 'replace';
 		try {
 			await spinnerVerbLibrary.setMode(mode);
-			notifications.success(`Mode set to "${mode}"`);
+			notifications.success(i18n.t('settingsComp.spinnerModeChanged', { mode }));
 		} catch (err) {
-			notifications.error('Failed to change mode');
+			notifications.error(i18n.t('settingsComp.spinnerModeChangeFailed'));
 		}
 	}
 
@@ -63,9 +64,9 @@
 		isSyncing = true;
 		try {
 			await spinnerVerbLibrary.sync();
-			notifications.success('Spinner verbs synced to settings.json');
+			notifications.success(i18n.t('settingsComp.spinnerSynced'));
 		} catch (err) {
-			notifications.error('Failed to sync: ' + String(err));
+			notifications.error(i18n.t('settingsComp.spinnerSyncFailed', { err: String(err) }));
 		} finally {
 			isSyncing = false;
 		}
@@ -79,7 +80,7 @@
 			for="spinner-mode"
 			class="text-sm font-medium text-gray-700 dark:text-gray-300"
 		>
-			Mode:
+			{i18n.t('settingsComp.spinnerModeLabel')}
 		</label>
 		<select
 			id="spinner-mode"
@@ -87,8 +88,8 @@
 			onchange={handleModeChange}
 			class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
 		>
-			<option value="append">Append (add to defaults)</option>
-			<option value="replace">Replace (use only these)</option>
+			<option value="append">{i18n.t('settingsComp.spinnerModeAppend')}</option>
+			<option value="replace">{i18n.t('settingsComp.spinnerModeReplace')}</option>
 		</select>
 	</div>
 
@@ -99,11 +100,11 @@
 			class="btn btn-secondary flex items-center gap-2"
 		>
 			<RefreshCw class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
-			Sync to Settings
+			{i18n.t('settingsComp.syncToSettings')}
 		</button>
 		<button onclick={() => (showAddVerb = true)} class="btn btn-primary">
 			<Plus class="w-4 h-4 mr-2" />
-			Add Verb
+			{i18n.t('settingsComp.addVerb')}
 		</button>
 	</div>
 </div>
@@ -120,7 +121,7 @@
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4">
 			<div class="p-6">
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-					Add Spinner Verb
+					{i18n.t('settingsComp.addSpinnerVerbTitle')}
 				</h2>
 				<SpinnerVerbForm onSubmit={handleCreate} onCancel={() => (showAddVerb = false)} />
 			</div>
@@ -134,7 +135,7 @@
 		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4">
 			<div class="p-6">
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-					Edit Spinner Verb
+					{i18n.t('settingsComp.editSpinnerVerbTitle')}
 				</h2>
 				<SpinnerVerbForm
 					initialValues={editingVerb}
@@ -148,9 +149,9 @@
 
 <ConfirmDialog
 	open={!!deletingVerb}
-	title="Delete Spinner Verb"
-	message="Are you sure you want to delete '{deletingVerb?.verb}'? This cannot be undone."
-	confirmText="Delete"
+	title={i18n.t('settingsComp.deleteSpinnerVerbTitle')}
+	message={i18n.t('settingsComp.deleteSpinnerVerbConfirm', { verb: deletingVerb?.verb ?? '' })}
+	confirmText={i18n.t('common.delete')}
 	onConfirm={handleDelete}
 	onCancel={() => (deletingVerb = null)}
 />

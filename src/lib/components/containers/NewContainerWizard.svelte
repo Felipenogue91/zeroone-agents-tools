@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import type { ContainerTemplate } from '$lib/types';
 	import ContainerForm from './ContainerForm.svelte';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
@@ -77,7 +78,7 @@
 
 {#if step === 'pick'}
 	<div class="space-y-4">
-		<p class="text-sm text-gray-500 dark:text-gray-400">Choose a template to get started quickly, or create a custom container from scratch.</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400">{i18n.t('containerComp.wizardSubtitle')}</p>
 
 		<!-- Custom option -->
 		<button
@@ -89,8 +90,8 @@
 					<Plus class="w-5 h-5 text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
 				</div>
 				<div>
-					<p class="font-medium text-gray-900 dark:text-white">Custom Container</p>
-					<p class="text-sm text-gray-500 dark:text-gray-400">Start from scratch with a blank configuration</p>
+					<p class="font-medium text-gray-900 dark:text-white">{i18n.t('containerComp.customContainer')}</p>
+					<p class="text-sm text-gray-500 dark:text-gray-400">{i18n.t('containerComp.customContainerDesc')}</p>
 				</div>
 			</div>
 		</button>
@@ -103,7 +104,7 @@
 						? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300'
 						: 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'}"
 					onclick={() => selectedCategory = 'all'}
-				>All</button>
+				>{i18n.t('containerComp.all')}</button>
 				{#each categories as cat}
 					<button
 						class="px-3 py-1.5 text-sm rounded-md border transition-colors {selectedCategory === cat
@@ -123,7 +124,7 @@
 					>
 						<div class="flex items-start gap-3">
 							{#if getIcon(template)}
-								<img src={getIcon(template)} alt="{template.name} logo" class="w-8 h-8 shrink-0" />
+								<img src={getIcon(template)} alt={i18n.t('containerComp.logoAlt', { name: template.name })} class="w-8 h-8 shrink-0" />
 							{:else}
 								<div class="text-2xl shrink-0">{template.icon || '\u{1F4E6}'}</div>
 							{/if}
@@ -137,28 +138,28 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">Loading templates...</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">{i18n.t('containerComp.loadingTemplates')}</p>
 		{/if}
 	</div>
 {:else}
 	<div class="space-y-4">
 		<!-- Back + context -->
 		<div class="flex items-center gap-3">
-			<button onclick={goBack} class="btn btn-ghost p-1.5" aria-label="Back to templates">
+			<button onclick={goBack} class="btn btn-ghost p-1.5" aria-label={i18n.t('containerComp.backToTemplates')}>
 				<ArrowLeft class="w-4 h-4" />
 			</button>
 			{#if selectedTemplate}
 				<div class="flex items-center gap-2">
 					{#if getIcon(selectedTemplate)}
-						<img src={getIcon(selectedTemplate)} alt="{selectedTemplate.name} logo" class="w-5 h-5" />
+						<img src={getIcon(selectedTemplate)} alt={i18n.t('containerComp.logoAlt', { name: selectedTemplate.name })} class="w-5 h-5" />
 					{:else}
 						<span class="text-lg">{selectedTemplate.icon}</span>
 					{/if}
 					<span class="text-sm font-medium text-gray-900 dark:text-white">{selectedTemplate.name}</span>
-					<span class="text-xs text-gray-400 dark:text-gray-500">— customize below</span>
+					<span class="text-xs text-gray-400 dark:text-gray-500">{i18n.t('containerComp.customizeBelow')}</span>
 				</div>
 			{:else}
-				<span class="text-sm font-medium text-gray-900 dark:text-white">Custom Container</span>
+				<span class="text-sm font-medium text-gray-900 dark:text-white">{i18n.t('containerComp.customContainer')}</span>
 			{/if}
 		</div>
 

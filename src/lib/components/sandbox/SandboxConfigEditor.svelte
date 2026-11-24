@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClaudeSettings, SandboxSettings, SandboxNetworkSettings } from '$lib/types';
+	import { i18n } from '$lib/i18n';
 	import { Save, Plus, X } from 'lucide-svelte';
 	import SandboxNetworkEditor from './SandboxNetworkEditor.svelte';
 
@@ -92,8 +93,8 @@
 	}
 
 	function getTriStateLabel(value: boolean | undefined): string {
-		if (value === undefined) return 'Not set';
-		return value ? 'Enabled' : 'Disabled';
+		if (value === undefined) return i18n.t('settingsComp.notSet');
+		return value ? i18n.t('settingsComp.enabledLabel') : i18n.t('settingsComp.disabledLabel');
 	}
 
 	function getTriStateColor(value: boolean | undefined): string {
@@ -123,34 +124,30 @@
 		network = updated;
 	}
 
-	const toggleFields: {
-		key: 'enabled' | 'autoAllowBashIfSandboxed' | 'allowUnsandboxedCommands' | 'enableWeakerNestedSandbox';
-		label: string;
-		description: string;
-	}[] = [
+	const toggleFields = $derived([
 		{
-			key: 'enabled',
-			label: 'Sandbox Enabled',
-			description: 'Enable bash command sandboxing for isolation'
+			key: 'enabled' as const,
+			label: i18n.t('settingsComp.sandboxEnabled'),
+			description: i18n.t('settingsComp.sandboxEnabledDesc')
 		},
 		{
-			key: 'autoAllowBashIfSandboxed',
-			label: 'Auto-Allow Bash if Sandboxed',
-			description: 'Automatically allow bash commands when sandbox is active'
+			key: 'autoAllowBashIfSandboxed' as const,
+			label: i18n.t('settingsComp.autoAllowBash'),
+			description: i18n.t('settingsComp.autoAllowBashDesc')
 		},
 		{
-			key: 'allowUnsandboxedCommands',
-			label: 'Allow Unsandboxed Commands',
-			description: 'Allow certain commands to run outside the sandbox'
+			key: 'allowUnsandboxedCommands' as const,
+			label: i18n.t('settingsComp.allowUnsandboxed'),
+			description: i18n.t('settingsComp.allowUnsandboxedDesc')
 		},
 		{
-			key: 'enableWeakerNestedSandbox',
-			label: 'Enable Weaker Nested Sandbox',
-			description: 'Use a less restrictive sandbox for nested operations'
+			key: 'enableWeakerNestedSandbox' as const,
+			label: i18n.t('settingsComp.weakerNestedSandbox'),
+			description: i18n.t('settingsComp.weakerNestedSandboxDesc')
 		}
-	];
+	]);
 
-	function getFieldValue(key: typeof toggleFields[number]['key']): boolean | undefined {
+	function getFieldValue(key: (typeof toggleFields)[number]['key']): boolean | undefined {
 		if (key === 'enabled') return enabled;
 		if (key === 'autoAllowBashIfSandboxed') return autoAllowBashIfSandboxed;
 		if (key === 'allowUnsandboxedCommands') return allowUnsandboxedCommands;
@@ -162,9 +159,9 @@
 <div class="space-y-6">
 	<!-- General Settings -->
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">General</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.general')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Control sandbox isolation for bash command execution
+			{i18n.t('settingsComp.sandboxGeneralDesc')}
 		</p>
 
 		<div class="space-y-4">
@@ -186,7 +183,7 @@
 						<button
 							onclick={() => handleToggle(field.key)}
 							class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {getTriStateColor(value)}"
-							title="Click to cycle: Not set → Enabled → Disabled → Not set"
+							title={i18n.t('settingsComp.triStateCycleTitle')}
 						>
 							<span
 								class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {getTriStatePosition(value)}"
@@ -200,16 +197,16 @@
 
 	<!-- Excluded Commands -->
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Excluded Commands</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.excludedCommands')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Commands excluded from sandbox restrictions (e.g. <code>git</code>, <code>docker</code>)
+			{i18n.t('settingsComp.excludedCommandsDescPrefix')} <code>git</code>, <code>docker</code>)
 		</p>
 
 		<div class="flex gap-2 mb-3">
 			<input
 				type="text"
 				bind:value={newCommand}
-				placeholder="e.g. git"
+				placeholder={i18n.t('settingsComp.excludedCommandPlaceholder')}
 				class="input text-sm flex-1"
 				onkeydown={(e) => e.key === 'Enter' && addCommand()}
 			/>
@@ -240,16 +237,16 @@
 			</div>
 		{:else}
 			<p class="text-xs text-gray-500 dark:text-gray-400 italic">
-				No excluded commands configured
+				{i18n.t('settingsComp.noExcludedCommands')}
 			</p>
 		{/if}
 	</div>
 
 	<!-- Network Configuration -->
 	<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Network</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{i18n.t('settingsComp.networkTitle')}</h3>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-			Configure network access rules for the sandbox
+			{i18n.t('settingsComp.networkDesc')}
 		</p>
 
 		<SandboxNetworkEditor {network} onchange={handleNetworkChange} />
@@ -259,7 +256,7 @@
 	<div class="flex justify-end">
 		<button onclick={handleSave} class="btn btn-primary">
 			<Save class="w-4 h-4 mr-2" />
-			Save Sandbox Settings
+			{i18n.t('settingsComp.saveSandboxSettings')}
 		</button>
 	</div>
 </div>

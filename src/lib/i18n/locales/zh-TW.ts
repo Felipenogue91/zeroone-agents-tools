@@ -1,6 +1,8 @@
 import type { Translations } from '../types';
+import { en } from './en';
 
 export const zhTW: Translations = {
+	...en,
 	// ── 側邊欄 ──────────────────────────────────────────
 	'nav.core': '核心',
 	'nav.tools': '工具',

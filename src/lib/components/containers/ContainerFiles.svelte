@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { containerLibrary } from '$lib/stores';
+	import { i18n } from '$lib/i18n';
 	import { Folder, File, ArrowLeft, RefreshCw } from 'lucide-svelte';
 
 	type Props = {
@@ -27,7 +28,7 @@
 		try {
 			const result = await containerLibrary.exec(containerId, ['ls', '-la', '--time-style=long-iso', path]);
 			if (result.exitCode !== 0) {
-				error = result.stderr || 'Failed to list directory';
+				error = result.stderr || i18n.t('containerComp.failedToListDir');
 				entries = [];
 				return;
 			}
@@ -94,13 +95,13 @@
 <div class="space-y-3">
 	<!-- Path bar -->
 	<div class="flex items-center gap-2">
-		<button onclick={goUp} disabled={currentPath === '/'} class="btn btn-ghost p-1.5" aria-label="Go up">
+		<button onclick={goUp} disabled={currentPath === '/'} class="btn btn-ghost p-1.5" aria-label={i18n.t('containerComp.goUp')}>
 			<ArrowLeft class="w-4 h-4" />
 		</button>
 		<div class="flex-1 min-w-0">
 			<p class="text-sm font-mono text-gray-700 dark:text-gray-300 truncate">{currentPath}</p>
 		</div>
-		<button onclick={() => listDir(currentPath)} class="btn btn-ghost p-1.5" aria-label="Refresh" disabled={isLoading}>
+		<button onclick={() => listDir(currentPath)} class="btn btn-ghost p-1.5" aria-label={i18n.t('common.refresh')} disabled={isLoading}>
 			<RefreshCw class="w-4 h-4" />
 		</button>
 	</div>
@@ -112,19 +113,19 @@
 	{/if}
 
 	{#if isLoading}
-		<div class="flex items-center justify-center py-8" role="status" aria-label="Loading files">
+		<div class="flex items-center justify-center py-8" role="status" aria-label={i18n.t('containerComp.loadingFiles')}>
 			<div class="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full"></div>
 		</div>
 	{:else if entries.length === 0 && !error}
-		<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Directory is empty</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{i18n.t('containerComp.dirEmpty')}</p>
 	{:else}
 		<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="bg-gray-50 dark:bg-gray-800 text-left text-xs text-gray-500 dark:text-gray-400">
-						<th class="px-3 py-2 font-medium">Name</th>
-						<th class="px-3 py-2 font-medium w-24 text-right">Size</th>
-						<th class="px-3 py-2 font-medium w-40 text-right hidden sm:table-cell">Modified</th>
+						<th class="px-3 py-2 font-medium">{i18n.t('common.name')}</th>
+						<th class="px-3 py-2 font-medium w-24 text-right">{i18n.t('containerComp.size')}</th>
+						<th class="px-3 py-2 font-medium w-40 text-right hidden sm:table-cell">{i18n.t('containerComp.modified')}</th>
 					</tr>
 				</thead>
 				<tbody>
