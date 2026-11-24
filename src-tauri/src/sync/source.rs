@@ -52,6 +52,9 @@ pub struct SyncConfig {
     pub plugin_provided: BTreeMap<Cli, BTreeSet<String>>,
     pub codex_global_keep: BTreeSet<String>,
     pub overrides: Overrides,
+    /// `cliOff[scope][cli] = [names]`: turned off in one CLI only (scope =
+    /// "global" or the project folder name). App extension to the format.
+    pub cli_off: BTreeMap<String, BTreeMap<Cli, BTreeSet<String>>>,
     pub raw: Value,
 }
 
@@ -117,8 +120,30 @@ impl SyncConfig {
                 cfg.overrides.insert(scope.clone(), per_cli);
             }
         }
+        if let Some(off) = raw.get("cliOff").and_then(|v| v.as_object()) {
+            for (scope, clis) in off {
+                if is_doc_key(scope) {
+                    continue;
+                }
+                let mut per = BTreeMap::new();
+                for (k, names) in clis.as_object().into_iter().flatten() {
+                    if let Some(cli) = Cli::from_key(k) {
+                        per.insert(cli, string_list(Some(names)).into_iter().collect());
+                    }
+                }
+                cfg.cli_off.insert(scope.clone(), per);
+            }
+        }
         cfg.raw = raw;
         cfg
+    }
+
+    pub fn is_cli_off(&self, scope_name: &str, cli: Cli, name: &str) -> bool {
+        self.cli_off
+            .get(scope_name)
+            .and_then(|c| c.get(&cli))
+            .map(|s| s.contains(name))
+            .unwrap_or(false)
     }
 
     pub fn load(home: &AgentsHome) -> Self {
@@ -187,9 +212,20 @@ pub fn read_mcp_servers(path: &Path) -> BTreeMap<String, Value> {
         .unwrap_or_default()
 }
 
-/// `disabledMcpjsonServers` of `<project>/.claude/settings.json`.
+/// `disabledMcpjsonServers` of `<project>/.claude/settings.json` (off in
+/// the three CLIs, mcp-sync semantics).
 pub fn read_disabled(project: &Path) -> BTreeSet<String> {
-    let st = load_json(&project.join(".claude").join("settings.json"));
+    read_disabled_in(&project.join(".claude").join("settings.json"))
+}
+
+/// `disabledMcpjsonServers` of `<project>/.claude/settings.local.json`:
+/// only Claude reads it, so it means "off in Claude only".
+pub fn read_disabled_local(project: &Path) -> BTreeSet<String> {
+    read_disabled_in(&project.join(".claude").join("settings.local.json"))
+}
+
+fn read_disabled_in(file: &Path) -> BTreeSet<String> {
+    let st = load_json(file);
     string_list(st.as_ref().and_then(|s| s.get("disabledMcpjsonServers")))
         .into_iter()
         .collect()
@@ -202,6 +238,7 @@ pub struct ProjectSource {
     pub name: String,
     pub servers: BTreeMap<String, Value>,
     pub disabled: BTreeSet<String>,
+    pub disabled_claude_only: BTreeSet<String>,
 }
 
 impl ProjectSource {
@@ -213,6 +250,7 @@ impl ProjectSource {
                 .unwrap_or_default(),
             servers: read_mcp_servers(&path.join(".mcp.json")),
             disabled: read_disabled(path),
+            disabled_claude_only: read_disabled_local(path),
             path: path.to_path_buf(),
         }
     }
@@ -258,7 +296,13 @@ impl SourceSnapshot {
                 path: p.path.to_string_lossy().to_string(),
             };
             for (name, cfg) in &p.servers {
-                out.push(self.mcp_resource(name, cfg, &scope, &p.name, Some(&p.disabled)));
+                let mut r = self.mcp_resource(name, cfg, &scope, &p.name, Some(&p.disabled));
+                if p.disabled_claude_only.contains(name)
+                    && r.targets.get(&Cli::Claude) == Some(&TargetState::On)
+                {
+                    r.targets.insert(Cli::Claude, TargetState::Off);
+                }
+                out.push(r);
             }
         }
         out.extend(skill_resources(&self.home, &self.agents));
@@ -286,6 +330,8 @@ impl SourceSnapshot {
                 }
             } else if matches!(scope, Scope::Global) && self.sync.is_plugin_provided(cli, name) {
                 TargetState::ProvidedByPlugin
+            } else if self.sync.is_cli_off(scope_name, cli, name) {
+                TargetState::Off
             } else {
                 TargetState::On
             };

@@ -381,7 +381,8 @@ impl<'a> Engine<'a> {
         let mut want_c = Map::new();
         for n in &order {
             let Some(c) = src_c.get(n) else { continue };
-            if sync.is_plugin_provided(Cli::Claude, n) {
+            if sync.is_plugin_provided(Cli::Claude, n) || sync.is_cli_off("global", Cli::Claude, n)
+            {
                 continue;
             }
             let mut miss = BTreeSet::new();
@@ -444,7 +445,9 @@ impl<'a> Engine<'a> {
                 let mut want_x: Vec<(String, Map<String, Value>)> = Vec::new();
                 for n in &order {
                     let Some(c) = src_x.get(n) else { continue };
-                    if sync.is_plugin_provided(Cli::Codex, n) {
+                    if sync.is_plugin_provided(Cli::Codex, n)
+                        || sync.is_cli_off("global", Cli::Codex, n)
+                    {
                         continue;
                     }
                     if let Some(t) =
@@ -496,7 +499,9 @@ impl<'a> Engine<'a> {
         let src_a = sync.with_overrides("global", Cli::Agy, src);
         let order_a: Vec<String> = order
             .iter()
-            .filter(|n| !sync.is_plugin_provided(Cli::Agy, n))
+            .filter(|n| {
+                !sync.is_plugin_provided(Cli::Agy, n) && !sync.is_cli_off("global", Cli::Agy, n)
+            })
             .cloned()
             .collect();
         let want_a = agy_servers(
@@ -612,7 +617,14 @@ impl<'a> Engine<'a> {
 
             // agy: local .agents/mcp_config.json in every folder
             let src_a = sync.with_overrides(&name, Cli::Agy, &ps.servers);
-            let want = agy_servers(&src_a, &order, &ps.disabled, &self.secrets, &mut warns);
+            let mut off_a = ps.disabled.clone();
+            off_a.extend(
+                order
+                    .iter()
+                    .filter(|n| sync.is_cli_off(&name, Cli::Agy, n))
+                    .cloned(),
+            );
+            let want = agy_servers(&src_a, &order, &off_a, &self.secrets, &mut warns);
             let f = p.join(AGY_PROJECT_REL);
             let text = read_text(&f);
             let doc = text
@@ -681,7 +693,7 @@ impl<'a> Engine<'a> {
                         if let Some(t) = to_codex(
                             n,
                             c,
-                            ps.disabled.contains(n),
+                            ps.disabled.contains(n) || sync.is_cli_off(&name, Cli::Codex, n),
                             cur.get(n),
                             true,
                             &self.secrets,
@@ -891,108 +903,144 @@ fn prune_backups(root: &Path, keep: usize) {
 
 pub const BACKUPS_KEPT: usize = 30;
 
-/// Apply planned changes. Each file is checked against the preview first;
-/// a file edited in between is skipped (except `~/.claude.json`, which is
-/// re-patched on its fresh content). Every touched file is backed up in
-/// `backup_root/<id>/` (0700) so the set can be undone.
-pub fn apply(changes: &[FileChange], backup_root: &Path) -> anyhow::Result<ApplyOutcome> {
-    let mut outcome = ApplyOutcome::default();
-    if changes.is_empty() {
-        return Ok(outcome);
-    }
-    let id = format!(
-        "{}-{:03}",
-        chrono::Local::now().format("%Y%m%d-%H%M%S"),
-        std::process::id() % 1000
-    );
-    let dir = backup_root.join(&id);
-    std::fs::create_dir_all(&dir)?;
-    let _ = set_mode(backup_root, 0o700);
-    let _ = set_mode(&dir, 0o700);
-    let mut manifest: Vec<BackupEntry> = Vec::new();
+/// One undoable set of writes (possibly several apply steps: e.g. edit the
+/// source, then regenerate the CLI files) under a single backup id.
+pub struct BackupSet {
+    root: PathBuf,
+    id: String,
+    dir: PathBuf,
+    manifest: Vec<BackupEntry>,
+    counter: usize,
+    pub outcome: ApplyOutcome,
+}
 
-    for (i, ch) in changes.iter().enumerate() {
-        let current = read_text(&ch.path);
-        let after: Option<String> = if let Some(patch) = &ch.claude_patch {
-            let mut doc = match current.as_deref() {
-                Some(t) => match serde_json::from_str::<Value>(t) {
-                    Ok(d) => d,
-                    Err(_) => {
-                        outcome.skipped.push((
-                            ch.path.to_string_lossy().to_string(),
-                            "JSON inválido".into(),
-                        ));
-                        continue;
-                    }
-                },
-                None => Value::Object(Map::new()),
+impl BackupSet {
+    pub fn new(root: &Path) -> anyhow::Result<Self> {
+        static SEQ: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let id = format!(
+            "{}-{:03}{:02}",
+            chrono::Local::now().format("%Y%m%d-%H%M%S"),
+            std::process::id() % 1000,
+            SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 100
+        );
+        let dir = root.join(&id);
+        Ok(BackupSet {
+            root: root.to_path_buf(),
+            id,
+            dir,
+            manifest: Vec::new(),
+            counter: 0,
+            outcome: ApplyOutcome::default(),
+        })
+    }
+
+    /// Apply planned changes. Each file is checked against the preview
+    /// first; a file edited in between is skipped (except `~/.claude.json`,
+    /// which is re-patched on its fresh content). Every touched file is
+    /// backed up (0600 inside a 0700 folder) before being written.
+    pub fn apply(&mut self, changes: &[FileChange]) -> anyhow::Result<()> {
+        for ch in changes {
+            let current = read_text(&ch.path);
+            let after: Option<String> = if let Some(patch) = &ch.claude_patch {
+                let mut doc = match current.as_deref() {
+                    Some(t) => match serde_json::from_str::<Value>(t) {
+                        Ok(d) => d,
+                        Err(_) => {
+                            self.outcome.skipped.push((
+                                ch.path.to_string_lossy().to_string(),
+                                "JSON inválido".into(),
+                            ));
+                            continue;
+                        }
+                    },
+                    None => Value::Object(Map::new()),
+                };
+                patch.apply_to(&mut doc);
+                Some(pretty(&doc))
+            } else {
+                if current != ch.before {
+                    self.outcome.skipped.push((
+                        ch.path.to_string_lossy().to_string(),
+                        "o arquivo mudou desde a prévia; gere a prévia de novo".into(),
+                    ));
+                    continue;
+                }
+                ch.after.clone()
             };
-            patch.apply_to(&mut doc);
-            Some(pretty(&doc))
-        } else {
-            if current != ch.before {
-                outcome.skipped.push((
-                    ch.path.to_string_lossy().to_string(),
-                    "o arquivo mudou desde a prévia; gere a prévia de novo".into(),
-                ));
+            if after == current {
                 continue;
             }
-            ch.after.clone()
-        };
 
-        let entry = match &current {
-            Some(text) => {
-                let file = format!("{:04}", i);
-                let bp = dir.join(&file);
-                std::fs::write(&bp, text)?;
-                let _ = set_mode(&bp, 0o600);
-                BackupEntry {
+            if self.manifest.is_empty() {
+                std::fs::create_dir_all(&self.dir)?;
+                let _ = set_mode(&self.root, 0o700);
+                let _ = set_mode(&self.dir, 0o700);
+            }
+            let entry = match &current {
+                Some(text) => {
+                    let file = format!("{:04}", self.counter);
+                    self.counter += 1;
+                    let bp = self.dir.join(&file);
+                    std::fs::write(&bp, text)?;
+                    let _ = set_mode(&bp, 0o600);
+                    BackupEntry {
+                        path: ch.path.to_string_lossy().to_string(),
+                        existed: true,
+                        file: Some(file),
+                    }
+                }
+                None => BackupEntry {
                     path: ch.path.to_string_lossy().to_string(),
-                    existed: true,
-                    file: Some(file),
-                }
-            }
-            None => BackupEntry {
-                path: ch.path.to_string_lossy().to_string(),
-                existed: false,
-                file: None,
-            },
-        };
-        manifest.push(entry);
+                    existed: false,
+                    file: None,
+                },
+            };
+            self.manifest.push(entry);
 
-        match after {
-            Some(text) => {
-                if let Some(parent) = ch.path.parent() {
-                    std::fs::create_dir_all(parent)?;
+            match after {
+                Some(text) => {
+                    if let Some(parent) = ch.path.parent() {
+                        std::fs::create_dir_all(parent)?;
+                    }
+                    if let Some((repo, rel)) = &ch.ensure_ignored {
+                        ensure_ignored(repo, rel);
+                    }
+                    crate::utils::atomic::write_atomic(&ch.path, &text)?;
+                    if let Some(mode) = ch.mode {
+                        set_mode(&ch.path, mode)?;
+                    }
                 }
-                if let Some((repo, rel)) = &ch.ensure_ignored {
-                    ensure_ignored(repo, rel);
-                }
-                crate::utils::atomic::write_atomic(&ch.path, &text)?;
-                if let Some(mode) = ch.mode {
-                    set_mode(&ch.path, mode)?;
+                None => {
+                    if ch.path.exists() {
+                        std::fs::remove_file(&ch.path)?;
+                    }
                 }
             }
-            None => {
-                if ch.path.exists() {
-                    std::fs::remove_file(&ch.path)?;
-                }
-            }
+            self.outcome
+                .applied
+                .push(ch.path.to_string_lossy().to_string());
         }
-        outcome.applied.push(ch.path.to_string_lossy().to_string());
+        Ok(())
     }
 
-    if manifest.is_empty() {
-        let _ = std::fs::remove_dir_all(&dir);
-    } else {
-        std::fs::write(
-            dir.join("manifest.json"),
-            serde_json::to_string_pretty(&manifest)?,
-        )?;
-        outcome.backup_id = Some(id);
+    pub fn finish(mut self) -> anyhow::Result<ApplyOutcome> {
+        if !self.manifest.is_empty() {
+            std::fs::write(
+                self.dir.join("manifest.json"),
+                serde_json::to_string_pretty(&self.manifest)?,
+            )?;
+            self.outcome.backup_id = Some(self.id.clone());
+            prune_backups(&self.root, BACKUPS_KEPT);
+        }
+        Ok(self.outcome)
     }
-    prune_backups(backup_root, BACKUPS_KEPT);
-    Ok(outcome)
+}
+
+/// Apply planned changes as one undoable set (see [`BackupSet::apply`]).
+pub fn apply(changes: &[FileChange], backup_root: &Path) -> anyhow::Result<ApplyOutcome> {
+    let mut set = BackupSet::new(backup_root)?;
+    set.apply(changes)?;
+    set.finish()
 }
 
 /// Restore a backup set (files that did not exist are removed again).

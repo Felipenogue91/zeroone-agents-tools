@@ -10,6 +10,7 @@ pub mod health;
 pub mod jsonedit;
 pub mod model;
 pub mod occurrences;
+pub mod projects;
 pub mod secrets;
 pub mod skills;
 pub mod source;

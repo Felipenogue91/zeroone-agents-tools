@@ -387,6 +387,107 @@ fn health_changes(
     }
 }
 
+// ------------------------------------------------------------------ projects / editing
+
+/// Project screen data: own servers, inherited globals, worktrees, pending.
+#[tauri::command]
+pub fn get_project_sync(project: String) -> Result<crate::sync::projects::ProjectSyncView, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let eng = Engine::new(&snap);
+    let mut view = crate::sync::projects::project_view(&snap, &eng, std::path::Path::new(&project));
+    for r in &mut view.report {
+        r.summary = eng.secrets.mask(&r.summary);
+        r.detail = r.detail.as_ref().map(|d| eng.secrets.mask(d));
+    }
+    Ok(view)
+}
+
+fn save(
+    db: &State<'_, Arc<Mutex<Database>>>,
+    changes: Vec<FileChange>,
+    scope: &crate::sync::model::Scope,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let home = home_dir()?;
+    let out = crate::sync::projects::save_and_sync(&home, &backup_root()?, changes, scope)?;
+    if let Ok(db) = db.lock() {
+        let _ = refresh_occurrences_in_db(&db);
+    }
+    Ok(out)
+}
+
+/// Add/edit (`config`) or remove (`None`) a server in the source, then
+/// regenerate the CLIs. `project = None` → global.
+#[tauri::command]
+pub fn sync_set_server(
+    db: State<'_, Arc<Mutex<Database>>>,
+    project: Option<String>,
+    name: String,
+    config: Option<serde_json::Value>,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let scope = parse_scope(project);
+    let changes = crate::sync::projects::plan_set_server(&snap, &scope, &name, config.as_ref())?;
+    save(&db, changes, &scope)
+}
+
+/// Project server on/off in the three CLIs (`disabledMcpjsonServers`).
+#[tauri::command]
+pub fn sync_set_enabled(
+    db: State<'_, Arc<Mutex<Database>>>,
+    project: String,
+    name: String,
+    enabled: bool,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let changes =
+        crate::sync::projects::plan_set_enabled(std::path::Path::new(&project), &name, enabled)?;
+    save(
+        &db,
+        changes,
+        &crate::sync::model::Scope::Project { path: project },
+    )
+}
+
+/// Server on/off in one CLI only.
+#[tauri::command]
+pub fn sync_set_target(
+    db: State<'_, Arc<Mutex<Database>>>,
+    project: Option<String>,
+    name: String,
+    cli: Cli,
+    enabled: bool,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let scope = parse_scope(project);
+    let changes = crate::sync::projects::plan_set_target(&snap, &scope, &name, cli, enabled)?;
+    save(&db, changes, &scope)
+}
+
+/// Add/remove a project from `sync.json` (and generate its files).
+#[tauri::command]
+pub fn sync_manage_project(
+    db: State<'_, Arc<Mutex<Database>>>,
+    app: tauri::AppHandle,
+    project: String,
+    managed: bool,
+) -> Result<crate::sync::projects::SaveOutcome, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let path = PathBuf::from(&project);
+    let changes = crate::sync::projects::plan_manage_project(&snap, &path, managed)?;
+    // project scope: sync.json edit + first generation of the project files
+    // in the same undo set
+    let out = save(
+        &db,
+        changes,
+        &crate::sync::model::Scope::Project { path: project },
+    )?;
+    start_config_watcher(&app);
+    Ok(out)
+}
+
 // ------------------------------------------------------------------ watcher
 
 pub struct WatcherState(pub Mutex<Option<crate::sync::watcher::ConfigWatcher>>);

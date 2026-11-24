@@ -1,23 +1,30 @@
-# Estado (atualizado em 2026-11-24 21:05 por claude-code)
+# Estado (atualizado em 2026-11-24 21:40 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 3 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 4 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
 
 ## Próximo passo exato
 
-- Fase 4 (projetos): várias CLIs por projeto (sem `editor_type` único), salvar direto na fonte (`.mcp.json` / `disabledMcpjsonServers`) + aplicar com desfazer, herança global visível, worktrees, adicionar projeto ao `sync.json`.
+- Fase 5 (segredos): `secrets.env` 0600 como cofre (keyring opcional), banco só com referência, UI recebe valor mascarado; comando para migrar os 14 literais do banco (rodar só com aprovação).
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
 ## Decisões em aberto
 
+- **`cliOff` vs `mcp-sync`:** o app grava `cliOff` no `sync.json` para desligar MCP numa CLI só; o script atual não conhece essa chave. Opções em `docs/sync-cliOff.md` (trocar o hook por `zeroone-agents-tools --sync-here` ou aplicar o patch sugerido no script).
 - **Máquina real fora de sincronia (só leitura, nada aplicado):** `--sync-check` e `mcp-sync --check` concordam: global com Claude/agy divergentes (agy ainda tem `claude-code-tool-manager`, `figma`, `twenty`, `voice-studio`…), 4 projetos com `agy@` desatualizado e cópias antigas no escopo local do Claude. Aplicar (`mcp-sync` ou `zeroone-agents-tools --sync-apply`) só com aprovação do Felipe.
 - Fonte da verdade decidida: `~/.agents` (banco do app é só cache). Fase 7 (UI) liberada: as mudanças de UI/i18n do antigravity foram commitadas em `e11105b`.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
 
+- **Fase 4 sync multi-CLI (2026-11-24, Claude Code):**
+  - `src-tauri/src/sync/projects.rs`: salvar = gravar a fonte e regenerar as CLIs do escopo num único conjunto de backup (um "Desfazer" volta tudo). Ações: adicionar/editar/remover MCP (`global.json` ou `.mcp.json`, edição cirúrgica), desligar nas 3 CLIs (`disabledMcpjsonServers`), desligar só no Claude de projeto (`settings.local.json`), desligar numa CLI (`cliOff` no `sync.json`, documentado em `docs/sync-cliOff.md`), gerenciar projeto (`projects` do `sync.json`).
+  - Projeto deixa de ter CLI única: todo projeto gerenciado gera para as 3 CLIs, com chave por servidor. `project_view` mostra servidores próprios, globais herdados (`inherited`), sobrescrita de global, worktrees com status do agy e pendências por CLI.
+  - `engine::BackupSet` (vários passos num backup só) e `jsonedit::set_key` (qualquer caminho, preserva estilo; corrigido corte de linha compartilhada).
+  - Comandos: `get_project_sync`, `sync_set_server`, `sync_set_enabled`, `sync_set_target`, `sync_manage_project`.
+  - Verificação: `cargo test` 2113/2113, Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes; `--sync-check` segue idêntico ao `mcp-sync --check` na máquina real.
 - **Fase 3 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/sync/watcher.rs`: watcher (`notify` 6) nas pastas de config (não recursivo, filtrado por nome, debounce 600 ms); no app emite `sync-changed`, atualiza o índice de ocorrências e se reinicia quando o `sync.json` muda.
   - `src-tauri/src/sync/health.rs`: divergências `OnlyInCli`, `MissingInCli`, `Drift`, `ClaudeLocalScope`, `AgySkillsFolder`, cada uma com ações (`Import`, `Reapply`, `RemoveLocalCopy`, `FixAgySkills`). Importar converte Codex/agy → formato Claude e devolve valor resolvido para `${VAR}`.

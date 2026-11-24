@@ -86,47 +86,28 @@ impl<'a> Scan<'a> {
     }
 }
 
-/// Locate the `mcpServers` object: (open brace, close brace, entries).
-fn locate(text: &str) -> Result<Option<(usize, usize, Vec<Entry>)>, String> {
+/// Locate the object at `path` (keys from the root): (open, close, entries).
+fn locate_at(text: &str, path: &[&str]) -> Result<Option<(usize, usize, Vec<Entry>)>, String> {
     let b = text.as_bytes();
     let mut s = Scan { b, i: 0 };
     s.ws();
-    if b.get(s.i) != Some(&b'{') {
-        return Err("o arquivo não é um objeto JSON".into());
-    }
-    s.i += 1;
+    let mut depth = 0usize;
     loop {
-        s.ws();
-        match b.get(s.i) {
-            Some(b'}') => return Ok(None),
-            Some(b',') => {
-                s.i += 1;
-                continue;
-            }
-            Some(b'"') => {}
-            _ => return Err(format!("JSON inesperado na posição {}", s.i)),
-        }
-        let key = s.string()?;
-        s.ws();
-        if b.get(s.i) != Some(&b':') {
-            return Err("esperava ':'".into());
-        }
-        s.i += 1;
-        s.ws();
-        if key != "mcpServers" {
-            s.value()?;
-            continue;
-        }
         if b.get(s.i) != Some(&b'{') {
-            return Err("mcpServers não é um objeto".into());
+            return Err(if depth == 0 {
+                "o arquivo não é um objeto JSON".into()
+            } else {
+                format!("{} não é um objeto", path[depth - 1])
+            });
         }
         let open = s.i;
         s.i += 1;
         let mut entries = Vec::new();
+        let mut descended = false;
         loop {
             s.ws();
             match b.get(s.i) {
-                Some(b'}') => return Ok(Some((open, s.i, entries))),
+                Some(b'}') => break,
                 Some(b',') => {
                     s.i += 1;
                     continue;
@@ -137,8 +118,16 @@ fn locate(text: &str) -> Result<Option<(usize, usize, Vec<Entry>)>, String> {
             let key_start = s.i;
             let name = s.string()?;
             s.ws();
-            s.i += 1; // ':'
+            if b.get(s.i) != Some(&b':') {
+                return Err("esperava ':'".into());
+            }
+            s.i += 1;
             s.ws();
+            if depth < path.len() && name == path[depth] {
+                depth += 1;
+                descended = true;
+                break;
+            }
             let value_start = s.i;
             s.value()?;
             entries.push(Entry {
@@ -148,6 +137,13 @@ fn locate(text: &str) -> Result<Option<(usize, usize, Vec<Entry>)>, String> {
                 value_end: s.i,
             });
         }
+        if descended {
+            continue;
+        }
+        if depth < path.len() {
+            return Ok(None); // path missing
+        }
+        return Ok(Some((open, s.i, entries)));
     }
 }
 
@@ -209,6 +205,46 @@ fn hybrid(v: &Value, indent: &str, unit: &str) -> String {
     }
 }
 
+/// Multi-line rendering in the hybrid style: one key/item per line, values
+/// inline (used when replacing a value that already spanned lines).
+fn expanded(v: &Value, indent: &str, unit: &str) -> String {
+    let inner = format!("{}{}", indent, unit);
+    match v {
+        Value::Object(m) if !m.is_empty() => {
+            let lines: Vec<String> = m
+                .iter()
+                .map(|(k, x)| {
+                    format!(
+                        "{}{}: {}",
+                        inner,
+                        serde_json::to_string(k).unwrap(),
+                        compact(x)
+                    )
+                })
+                .collect();
+            format!("{{\n{}\n{}}}", lines.join(",\n"), indent)
+        }
+        Value::Array(a) if !a.is_empty() => {
+            let lines: Vec<String> = a
+                .iter()
+                .map(|x| format!("{}{}", inner, compact(x)))
+                .collect();
+            format!("[\n{}\n{}]", lines.join(",\n"), indent)
+        }
+        other => compact(other),
+    }
+}
+
+/// File written in the hybrid style (some objects on one line)?
+fn file_is_hybrid(text: &str) -> bool {
+    text.lines().any(|l| {
+        let t = l.trim();
+        t.contains(": { \"")
+            || t.contains(": {\"")
+            || (t.starts_with("\"") && t.contains("\": [\"") && t.ends_with("],"))
+    })
+}
+
 fn line_indent(text: &str, pos: usize) -> String {
     let line_start = text[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
     text[line_start..pos]
@@ -253,21 +289,47 @@ fn render(v: &Value, indent: &str, unit: &str, hybrid_style: bool) -> String {
 /// Set (`Some`) or remove (`None`) one server, touching only its span.
 /// Creates `mcpServers` when missing.
 pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<String, String> {
+    set_key(text, &["mcpServers"], name, value)
+}
+
+fn value_at<'v>(doc: &'v Value, path: &[&str]) -> Option<&'v Value> {
+    path.iter().try_fold(doc, |v, k| v.get(*k))
+}
+
+/// Set (`Some`) or remove (`None`) `key` inside the object at `path`,
+/// touching only that span and keeping the file's style. Missing parent
+/// objects are created.
+pub fn set_key(
+    text: &str,
+    path: &[&str],
+    key: &str,
+    value: Option<&Value>,
+) -> Result<String, String> {
     // validate first: never edit a file we cannot parse
-    serde_json::from_str::<Value>(text).map_err(|e| format!("JSON inválido: {}", e))?;
-    let Some((open, close, entries)) = locate(text)? else {
-        let mut doc: Map<String, Value> = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    let doc: Value = serde_json::from_str(text).map_err(|e| format!("JSON inválido: {}", e))?;
+    let Some((open, close, entries)) = locate_at(text, path)? else {
         let Some(v) = value else {
             return Ok(text.to_string());
         };
-        let mut servers = Map::new();
-        servers.insert(name.to_string(), v.clone());
-        doc.insert("mcpServers".into(), Value::Object(servers));
-        return Ok(serde_json::to_string_pretty(&Value::Object(doc)).unwrap() + "\n");
+        if path.is_empty() {
+            return Err("o arquivo não é um objeto JSON".into());
+        }
+        // create the missing parent: set parent[last] = { key: value }
+        let (parent, last) = path.split_at(path.len() - 1);
+        let mut obj = Map::new();
+        obj.insert(key.to_string(), v.clone());
+        let mut new_parent_val = value_at(&doc, parent).and_then(|p| p.get(last[0])).cloned();
+        if let Some(Value::Object(m)) = &mut new_parent_val {
+            m.insert(key.to_string(), v.clone());
+        } else {
+            new_parent_val = Some(Value::Object(obj));
+        }
+        return set_key(text, parent, last[0], new_parent_val.as_ref());
     };
-    let (indent, unit, hyb) = style(text, open, &entries);
-    let key = serde_json::to_string(name).unwrap();
-    let existing = entries.iter().position(|e| e.name == name);
+    let hyb = file_is_hybrid(text) || style(text, open, &entries).2;
+    let (indent, unit, _) = style(text, open, &entries);
+    let key_json = serde_json::to_string(key).unwrap();
+    let existing = entries.iter().position(|e| e.name == key);
     let out = match (existing, value) {
         (Some(i), Some(v)) => {
             let e = &entries[i];
@@ -276,11 +338,12 @@ pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<Strin
                 return Ok(text.to_string());
             }
             let was_inline = !old_text.contains('\n');
-            let rendered = if hyb && was_inline {
-                // an entry written on one line stays on one line
-                compact(v)
+            let rendered = if was_inline && hyb {
+                compact(v) // an entry written on one line stays on one line
+            } else if hyb {
+                expanded(v, &indent, &unit)
             } else {
-                render(v, &indent, &unit, hyb)
+                pretty_indented(v, &indent)
             };
             format!(
                 "{}{}{}",
@@ -292,19 +355,21 @@ pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<Strin
         (Some(i), None) => {
             let e = &entries[i];
             if entries.len() == 1 {
-                // `{ ... }` becomes `{}`
                 format!("{}{}", &text[..open + 1], &text[close..])
             } else if i + 1 < entries.len() {
-                // remove from key start up to next key start
                 let next = entries[i + 1].key_start;
-                let line_start = text[..e.key_start]
-                    .rfind('\n')
-                    .map(|x| x + 1)
-                    .unwrap_or(e.key_start);
-                let next_line = text[..next].rfind('\n').map(|x| x + 1).unwrap_or(next);
-                format!("{}{}", &text[..line_start], &text[next_line..])
+                let line_start = text[..e.key_start].rfind('\n').map(|x| x + 1).unwrap_or(0);
+                let next_line = text[..next].rfind('\n').map(|x| x + 1).unwrap_or(0);
+                let own_line = text[line_start..e.key_start].trim().is_empty();
+                let next_own_line =
+                    text[next_line..next].trim().is_empty() && next_line > e.key_start;
+                if own_line && next_own_line {
+                    format!("{}{}", &text[..line_start], &text[next_line..])
+                } else {
+                    // entries share a line: cut from this key to the next one
+                    format!("{}{}", &text[..e.key_start], &text[next..])
+                }
             } else {
-                // last entry: drop the preceding comma too
                 let prev_end = entries[i - 1].value_end;
                 format!("{}{}", &text[..prev_end], &text[e.value_end..])
             }
@@ -316,7 +381,7 @@ pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<Strin
                     "{},\n{}{}: {}{}",
                     &text[..last.value_end],
                     indent,
-                    key,
+                    key_json,
                     rendered,
                     &text[last.value_end..]
                 ),
@@ -326,7 +391,7 @@ pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<Strin
                         "{}\n{}{}: {}\n{}{}",
                         &text[..open + 1],
                         indent,
-                        key,
+                        key_json,
                         rendered,
                         close_indent,
                         &text[close..]
@@ -339,7 +404,7 @@ pub fn set_server(text: &str, name: &str, value: Option<&Value>) -> Result<Strin
     // the result must still be valid JSON with the expected content
     let check: Value =
         serde_json::from_str(&out).map_err(|e| format!("edição gerou JSON inválido: {}", e))?;
-    let got = check.get("mcpServers").and_then(|m| m.get(name));
+    let got = value_at(&check, path).and_then(|o| o.get(key));
     if got != value {
         return Err("edição não produziu o valor esperado".into());
     }
@@ -492,6 +557,63 @@ mod tests {
         let off = set_disabled(None, "b", true).unwrap().unwrap();
         let v: Value = serde_json::from_str(&off).unwrap();
         assert_eq!(v["disabledMcpjsonServers"], json!(["b"]));
+    }
+
+    const SYNC: &str = r#"{
+  "_doc": "x",
+  "projects": [
+    "~/w/a",
+    "~/w/b"
+  ],
+  "pluginProvided": {
+    "claude": ["Neon"]
+  },
+  "codexGlobalKeep": ["node_repl"],
+  "overrides": {
+    "global": {
+      "agy": {
+        "ctx": { "args": ["--a"] }
+      }
+    }
+  }
+}
+"#;
+
+    #[test]
+    fn set_key_keeps_multiline_array_style() {
+        let out = set_key(
+            SYNC,
+            &[],
+            "projects",
+            Some(&json!(["~/w/a", "~/w/b", "~/w/c"])),
+        )
+        .unwrap();
+        assert!(out.contains("  \"projects\": [\n    \"~/w/a\",\n    \"~/w/b\",\n    \"~/w/c\"\n  ],\n  \"pluginProvided\""));
+        assert!(out.ends_with(&SYNC[SYNC.find("  \"pluginProvided\"").unwrap()..]));
+    }
+
+    #[test]
+    fn set_key_creates_nested_parents_inline_in_hybrid_file() {
+        let out = set_key(SYNC, &["cliOff", "global"], "codex", Some(&json!(["ctx"]))).unwrap();
+        let v: Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["cliOff"]["global"]["codex"], json!(["ctx"]));
+        assert!(out.contains("  \"cliOff\": { \"global\": { \"codex\": [\"ctx\"] } }\n}"));
+        // deeper edit inside an existing nested object
+        let out2 = set_key(&out, &["cliOff", "global"], "agy", Some(&json!(["x"]))).unwrap();
+        let v: Value = serde_json::from_str(&out2).unwrap();
+        assert_eq!(v["cliOff"]["global"]["agy"], json!(["x"]));
+        assert_eq!(v["cliOff"]["global"]["codex"], json!(["ctx"]));
+        // remove
+        let out3 = set_key(&out2, &["cliOff", "global"], "codex", None).unwrap();
+        let v: Value = serde_json::from_str(&out3).unwrap();
+        assert!(v["cliOff"]["global"].get("codex").is_none());
+        let untouched = &SYNC[..SYNC.rfind("  }\n}").unwrap() + 3];
+        assert!(out3.starts_with(untouched), "{}", out3);
+        assert!(
+            out3.contains("\"cliOff\": { \"global\": { \"agy\": [\"x\"] } }"),
+            "{}",
+            out3
+        );
     }
 
     /// Manual check (read-only): rewriting every server of the real source
