@@ -60,6 +60,10 @@ pub struct Health {
     pub divergences: Vec<Divergence>,
     pub report: Vec<ReportItem>,
     pub checked_at: String,
+    /// `${VAR}` referenced by the source and not defined in the vault.
+    pub missing_secrets: Vec<String>,
+    /// secrets.env readable by other users.
+    pub secrets_permissions_ok: bool,
 }
 
 fn scope_label(scope: &Scope) -> String {
@@ -301,6 +305,8 @@ pub fn compute_health(
         divergences: out,
         report: plan.report.clone(),
         checked_at: chrono::Local::now().to_rfc3339(),
+        missing_secrets: Vec::new(),
+        secrets_permissions_ok: true,
     }
 }
 

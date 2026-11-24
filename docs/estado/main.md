@@ -1,17 +1,19 @@
-# Estado (atualizado em 2026-11-24 21:40 por claude-code)
+# Estado (atualizado em 2026-11-24 22:10 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 4 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 a 5 concluídas. A UI das fases 3–5 (tela de Saúde, toast de desfazer, máscara de segredo) entra na Fase 7; até lá o backend fica exposto por comandos Tauri e pelo terminal.
 
 ## Próximo passo exato
 
-- Fase 5 (segredos): `secrets.env` 0600 como cofre (keyring opcional), banco só com referência, UI recebe valor mascarado; comando para migrar os 14 literais do banco (rodar só com aprovação).
+- Fase 6 (prevenção): fixtures sanitizadas de Claude/Codex/agy, testes de ida e volta (campo desconhecido não some) e aviso de versão desconhecida das CLIs.
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
 ## Decisões em aberto
 
+- **Incidente (2026-11-24 ~15:42):** um subcomando ainda não registrado (`--secrets-status`) abriu a janela do build de dev por ~10 min contra a pasta de dados real. Efeito só no banco (cache): migrations 25/26 e scan de início (saíram as 14 entradas do catálogo do marketplace, 41 → 27 MCPs; atribuições intactas; 5 MCPs passaram a `${VAR}`). Nenhum arquivo de config das CLIs mudou (conferido por mtime). Corrigido: argumento `--sync-*`/`--secrets-*` desconhecido agora mostra ajuda e sai com código 2.
+- Keyring do SO não entrou: o cofre é o `secrets.env` 0600 (o crate de keyring puxa dbus/secret-service no Linux; avaliar se valer a pena).
 - **`cliOff` vs `mcp-sync`:** o app grava `cliOff` no `sync.json` para desligar MCP numa CLI só; o script atual não conhece essa chave. Opções em `docs/sync-cliOff.md` (trocar o hook por `zeroone-agents-tools --sync-here` ou aplicar o patch sugerido no script).
 - **Máquina real fora de sincronia (só leitura, nada aplicado):** `--sync-check` e `mcp-sync --check` concordam: global com Claude/agy divergentes (agy ainda tem `claude-code-tool-manager`, `figma`, `twenty`, `voice-studio`…), 4 projetos com `agy@` desatualizado e cópias antigas no escopo local do Claude. Aplicar (`mcp-sync` ou `zeroone-agents-tools --sync-apply`) só com aprovação do Felipe.
 - Fonte da verdade decidida: `~/.agents` (banco do app é só cache). Fase 7 (UI) liberada: as mudanças de UI/i18n do antigravity foram commitadas em `e11105b`.
@@ -19,6 +21,13 @@ Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases 
 
 ## Feito e verificado
 
+- **Fase 5 sync multi-CLI (2026-11-24, Claude Code):**
+  - `src-tauri/src/sync/vault.rs`: cofre `~/.agents/mcp/secrets.env` (criado/forçado 0600, edição preserva comentários e ordem). Status só com nomes: definidos, referenciados, faltando, sem uso, permissão.
+  - Banco guarda só referência: fim do scan troca valores que existem no cofre por `${VAR}` (`Database::redact_known_secrets`). `get_sync_resources` mascara literais antes de mandar pra UI; saúde inclui `missingSecrets` e permissão do cofre.
+  - Migração de literais (banco e, opcionalmente, `global.json`/`.mcp.json`) com nome sugerido (`MCP_CHAVE`) ou reaproveitando o nome já no cofre; só roda com `confirm: true`. Heurística ignora `XAUTHORITY`/`*_PATH`/`*_FILE`/`*_URL`.
+  - Comandos: `get_secrets_status`, `set_secret`, `fix_secrets_permissions`, `plan_secret_migration`, `apply_secret_migration`. Terminal: `--secrets-status`.
+  - Máquina real (só leitura): cofre 0600, 13 definidos = 13 referenciados, 0 literais pendentes.
+  - Verificação: `cargo test` 2118/2118, Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes.
 - **Fase 4 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/sync/projects.rs`: salvar = gravar a fonte e regenerar as CLIs do escopo num único conjunto de backup (um "Desfazer" volta tudo). Ações: adicionar/editar/remover MCP (`global.json` ou `.mcp.json`, edição cirúrgica), desligar nas 3 CLIs (`disabledMcpjsonServers`), desligar só no Claude de projeto (`settings.local.json`), desligar numa CLI (`cliOff` no `sync.json`, documentado em `docs/sync-cliOff.md`), gerenciar projeto (`projects` do `sync.json`).
   - Projeto deixa de ter CLI única: todo projeto gerenciado gera para as 3 CLIs, com chave por servidor. `project_view` mostra servidores próprios, globais herdados (`inherited`), sobrescrita de global, worktrees com status do agy e pendências por CLI.

@@ -125,15 +125,6 @@ pub enum TargetState {
     Unsupported { reason: String },
 }
 
-impl TargetState {
-    pub fn is_active(&self) -> bool {
-        matches!(
-            self,
-            TargetState::On | TargetState::Native | TargetState::ProvidedByPlugin
-        )
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Resource {
@@ -181,7 +172,19 @@ pub fn collect_var_refs(value: &Value, out: &mut Vec<String>) {
     }
 }
 
+/// Keys that contain "auth"/"key" but hold paths or URLs, not secrets.
+pub fn is_non_secret_key(key: &str) -> bool {
+    let k = key.to_ascii_uppercase();
+    k == "XAUTHORITY"
+        || ["_PATH", "_FILE", "_DIR", "_URL", "_HOST", "_PORT"]
+            .iter()
+            .any(|s| k.ends_with(s))
+}
+
 fn looks_secret_key(key: &str) -> bool {
+    if is_non_secret_key(key) {
+        return false;
+    }
     let k = key.to_ascii_lowercase();
     [
         "token",
@@ -270,7 +273,7 @@ mod tests {
 
     #[test]
     fn literal_secret_detection() {
-        let cfg = json!({"env": {"API_KEY": "sk-123", "OK": "${API}", "MODE": "dev"}, "headers": {"Authorization": "Bearer abc"}});
+        let cfg = json!({"env": {"API_KEY": "sk-123", "OK": "${API}", "MODE": "dev", "XAUTHORITY": "/run/x", "KEY_FILE": "/k"}, "headers": {"Authorization": "Bearer abc"}});
         let mut keys = literal_secret_keys(&cfg);
         keys.sort();
         assert_eq!(keys, vec!["env.API_KEY", "headers.Authorization"]);
@@ -282,13 +285,5 @@ mod tests {
         assert_eq!(mcp_transport(&json!({"url": "http://x"})), "http");
         assert_eq!(mcp_transport(&json!({"serverUrl": "http://x"})), "http");
         assert_eq!(mcp_transport(&json!({"type": "sse", "url": "x"})), "sse");
-    }
-
-    #[test]
-    fn target_active() {
-        assert!(TargetState::On.is_active());
-        assert!(TargetState::Native.is_active());
-        assert!(!TargetState::Off.is_active());
-        assert!(!TargetState::Unsupported { reason: "x".into() }.is_active());
     }
 }

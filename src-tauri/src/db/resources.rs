@@ -253,6 +253,60 @@ impl Database {
     }
 }
 
+impl Database {
+    /// (id, name, {"env": .., "headers": ..}) of every library MCP.
+    pub fn mcp_secret_rows(&self) -> Result<Vec<(i64, String, serde_json::Value)>> {
+        let mut st = self
+            .conn()
+            .prepare("SELECT id, name, env, headers FROM mcps")?;
+        let rows = st.query_map([], |r| {
+            let env: Option<String> = r.get(2)?;
+            let headers: Option<String> = r.get(3)?;
+            Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, env, headers))
+        })?;
+        Ok(rows
+            .filter_map(|r| r.ok())
+            .map(|(id, name, env, headers)| {
+                let parse = |s: Option<String>| {
+                    s.and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                        .unwrap_or(serde_json::Value::Null)
+                };
+                (
+                    id,
+                    name,
+                    serde_json::json!({"env": parse(env), "headers": parse(headers)}),
+                )
+            })
+            .collect())
+    }
+
+    pub fn update_mcp_secret_fields(&self, id: i64, cfg: &serde_json::Value) -> Result<()> {
+        let to_text = |v: Option<&serde_json::Value>| {
+            v.filter(|x| !x.is_null())
+                .map(|x| serde_json::to_string(x).unwrap())
+        };
+        self.conn().execute(
+            "UPDATE mcps SET env = ?1, headers = ?2, updated_at = CURRENT_TIMESTAMP WHERE id = ?3",
+            params![to_text(cfg.get("env")), to_text(cfg.get("headers")), id],
+        )?;
+        Ok(())
+    }
+
+    /// Replace values that exist in the vault by `${VAR}` references (the DB
+    /// must only keep references). Returns how many rows changed.
+    pub fn redact_known_secrets(&self, secrets: &crate::sync::secrets::Secrets) -> Result<usize> {
+        let mut changed = 0;
+        for (id, _name, cfg) in self.mcp_secret_rows()? {
+            let red = secrets.unresolve(&cfg);
+            if red != cfg {
+                self.update_mcp_secret_fields(id, &red)?;
+                changed += 1;
+            }
+        }
+        Ok(changed)
+    }
+}
+
 /// `kind:scope...:name` → (kind, name). The name is after the last ':'
 /// (names cannot contain ':' in any CLI config format we support).
 fn split_uid(uid: &str) -> (String, String) {
@@ -316,6 +370,29 @@ mod tests {
         assert_eq!(m.len(), 1);
         assert!(!m[0].is_favorite);
         assert_eq!(m[0].tags, vec!["x"]);
+    }
+
+    #[test]
+    fn redacts_values_known_to_the_vault() {
+        let db = Database::in_memory().unwrap();
+        db.conn()
+            .execute(
+                "INSERT INTO mcps (name, type, url, headers, env) VALUES ('a','http','u','{\"Authorization\":\"Bearer sk-live-1\"}','{\"OTHER\":\"literal-x\"}')",
+                [],
+            )
+            .unwrap();
+        let mut m = std::collections::HashMap::new();
+        m.insert("A_TOKEN".to_string(), "sk-live-1".to_string());
+        let n = db
+            .redact_known_secrets(&crate::sync::secrets::Secrets::from_map(m))
+            .unwrap();
+        assert_eq!(n, 1);
+        let rows = db.mcp_secret_rows().unwrap();
+        assert_eq!(rows[0].2["headers"]["Authorization"], "Bearer ${A_TOKEN}");
+        assert_eq!(
+            rows[0].2["env"]["OTHER"], "literal-x",
+            "unknown literals wait for the migration"
+        );
     }
 
     #[test]

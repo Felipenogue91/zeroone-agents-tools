@@ -52,6 +52,19 @@ pub(crate) fn refresh_occurrences_in_db(db: &Database) -> Result<usize, String> 
     Ok(occ.len())
 }
 
+/// Hide literal secret values of a config before it reaches the UI.
+pub(crate) fn mask_config(r: &mut Resource) {
+    let Some(cfg) = r.config.as_mut() else { return };
+    for key in r.literal_secret_keys.clone() {
+        let Some((field, k)) = key.split_once('.') else {
+            continue;
+        };
+        if let Some(v) = cfg.get_mut(field).and_then(|m| m.get_mut(k)) {
+            *v = serde_json::Value::String(crate::sync::secrets::MASK.to_string());
+        }
+    }
+}
+
 pub(crate) fn build_views(
     resources: Vec<Resource>,
     meta: &[ResourceMeta],
@@ -59,7 +72,8 @@ pub(crate) fn build_views(
 ) -> Vec<ResourceView> {
     resources
         .into_iter()
-        .map(|r| {
+        .map(|mut r| {
+            mask_config(&mut r);
             let m = meta.iter().find(|m| m.uid == r.uid);
             ResourceView {
                 is_favorite: m.map(|m| m.is_favorite).unwrap_or(false),
@@ -293,6 +307,12 @@ pub fn get_sync_health(
     for d in &mut health.divergences {
         d.message = eng.secrets.mask(&d.message);
     }
+    let st = crate::sync::vault::status(&snap);
+    health.missing_secrets = st.missing;
+    health.secrets_permissions_ok = st.permissions_ok;
+    if !health.missing_secrets.is_empty() || !health.secrets_permissions_ok {
+        health.in_sync = false;
+    }
     for r in &mut health.report {
         r.summary = eng.secrets.mask(&r.summary);
         r.detail = r.detail.as_ref().map(|d| eng.secrets.mask(d));
@@ -488,6 +508,152 @@ pub fn sync_manage_project(
     Ok(out)
 }
 
+// ------------------------------------------------------------------ secrets
+
+/// Vault status: names only (defined / referenced / missing / unused).
+#[tauri::command]
+pub fn get_secrets_status() -> Result<crate::sync::vault::SecretsStatus, String> {
+    let home = home_dir()?;
+    Ok(crate::sync::vault::status(&SourceSnapshot::load(&home)))
+}
+
+/// Set (`value`) or remove (`None`) a secret in secrets.env (0600). The
+/// value is never returned by any command.
+#[tauri::command]
+pub fn set_secret(name: String, value: Option<String>) -> Result<(), String> {
+    let home = home_dir()?;
+    let agents = crate::utils::agents_home::AgentsHome::from_home(&home);
+    crate::sync::vault::set_secret(&agents.secrets_file, &name, value.as_deref())
+}
+
+#[tauri::command]
+pub fn fix_secrets_permissions() -> Result<(), String> {
+    let home = home_dir()?;
+    let agents = crate::utils::agents_home::AgentsHome::from_home(&home);
+    crate::sync::vault::fix_permissions(&agents.secrets_file)
+}
+
+/// Literal secrets in the app DB and in the source files (names only).
+#[tauri::command]
+pub fn plan_secret_migration(
+    db: State<'_, Arc<Mutex<Database>>>,
+) -> Result<Vec<crate::sync::vault::LiteralSecret>, String> {
+    let home = home_dir()?;
+    let snap = SourceSnapshot::load(&home);
+    let rows: Vec<(String, serde_json::Value)> = {
+        let db = db.lock().map_err(|e| e.to_string())?;
+        db.mcp_secret_rows()
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|(_, n, c)| (n, c))
+            .collect()
+    };
+    Ok(crate::sync::vault::plan_migration(&snap, &rows))
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecretMigrationOutcome {
+    pub db_rows: usize,
+    pub source_files: Option<crate::sync::projects::SaveOutcome>,
+    pub stored_vars: Vec<String>,
+}
+
+/// Move literal secrets to secrets.env and leave `${VAR}` behind. Requires
+/// `confirm = true` (it rewrites the vault, the DB and, with
+/// `include_source`, the user's source files).
+#[tauri::command]
+pub fn apply_secret_migration(
+    db: State<'_, Arc<Mutex<Database>>>,
+    confirm: bool,
+    include_source: bool,
+) -> Result<SecretMigrationOutcome, String> {
+    if !confirm {
+        return Err("Migração de segredos precisa de confirmação explícita.".into());
+    }
+    let home = home_dir()?;
+    let agents = crate::utils::agents_home::AgentsHome::from_home(&home);
+    let mut stored: Vec<String> = Vec::new();
+    let mut store = |vars: Vec<(String, String)>| -> Result<(), String> {
+        for (var, value) in vars {
+            crate::sync::vault::set_secret(&agents.secrets_file, &var, Some(&value))?;
+            stored.push(var);
+        }
+        Ok(())
+    };
+    // 1. database
+    let mut db_rows = 0;
+    {
+        let db = db.lock().map_err(|e| e.to_string())?;
+        for (id, name, cfg) in db.mcp_secret_rows().map_err(|e| e.to_string())? {
+            let vault = std::fs::read_to_string(&agents.secrets_file).unwrap_or_default();
+            let (red, vars) = crate::sync::vault::redact_config(&name, &cfg, &vault);
+            if red != cfg {
+                store(vars)?;
+                db.update_mcp_secret_fields(id, &red)
+                    .map_err(|e| e.to_string())?;
+                db_rows += 1;
+            }
+        }
+    }
+    // 2. source files (global.json / .mcp.json), one undoable set per scope
+    let mut source_out = None;
+    if include_source {
+        let snap = SourceSnapshot::load(&home);
+        let mut changes = Vec::new();
+        let mut scopes: Vec<(
+            crate::sync::model::Scope,
+            std::collections::BTreeMap<String, serde_json::Value>,
+        )> = vec![(crate::sync::model::Scope::Global, snap.global.clone())];
+        for p in &snap.projects {
+            scopes.push((
+                crate::sync::model::Scope::Project {
+                    path: p.path.to_string_lossy().to_string(),
+                },
+                p.servers.clone(),
+            ));
+        }
+        for (scope, servers) in scopes {
+            for (name, cfg) in servers {
+                let vault = std::fs::read_to_string(&agents.secrets_file).unwrap_or_default();
+                let (red, vars) = crate::sync::vault::redact_config(&name, &cfg, &vault);
+                if red == cfg {
+                    continue;
+                }
+                store(vars)?;
+                let snap_now = SourceSnapshot::load(&home);
+                let mut ch =
+                    crate::sync::projects::plan_set_server(&snap_now, &scope, &name, Some(&red))?;
+                // apply each edit immediately so the next one sees it
+                crate::sync::engine::apply(&ch, &backup_root()?).map_err(|e| e.to_string())?;
+                changes.append(&mut ch);
+            }
+        }
+        if !changes.is_empty() {
+            // regenerate every CLI file from the redacted source
+            let snap = SourceSnapshot::load(&home);
+            let eng = Engine::new(&snap);
+            let plan = eng.plan(None);
+            let out = engine::apply(&plan.changes, &backup_root()?).map_err(|e| e.to_string())?;
+            let clis: std::collections::BTreeSet<Cli> =
+                plan.changes.iter().map(|c| c.cli).collect();
+            source_out = Some(crate::sync::projects::SaveOutcome {
+                apply: out,
+                clis: clis.into_iter().collect(),
+                unmanaged_project: false,
+            });
+            if let Ok(db) = db.lock() {
+                let _ = refresh_occurrences_in_db(&db);
+            }
+        }
+    }
+    Ok(SecretMigrationOutcome {
+        db_rows,
+        source_files: source_out,
+        stored_vars: stored,
+    })
+}
+
 // ------------------------------------------------------------------ watcher
 
 pub struct WatcherState(pub Mutex<Option<crate::sync::watcher::ConfigWatcher>>);
@@ -542,14 +708,22 @@ pub fn start_config_watcher(app: &tauri::AppHandle) {
 /// - `--sync-here`: session hook, updates the agy file of the current folder;
 /// - `--sync-check [--json]`: report only;
 /// - `--sync-apply`: apply everything (with backup);
-/// - `--sync-health [--json]`: divergences per CLI (read-only).
+/// - `--sync-health [--json]`: divergences per CLI (read-only);
+/// - `--secrets-status`: vault names and literal secrets (names only).
 pub fn run_cli(args: &[String]) -> Option<i32> {
     let first = args.first()?.as_str();
+    // Any --sync-*/--secrets-* argument is a terminal call: an unknown one
+    // prints help instead of silently opening the window.
+    if !(first.starts_with("--sync-") || first.starts_with("--secrets-")) {
+        return None;
+    }
+    const HELP: &str = "uso: zeroone-agents-tools --sync-check [--json] | --sync-health [--json] | --sync-apply | --sync-here | --secrets-status";
     if !matches!(
         first,
-        "--sync-here" | "--sync-check" | "--sync-apply" | "--sync-health"
+        "--sync-here" | "--sync-check" | "--sync-apply" | "--sync-health" | "--secrets-status"
     ) {
-        return None;
+        eprintln!("{}", HELP);
+        return Some(2);
     }
     let home = match home_dir() {
         Ok(h) => h,
@@ -570,6 +744,75 @@ pub fn run_cli(args: &[String]) -> Option<i32> {
                     Ok(_) => println!("zeroone-agents-tools: MCPs do projeto atualizados pro agy (vale na próxima sessão do agy)."),
                     Err(e) => eprintln!("zeroone-agents-tools: {}", e),
                 }
+            }
+            Some(0)
+        }
+        "--secrets-status" => {
+            // names only; the app DB is opened read-only
+            let st = crate::sync::vault::status(&snap);
+            println!(
+                "cofre: {} ({}), {} definidos, {} referenciados",
+                st.file.replace(&home.to_string_lossy().to_string(), "~"),
+                if st.permissions_ok {
+                    "permissão ok"
+                } else {
+                    "PERMISSÃO ABERTA"
+                },
+                st.defined.len(),
+                st.referenced.len()
+            );
+            if !st.missing.is_empty() {
+                println!("faltando: {}", st.missing.join(", "));
+            }
+            if !st.unused.is_empty() {
+                println!("sem uso: {}", st.unused.join(", "));
+            }
+            let mut rows: Vec<(String, serde_json::Value)> = Vec::new();
+            if let Some(db_path) =
+                dirs::data_dir().map(|d| d.join(APP_IDENTIFIER).join("mcp_library.db"))
+            {
+                if let Ok(conn) = rusqlite::Connection::open_with_flags(
+                    &db_path,
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+                ) {
+                    if let Ok(mut q) = conn.prepare("SELECT name, env, headers FROM mcps") {
+                        let parse = |s: Option<String>| {
+                            s.and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                                .unwrap_or(serde_json::Value::Null)
+                        };
+                        if let Ok(it) = q.query_map([], |r| {
+                            Ok((
+                                r.get::<_, String>(0)?,
+                                r.get::<_, Option<String>>(1)?,
+                                r.get::<_, Option<String>>(2)?,
+                            ))
+                        }) {
+                            for (n, e, h) in it.flatten() {
+                                rows.push((
+                                    n,
+                                    serde_json::json!({"env": parse(e), "headers": parse(h)}),
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+            let plan = crate::sync::vault::plan_migration(&snap, &rows);
+            println!("literais para mover ao cofre: {}", plan.len());
+            for l in &plan {
+                println!(
+                    "  [{}] {} {}.{} → ${{{}}}{}",
+                    l.location,
+                    l.mcp,
+                    l.field,
+                    l.key,
+                    l.already_in_vault.as_deref().unwrap_or(&l.var),
+                    if l.already_in_vault.is_some() {
+                        " (valor já está no cofre)"
+                    } else {
+                        ""
+                    }
+                );
             }
             Some(0)
         }

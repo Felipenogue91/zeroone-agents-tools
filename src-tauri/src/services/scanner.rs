@@ -145,6 +145,16 @@ pub fn run_full_scan(db: &Database) -> Result<usize> {
     // Reconcile deleted projects and auto-detected assets against disk
     reconcile_filesystem_entries(db)?;
 
+    // The DB keeps references only: values known to the vault become ${VAR}
+    if let Some(agents) = crate::utils::agents_home::agents_home() {
+        let secrets = crate::sync::secrets::Secrets::load(&agents.secrets_file);
+        match db.redact_known_secrets(&secrets) {
+            Ok(n) if n > 0 => log::info!("[sync] {} MCPs do banco passaram a usar ${{VAR}}", n),
+            Err(e) => log::warn!("[sync] redação de segredos falhou: {}", e),
+            _ => {}
+        }
+    }
+
     // Multi-CLI occurrence index (read-only, non-fatal)
     if let Err(e) = crate::commands::sync::refresh_occurrences_in_db(db) {
         log::warn!("[sync] occurrence index not refreshed: {}", e);
