@@ -9,6 +9,7 @@ pub struct ClaudePathsInternal {
     pub claude_json: PathBuf, // Main Claude Code config file (~/.claude.json)
     pub global_settings: PathBuf,
     pub plugins_dir: PathBuf,
+    #[allow(dead_code)]
     pub marketplaces_dir: PathBuf,
     pub commands_dir: PathBuf, // ~/.claude/commands/ for command-type skills
     pub skills_dir: PathBuf,   // ~/.claude/skills/ for agent-type skills

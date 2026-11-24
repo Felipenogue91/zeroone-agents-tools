@@ -82,7 +82,7 @@ pub fn read_claude_json() -> Result<Value> {
 pub fn write_claude_json(json: &Value) -> Result<()> {
     let paths = get_claude_paths()?;
     let content = serde_json::to_string_pretty(json)?;
-    fs::write(&paths.claude_json, content)?;
+    crate::utils::atomic::write_atomic(&paths.claude_json, content)?;
     Ok(())
 }
 

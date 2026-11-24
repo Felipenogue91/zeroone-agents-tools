@@ -163,8 +163,10 @@ pub fn add_project(
         imported_mcps, id
     );
 
-    // Register project in claude.json (even with no MCPs)
-    if let Ok(paths) = get_claude_paths() {
+    // Register project in claude.json (even with no MCPs). Skipped when
+    // MCPs are managed by ~/.agents: Claude Code registers projects itself.
+    let mcp_writes_allowed = crate::utils::agents_home::ensure_mcp_writes_allowed().is_ok();
+    if let (true, Ok(paths)) = (mcp_writes_allowed, get_claude_paths()) {
         let empty_mcps: Vec<config_writer::McpWithEnabledTuple> = vec![];
         let _ = config_writer::write_project_to_claude_json(&paths, &project.path, &empty_mcps);
     }
@@ -258,6 +260,8 @@ pub fn sync_project_config(
     use crate::utils::paths::get_claude_paths;
 
     info!("[Projects] Syncing config for project id={}", project_id);
+    // ~/.agents/mcp is the source of truth: never write MCPs into CLI configs.
+    crate::utils::agents_home::ensure_mcp_writes_allowed()?;
     let db = db.lock().map_err(|e| e.to_string())?;
 
     // Get project path

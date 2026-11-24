@@ -7,9 +7,12 @@ use std::path::PathBuf;
 pub struct GeminiPathsInternal {
     #[allow(dead_code)]
     pub home: PathBuf,
-    pub config_dir: PathBuf,           // ~/.gemini/
-    pub settings_file: PathBuf,        // ~/.gemini/settings.json
-    pub antigravity_mcp_file: PathBuf, // ~/.gemini/antigravity-cli/mcp_config.json
+    pub config_dir: PathBuf,    // ~/.gemini/
+    pub settings_file: PathBuf, // ~/.gemini/settings.json
+    /// Global MCP file read by the Antigravity CLI (`agy`):
+    /// ~/.gemini/config/mcp_config.json (confirmed on agy 1.5.16; the
+    /// `antigravity-cli/` folder only holds settings.json).
+    pub antigravity_mcp_file: PathBuf,
 }
 
 pub fn get_gemini_paths() -> Result<GeminiPathsInternal> {
@@ -23,7 +26,7 @@ pub fn get_gemini_paths() -> Result<GeminiPathsInternal> {
 
     Ok(GeminiPathsInternal {
         settings_file: config_dir.join("settings.json"),
-        antigravity_mcp_file: config_dir.join("antigravity-cli").join("mcp_config.json"),
+        antigravity_mcp_file: config_dir.join("config").join("mcp_config.json"),
         home,
         config_dir,
     })

@@ -1121,7 +1121,56 @@ impl Database {
             }
         }
 
+        // Migration 25: drop scan pollution (idempotent, DB only — never
+        // touches user config files).
+        self.cleanup_scan_pollution()?;
+
         Ok(())
+    }
+
+    /// Remove DB rows that the scanner imported by mistake:
+    /// - the app's own MCP under the old fork names (`claude-code-tool-manager`,
+    ///   `zeroone-agents-tools`) read back from CLI configs; the `system` row
+    ///   ("Tool Manager MCP") is kept;
+    /// - MCPs read from the plugin *marketplace catalog*
+    ///   (`~/.claude/plugins/marketplaces/**/.mcp.json`) as if installed.
+    ///
+    /// Rows the user touched (manual source, favorite, assigned globally, to a
+    /// project, to the gateway or to a profile) are always kept.
+    pub fn cleanup_scan_pollution(&self) -> Result<usize> {
+        let untouched = "COALESCE(is_favorite, 0) = 0
+              AND id NOT IN (SELECT mcp_id FROM global_mcps)
+              AND id NOT IN (SELECT mcp_id FROM project_mcps)
+              AND id NOT IN (SELECT mcp_id FROM gateway_mcps)
+              AND id NOT IN (SELECT item_id FROM profile_items WHERE item_type = 'mcp')";
+        let legacy = self.conn.execute(
+            &format!(
+                "DELETE FROM mcps
+                 WHERE name IN ('claude-code-tool-manager', 'zeroone-agents-tools')
+                   AND COALESCE(source, '') NOT IN ('manual', 'system')
+                   AND {}",
+                untouched
+            ),
+            [],
+        )?;
+        let catalog = self.conn.execute(
+            &format!(
+                "DELETE FROM mcps
+                 WHERE source = 'auto-detected'
+                   AND replace(COALESCE(source_path, ''), '\\', '/') LIKE '%/.claude/plugins/marketplaces/%'
+                   AND {}",
+                untouched
+            ),
+            [],
+        )?;
+        if legacy + catalog > 0 {
+            log::info!(
+                "[DB] Removed scan pollution: {} legacy self entries, {} marketplace catalog MCPs",
+                legacy,
+                catalog
+            );
+        }
+        Ok(legacy + catalog)
     }
 
     // App settings methods
@@ -4088,5 +4137,42 @@ mod tests {
     fn test_reorder_spinner_verbs_empty() {
         let db = setup_db();
         db.reorder_spinner_verbs(&[]).unwrap();
+    }
+
+    #[test]
+    fn test_cleanup_scan_pollution_keeps_user_touched_rows() {
+        let db = Database::in_memory().unwrap();
+        let c = db.conn();
+        let cat = "/home/u/.claude/plugins/marketplaces/m/plugins/p/.mcp.json";
+        c.execute("INSERT INTO mcps (name, type, command, source, source_path) VALUES ('example-server','stdio','x','auto-detected',?1)", [cat]).unwrap();
+        c.execute("INSERT INTO mcps (name, type, command, source, source_path, is_favorite) VALUES ('fav','stdio','x','auto-detected',?1,1)", [cat]).unwrap();
+        c.execute("INSERT INTO mcps (name, type, command, source, source_path) VALUES ('assigned','stdio','x','auto-detected',?1)", [cat]).unwrap();
+        let assigned: i64 = c
+            .query_row("SELECT id FROM mcps WHERE name='assigned'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        c.execute("INSERT INTO global_mcps (mcp_id) VALUES (?1)", [assigned])
+            .unwrap();
+        c.execute("INSERT INTO mcps (name, type, command, source, source_path) VALUES ('installed','stdio','x','auto-detected','/home/u/.claude/plugins/cache/m/p/1/.mcp.json')", []).unwrap();
+        c.execute("INSERT INTO mcps (name, type, url, source) VALUES ('claude-code-tool-manager','http','http://127.0.0.1:23847/mcp','gemini')", []).unwrap();
+        c.execute("INSERT INTO mcps (name, type, url, source) VALUES ('Tool Manager MCP','http','http://127.0.0.1:23847/mcp','system')", []).unwrap();
+        c.execute("INSERT INTO mcps (name, type, command, source, source_path) VALUES ('win','stdio','x','auto-detected','C:\\Users\\u\\.claude\\plugins\\marketplaces\\m\\.mcp.json')", []).unwrap();
+
+        let removed = db.cleanup_scan_pollution().unwrap();
+        assert_eq!(removed, 3);
+        let names: Vec<String> = {
+            let mut st = c.prepare("SELECT name FROM mcps ORDER BY name").unwrap();
+            st.query_map([], |r| r.get(0))
+                .unwrap()
+                .map(|r| r.unwrap())
+                .collect()
+        };
+        assert_eq!(
+            names,
+            vec!["Tool Manager MCP", "assigned", "fav", "installed"]
+        );
+        // idempotent
+        assert_eq!(db.cleanup_scan_pollution().unwrap(), 0);
     }
 }

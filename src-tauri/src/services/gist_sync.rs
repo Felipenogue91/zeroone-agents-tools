@@ -602,7 +602,7 @@ pub fn apply_pulled_payload(
                 let backup = path.with_file_name(format!("{}.bak", file_name));
                 let _ = std::fs::copy(&path, &backup);
             }
-            std::fs::write(&path, content)?;
+            crate::utils::atomic::write_atomic(&path, content)?;
             pulled.push("Global CLAUDE.md".to_string());
         }
     }
@@ -730,7 +730,9 @@ pub fn apply_pulled_payload(
                                     claude_md_path.with_file_name(format!("{}.bak", file_name));
                                 let _ = std::fs::copy(&claude_md_path, &backup);
                             }
-                            if let Err(e) = std::fs::write(&claude_md_path, content) {
+                            if let Err(e) =
+                                crate::utils::atomic::write_atomic(&claude_md_path, content)
+                            {
                                 conflicts.push(format!(
                                     "Project '{}': {}",
                                     project_entry.canonical_name, e

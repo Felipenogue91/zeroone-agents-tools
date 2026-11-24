@@ -197,8 +197,35 @@ fn backup_config_file(path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Write MCP servers to Codex config.toml, preserving existing content
+/// Keys of a `[mcp_servers.X]` table that the app generates. Every other key
+/// (`startup_timeout_sec`, `env_vars`, `enabled_tools`, `tool_timeout_sec`,
+/// `default_tools_approval_mode`, ...) is user/tool-owned and must survive a
+/// write untouched.
+const CODEX_MANAGED_KEYS: &[&str] = &[
+    "enabled",
+    "command",
+    "args",
+    "env",
+    "url",
+    "http_headers",
+    "bearer_token_env_var",
+];
+
+/// Write MCP servers to Codex config.toml, preserving existing content.
+///
+/// Merge semantics (never destructive):
+/// - servers in `mcps` are created or updated; keys the app does not manage
+///   are kept as they are;
+/// - servers not in `mcps` are left untouched (they may belong to the user,
+///   to a plugin or to another sync tool);
+/// - everything outside `[mcp_servers]` is preserved by `toml_edit`.
 pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
+    write_codex_config_merge(path, mcps, &[])
+}
+
+/// Same as [`write_codex_config`], and additionally marks `disabled` servers
+/// (by name) with `enabled = false` instead of deleting them.
+pub fn write_codex_config_merge(path: &Path, mcps: &[McpTuple], disabled: &[String]) -> Result<()> {
     // Read existing config or create new
     let content = if path.exists() {
         std::fs::read_to_string(path)?
@@ -216,7 +243,7 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
     })?;
 
     // Skip overwrite when DB has no MCPs — preserves externally-managed configs
-    if mcps.is_empty() {
+    if mcps.is_empty() && disabled.is_empty() {
         return Ok(());
     }
 
@@ -225,16 +252,23 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
         doc["mcp_servers"] = Item::Table(Table::new());
     }
 
-    let mcp_servers = doc["mcp_servers"].as_table_mut().unwrap();
-
-    // Clear existing MCP entries (we'll rebuild them)
-    mcp_servers.clear();
+    let mcp_servers = doc["mcp_servers"]
+        .as_table_mut()
+        .ok_or_else(|| anyhow::anyhow!("`mcp_servers` in {} is not a table", path.display()))?;
+    mcp_servers.set_implicit(true);
 
     // Add each MCP
     for mcp in mcps {
         let (name, mcp_type, command, args, url, headers, env) = mcp;
 
-        let mut server_table = Table::new();
+        // Start from the existing table so unknown keys survive.
+        let mut server_table = match mcp_servers.get(name).and_then(|i| i.as_table()) {
+            Some(existing) => existing.clone(),
+            None => Table::new(),
+        };
+        for key in CODEX_MANAGED_KEYS {
+            server_table.remove(key);
+        }
 
         match mcp_type.as_str() {
             "stdio" => {
@@ -256,8 +290,10 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
 
                 if let Some(env_json) = env {
                     if let Ok(env_map) = serde_json::from_str::<HashMap<String, String>>(env_json) {
+                        let mut keys: Vec<_> = env_map.into_iter().collect();
+                        keys.sort();
                         let mut inline = InlineTable::new();
-                        for (k, v) in env_map {
+                        for (k, v) in keys {
                             inline.insert(&k, v.into());
                         }
                         server_table.insert("env", value(inline));
@@ -278,8 +314,10 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
                         // Check for Authorization header with env var reference
                         let mut bearer_var: Option<String> = None;
                         let mut http_headers = InlineTable::new();
+                        let mut entries: Vec<_> = headers_map.iter().collect();
+                        entries.sort();
 
-                        for (k, v) in &headers_map {
+                        for (k, v) in entries {
                             if k == "Authorization" && v.starts_with('$') {
                                 // Convert $ENV_VAR to bearer_token_env_var
                                 bearer_var = Some(v.trim_start_matches('$').to_string());
@@ -304,6 +342,12 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
         mcp_servers.insert(name, Item::Table(server_table));
     }
 
+    for name in disabled {
+        if let Some(table) = mcp_servers.get_mut(name).and_then(|i| i.as_table_mut()) {
+            table.insert("enabled", value(false));
+        }
+    }
+
     // Ensure parent directory exists
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -313,7 +357,7 @@ pub fn write_codex_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
     backup_config_file(path)?;
 
     // Write back
-    std::fs::write(path, doc.to_string())?;
+    crate::utils::atomic::write_atomic(path, doc.to_string())?;
 
     Ok(())
 }
@@ -376,7 +420,7 @@ pub fn remove_mcp_from_codex_config(path: &Path, name: &str) -> Result<()> {
     backup_config_file(path)?;
 
     // Write back
-    std::fs::write(path, doc.to_string())?;
+    crate::utils::atomic::write_atomic(path, doc.to_string())?;
 
     Ok(())
 }
@@ -898,5 +942,143 @@ url = "https://example.com/mcp"
         let content = fs::read_to_string(&config_path).unwrap();
         assert!(content.contains("command = \"node\""));
         assert!(!content.contains("args"));
+    }
+
+    // =========================================================================
+    // Preservation (never destroy what the app does not own)
+    // =========================================================================
+
+    const REAL_LIKE: &str = r#"model = "gpt-5"
+model_reasoning_effort = "high"
+
+[projects."/tmp/x"]
+trust_level = "trusted"
+
+[features]
+web_search = true
+
+[mcp_servers.node_repl]
+command = "node"
+args = ["repl.js"]
+env_vars = ["NODE_OPTIONS"]
+startup_timeout_sec = 30
+
+# --- gerado pelo mcp-sync (~/.agents/bin/mcp-sync): edite o .mcp.json / global.json, não aqui ---
+[mcp_servers.ai-memory]
+url = "http://127.0.0.1:1/mcp"
+default_tools_approval_mode = "approve"
+
+[mcp_servers.repowise]
+command = "repowise"
+args = ["mcp"]
+startup_timeout_sec = 60
+enabled_tools = ["search_codebase"]
+"#;
+
+    #[test]
+    fn test_write_preserves_unknown_servers_keys_and_top_level() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("config.toml");
+        fs::write(&path, REAL_LIKE).unwrap();
+
+        let mcps: Vec<McpTuple> = vec![
+            (
+                "ai-memory".into(),
+                "http".into(),
+                None,
+                None,
+                Some("http://127.0.0.1:2/mcp".into()),
+                None,
+                None,
+            ),
+            (
+                "repowise".into(),
+                "stdio".into(),
+                Some("repowise".into()),
+                Some(r#"["mcp","--fast"]"#.into()),
+                None,
+                None,
+                None,
+            ),
+        ];
+        write_codex_config(&path, &mcps).unwrap();
+
+        let out = fs::read_to_string(&path).unwrap();
+        let doc: toml::Value = toml::from_str(&out).unwrap();
+        // top level untouched
+        assert_eq!(doc["model"].as_str(), Some("gpt-5"));
+        assert_eq!(doc["features"]["web_search"].as_bool(), Some(true));
+        assert_eq!(
+            doc["projects"]["/tmp/x"]["trust_level"].as_str(),
+            Some("trusted")
+        );
+        let servers = doc["mcp_servers"].as_table().unwrap();
+        // server not managed by the app survives with all its keys
+        assert_eq!(
+            servers["node_repl"]["startup_timeout_sec"].as_integer(),
+            Some(30)
+        );
+        assert_eq!(
+            servers["node_repl"]["env_vars"].as_array().unwrap().len(),
+            1
+        );
+        // managed servers updated, unknown keys kept
+        assert_eq!(
+            servers["ai-memory"]["url"].as_str(),
+            Some("http://127.0.0.1:2/mcp")
+        );
+        assert_eq!(
+            servers["ai-memory"]["default_tools_approval_mode"].as_str(),
+            Some("approve")
+        );
+        assert_eq!(servers["repowise"]["args"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            servers["repowise"]["startup_timeout_sec"].as_integer(),
+            Some(60)
+        );
+        assert_eq!(
+            servers["repowise"]["enabled_tools"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        // the sync tool's marker comment is not lost
+        assert!(out.contains("gerado pelo mcp-sync"));
+    }
+
+    #[test]
+    fn test_write_merge_marks_disabled_instead_of_deleting() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("config.toml");
+        fs::write(&path, REAL_LIKE).unwrap();
+
+        write_codex_config_merge(&path, &[], &["repowise".to_string()]).unwrap();
+
+        let doc: toml::Value = toml::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let repowise = &doc["mcp_servers"]["repowise"];
+        assert_eq!(repowise["enabled"].as_bool(), Some(false));
+        assert_eq!(repowise["command"].as_str(), Some("repowise"));
+        assert_eq!(repowise["startup_timeout_sec"].as_integer(), Some(60));
+    }
+
+    #[test]
+    fn test_write_is_idempotent() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("config.toml");
+        fs::write(&path, REAL_LIKE).unwrap();
+        let mcps: Vec<McpTuple> = vec![(
+            "ai-memory".into(),
+            "http".into(),
+            None,
+            None,
+            Some("http://127.0.0.1:2/mcp".into()),
+            None,
+            None,
+        )];
+        write_codex_config(&path, &mcps).unwrap();
+        let first = fs::read_to_string(&path).unwrap();
+        write_codex_config(&path, &mcps).unwrap();
+        assert_eq!(first, fs::read_to_string(&path).unwrap());
     }
 }

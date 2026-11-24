@@ -20,7 +20,7 @@ fn write_settings_file(path: &Path, settings: &Value) -> Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     let content = serde_json::to_string_pretty(settings)?;
-    std::fs::write(path, content)?;
+    crate::utils::atomic::write_atomic(path, content)?;
     Ok(())
 }
 
@@ -86,7 +86,7 @@ pub fn write_statusline_script(script_content: &str) -> Result<std::path::PathBu
     if let Some(parent) = script_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(&script_path, script_content)?;
+    crate::utils::atomic::write_atomic(&script_path, script_content)?;
     Ok(script_path)
 }
 

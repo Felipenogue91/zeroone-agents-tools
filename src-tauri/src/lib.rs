@@ -229,6 +229,7 @@ pub fn run() {
             commands::config::remove_global_mcp,
             commands::config::toggle_global_mcp_assignment,
             commands::config::sync_global_config,
+            commands::config::get_mcp_management_status,
             commands::config::get_claude_paths,
             commands::config::open_config_file,
             commands::config::backup_configs,

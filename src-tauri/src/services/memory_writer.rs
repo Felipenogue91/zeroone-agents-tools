@@ -158,7 +158,7 @@ pub fn write_memory_file(
     }
 
     crate::utils::backup::backup_file(&path)?;
-    std::fs::write(&path, content)?;
+    crate::utils::atomic::write_atomic(&path, content)?;
 
     // Read back the file info to return updated metadata
     read_memory_file(scope, project_path)

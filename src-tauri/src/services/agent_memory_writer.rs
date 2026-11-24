@@ -109,7 +109,7 @@ pub fn write_agent_memory(
     }
 
     crate::utils::backup::backup_file(&path)?;
-    std::fs::write(&path, content)?;
+    crate::utils::atomic::write_atomic(&path, content)?;
     read_agent_memory(agent_name, scope, project_path)
 }
 

@@ -125,7 +125,7 @@ pub fn write_project_config(project_path: &Path, mcps: &[McpTuple]) -> Result<()
     backup_config_file(&config_path)?;
 
     let content = serde_json::to_string_pretty(&existing)?;
-    std::fs::write(&config_path, content)?;
+    crate::utils::atomic::write_atomic(&config_path, content)?;
     Ok(())
 }
 
@@ -159,7 +159,7 @@ pub fn write_global_config(paths: &ClaudePathsInternal, mcps: &[McpTuple]) -> Re
 
     // Write back to ~/.claude.json
     let content = serde_json::to_string_pretty(&claude_json)?;
-    std::fs::write(&paths.claude_json, content)?;
+    crate::utils::atomic::write_atomic(&paths.claude_json, content)?;
 
     Ok(())
 }
@@ -318,7 +318,7 @@ pub fn write_project_to_claude_json(
 
     // Write back
     let content = serde_json::to_string_pretty(&claude_json)?;
-    std::fs::write(&paths.claude_json, content)?;
+    crate::utils::atomic::write_atomic(&paths.claude_json, content)?;
 
     Ok(())
 }

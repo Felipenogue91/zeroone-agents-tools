@@ -113,7 +113,7 @@ fn write_settings_file(path: &Path, settings: &Value) -> Result<()> {
     }
     crate::utils::backup::backup_file(path)?;
     let content = serde_json::to_string_pretty(settings)?;
-    std::fs::write(path, content)?;
+    crate::utils::atomic::write_atomic(path, content)?;
     Ok(())
 }
 

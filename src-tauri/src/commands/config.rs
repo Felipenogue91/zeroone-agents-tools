@@ -79,6 +79,9 @@ pub(crate) fn sync_global_config_from_db(db: &Database) -> Result<(), String> {
     use crate::utils::{codex_paths, copilot_paths, cursor_paths, gemini_paths, opencode_paths};
     use log::{info, warn};
 
+    // ~/.agents/mcp is the source of truth: never write MCPs into CLI configs.
+    crate::utils::agents_home::ensure_mcp_writes_allowed()?;
+
     // Get enabled global MCPs
     let mut stmt = db
         .conn()
@@ -165,6 +168,14 @@ pub(crate) fn sync_global_config_from_db(db: &Database) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// Whether MCP configs are owned by `~/.agents/mcp` (UI shows a notice and
+/// disables direct writes).
+#[tauri::command]
+pub fn get_mcp_management_status() -> crate::utils::agents_home::McpManagementStatus {
+    let home = crate::utils::agents_home::agents_home();
+    crate::utils::agents_home::mcp_management_status_in(home.as_ref())
 }
 
 #[tauri::command]

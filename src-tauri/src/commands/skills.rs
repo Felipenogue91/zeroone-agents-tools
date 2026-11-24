@@ -409,10 +409,12 @@ pub fn toggle_global_skill(
         .map_err(|e| e.to_string())?;
 
     // Get the skill details
-    let query = "SELECT s.id, s.name, s.description, s.content, s.allowed_tools, s.model, s.disable_model_invocation, s.tags, s.source, s.source_path, s.is_favorite, s.created_at, s.updated_at
-         FROM global_skills gs
-         JOIN skills s ON gs.skill_id = s.id
-         WHERE gs.id = ?".to_string();
+    // Must select every column row_to_skill reads (it used to select 13 of 20
+    // and failed after the DB update).
+    let query = format!(
+        "SELECT {} FROM global_skills gs JOIN skills s ON gs.skill_id = s.id WHERE gs.id = ?",
+        skill_select_fields_prefixed("s")
+    );
     let mut stmt = db_guard.conn().prepare(&query).map_err(|e| e.to_string())?;
 
     let skill: Skill = stmt

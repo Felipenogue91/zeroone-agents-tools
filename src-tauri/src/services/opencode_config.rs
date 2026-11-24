@@ -261,7 +261,7 @@ pub fn write_opencode_global_config(config_path: &Path, mcps: &[McpTuple]) -> Re
 
     // Write back
     let content = serde_json::to_string_pretty(&config)?;
-    std::fs::write(config_path, content)?;
+    crate::utils::atomic::write_atomic(config_path, content)?;
 
     Ok(())
 }
@@ -300,7 +300,7 @@ pub fn write_opencode_project_config(project_path: &Path, mcps: &[McpTuple]) -> 
 
     // Write back
     let content = serde_json::to_string_pretty(&config)?;
-    std::fs::write(&config_path, content)?;
+    crate::utils::atomic::write_atomic(&config_path, content)?;
 
     Ok(())
 }

@@ -73,6 +73,8 @@ pub fn capture_profile_from_current(
 #[tauri::command]
 pub fn activate_profile(db: State<'_, Arc<Mutex<Database>>>, id: i64) -> Result<(), String> {
     info!("[Profiles] Activating profile id={}", id);
+    // Refuse before touching the DB so the cache does not diverge from disk.
+    crate::utils::agents_home::ensure_mcp_writes_allowed()?;
     let db = db.lock().map_err(|e| e.to_string())?;
     activate_profile_in_db(&db, id)?;
 

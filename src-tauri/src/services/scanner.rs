@@ -17,7 +17,6 @@ use rusqlite::params;
 use std::collections::HashSet;
 use std::path::Path;
 use tauri::Manager;
-use walkdir::WalkDir;
 
 /// Source literal used for rows populated by the auto-scan path (as opposed
 /// to UI-created rows which carry `source = 'manual'`).
@@ -572,74 +571,140 @@ pub fn scan_plugins(db: &Database) -> Result<usize> {
     let paths = get_claude_paths()?;
     let mut count = 0;
 
-    if paths.marketplaces_dir.exists() {
-        for entry in WalkDir::new(&paths.marketplaces_dir)
-            .max_depth(6)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_name() == ".mcp.json" {
-                match config_parser::parse_mcp_file(entry.path()) {
-                    Ok(mcps) => {
-                        for mcp in mcps {
-                            let source_path = entry.path().to_string_lossy().to_string();
+    // Only plugins that are installed AND enabled. The marketplace catalog
+    // (~/.claude/plugins/marketplaces/**) lists everything a marketplace
+    // offers, not what the user has: scanning it imported dozens of MCPs
+    // (example-server, imessage, fakechat...) as if installed.
+    for mcp_file in installed_plugin_mcp_files(&paths.plugins_dir, &paths.global_settings) {
+        match config_parser::parse_mcp_file(&mcp_file) {
+            Ok(mcps) => {
+                for mcp in mcps {
+                    let source_path = mcp_file.to_string_lossy().to_string();
 
-                            // Check if already exists
-                            let existing_id: Option<i64> = db
-                                .conn()
-                                .query_row(
-                                    "SELECT id FROM mcps WHERE name = ?",
-                                    [&mcp.name],
-                                    |row| row.get(0),
-                                )
-                                .ok();
+                    // Check if already exists
+                    let existing_id: Option<i64> = db
+                        .conn()
+                        .query_row("SELECT id FROM mcps WHERE name = ?", [&mcp.name], |row| {
+                            row.get(0)
+                        })
+                        .ok();
 
-                            if let Some(id) = existing_id {
-                                // Update source_path if not already set
-                                db.conn().execute(
-                                    "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
-                                    params![&source_path, id],
-                                )?;
-                            } else {
-                                let args_json =
-                                    mcp.args.as_ref().map(|a| serde_json::to_string(a).unwrap());
-                                let headers_json = mcp
-                                    .headers
-                                    .as_ref()
-                                    .map(|h| serde_json::to_string(h).unwrap());
-                                let env_json =
-                                    mcp.env.as_ref().map(|e| serde_json::to_string(e).unwrap());
+                    if let Some(id) = existing_id {
+                        // Update source_path if not already set
+                        db.conn().execute(
+                            "UPDATE mcps SET source_path = ? WHERE id = ? AND (source_path IS NULL OR source_path = '')",
+                            params![&source_path, id],
+                        )?;
+                    } else {
+                        let args_json =
+                            mcp.args.as_ref().map(|a| serde_json::to_string(a).unwrap());
+                        let headers_json = mcp
+                            .headers
+                            .as_ref()
+                            .map(|h| serde_json::to_string(h).unwrap());
+                        let env_json = mcp.env.as_ref().map(|e| serde_json::to_string(e).unwrap());
 
-                                let result = db.conn().execute(
-                                    "INSERT INTO mcps (name, type, command, args, url, headers, env, source, source_path)
-                                     VALUES (?, ?, ?, ?, ?, ?, ?, 'auto-detected', ?)",
-                                    params![
-                                        mcp.name,
-                                        mcp.mcp_type,
-                                        mcp.command,
-                                        args_json,
-                                        mcp.url,
-                                        headers_json,
-                                        env_json,
-                                        source_path
-                                    ],
-                                );
+                        let result = db.conn().execute(
+                            "INSERT INTO mcps (name, type, command, args, url, headers, env, source, source_path)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, 'auto-detected', ?)",
+                            params![
+                                mcp.name,
+                                mcp.mcp_type,
+                                mcp.command,
+                                args_json,
+                                mcp.url,
+                                headers_json,
+                                env_json,
+                                source_path
+                            ],
+                        );
 
-                                if result.is_ok() {
-                                    count += 1;
-                                }
-                            }
+                        if result.is_ok() {
+                            count += 1;
                         }
                     }
-                    Err(e) => {
-                        log::warn!("Failed to parse {:?}: {}", entry.path(), e);
-                    }
                 }
+            }
+            Err(e) => {
+                log::warn!("Failed to parse {:?}: {}", mcp_file, e);
             }
         }
     }
 
+    // Drop rows a previous version imported from the catalog.
+    let _ = db.cleanup_scan_pollution();
+
     Ok(count)
+}
+
+fn read_enabled_plugins(
+    settings_file: &Path,
+) -> Option<serde_json::Map<String, serde_json::Value>> {
+    let content = std::fs::read_to_string(settings_file).ok()?;
+    let json: serde_json::Value = serde_json::from_str(&content).ok()?;
+    json.get("enabledPlugins")?.as_object().cloned()
+}
+
+fn plugin_enabled_in(settings_file: &Path, key: &str) -> Option<bool> {
+    read_enabled_plugins(settings_file)?
+        .get(key)
+        .and_then(|v| v.as_bool())
+}
+
+/// `.mcp.json` files of Claude Code plugins that are installed
+/// (`plugins/installed_plugins.json`) and enabled (`enabledPlugins` in the
+/// user settings, or in the project settings for project/local installs).
+pub(crate) fn installed_plugin_mcp_files(
+    plugins_dir: &Path,
+    user_settings: &Path,
+) -> Vec<std::path::PathBuf> {
+    let installed = plugins_dir.join("installed_plugins.json");
+    let Ok(content) = std::fs::read_to_string(&installed) else {
+        return Vec::new();
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) else {
+        log::warn!("scanner: could not parse {}", installed.display());
+        return Vec::new();
+    };
+    let Some(plugins) = json.get("plugins").and_then(|p| p.as_object()) else {
+        return Vec::new();
+    };
+
+    let mut files = Vec::new();
+    let mut seen = HashSet::new();
+    for (key, entries) in plugins {
+        // v2: array of installs; v1: a single object
+        let installs: Vec<&serde_json::Value> = match entries {
+            serde_json::Value::Array(a) => a.iter().collect(),
+            other => vec![other],
+        };
+        for install in installs {
+            let project_path = install.get("projectPath").and_then(|v| v.as_str());
+            let enabled = match project_path {
+                Some(pp) => {
+                    let pp = Path::new(pp);
+                    plugin_enabled_in(&pp.join(".claude").join("settings.local.json"), key)
+                        .or_else(|| {
+                            plugin_enabled_in(&pp.join(".claude").join("settings.json"), key)
+                        })
+                        .or_else(|| plugin_enabled_in(user_settings, key))
+                        .unwrap_or(false)
+                }
+                None => plugin_enabled_in(user_settings, key).unwrap_or(false),
+            };
+            if !enabled {
+                continue;
+            }
+            let Some(install_path) = install.get("installPath").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let mcp_file = Path::new(install_path).join(".mcp.json");
+            if mcp_file.is_file() && seen.insert(mcp_file.clone()) {
+                files.push(mcp_file);
+            }
+        }
+    }
+    files
 }
 
 /// Scan global commands from ~/.claude/commands/
@@ -697,7 +762,8 @@ pub(crate) fn scan_skills_directory(
             let mut stmt = db.conn().prepare(
                 "SELECT gs.skill_id, COALESCE(s.source, 'auto-detected')
                  FROM global_skills gs
-                 JOIN skills s ON s.id = gs.skill_id",
+                 JOIN skills s ON s.id = gs.skill_id
+                 WHERE gs.is_enabled = 1",
             )?;
             let rows = stmt
                 .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
@@ -5013,5 +5079,87 @@ Body"#,
             )
             .unwrap();
         assert_eq!(manual_exists, 1);
+    }
+
+    // =========================================================================
+    // Installed plugins only (no marketplace catalog)
+    // =========================================================================
+
+    fn plugin_fixture() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let plugins = tmp.path().join("plugins");
+        let settings = tmp.path().join("settings.json");
+        let mk = |rel: &str| {
+            let d = plugins.join(rel);
+            std::fs::create_dir_all(&d).unwrap();
+            std::fs::write(
+                d.join(".mcp.json"),
+                r#"{"mcpServers":{"x":{"command":"x"}}}"#,
+            )
+            .unwrap();
+            d
+        };
+        let on = mk("cache/mk/on/1.0.0");
+        let off = mk("cache/mk/off/1.0.0");
+        let local = mk("cache/mk/local/1.0.0");
+        // catalog entry that is NOT installed
+        mk("marketplaces/mk/plugins/catalog-only");
+        let project = tmp.path().join("proj");
+        std::fs::create_dir_all(project.join(".claude")).unwrap();
+        std::fs::write(
+            project.join(".claude/settings.local.json"),
+            r#"{"enabledPlugins":{"local@mk":true}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            &settings,
+            r#"{"enabledPlugins":{"on@mk":true,"off@mk":false}}"#,
+        )
+        .unwrap();
+        let installed = serde_json::json!({
+            "version": 2,
+            "plugins": {
+                "on@mk": [{"scope":"user","installPath": on}],
+                "off@mk": [{"scope":"user","installPath": off}],
+                "local@mk": [{"scope":"local","projectPath": project,"installPath": local}]
+            }
+        });
+        std::fs::write(
+            plugins.join("installed_plugins.json"),
+            installed.to_string(),
+        )
+        .unwrap();
+        (tmp, plugins, settings)
+    }
+
+    #[test]
+    fn test_installed_plugin_mcp_files_only_enabled_installs() {
+        let (_tmp, plugins, settings) = plugin_fixture();
+        let files = installed_plugin_mcp_files(&plugins, &settings);
+        let names: Vec<String> = files
+            .iter()
+            .map(|f| {
+                f.parent()
+                    .unwrap()
+                    .parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .collect();
+        assert!(names.contains(&"on".to_string()));
+        assert!(names.contains(&"local".to_string()));
+        assert!(!names.contains(&"off".to_string()));
+        assert!(files
+            .iter()
+            .all(|f| !f.to_string_lossy().contains("marketplaces")));
+    }
+
+    #[test]
+    fn test_installed_plugin_mcp_files_missing_registry_is_empty() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        assert!(installed_plugin_mcp_files(tmp.path(), &tmp.path().join("s.json")).is_empty());
     }
 }

@@ -286,7 +286,7 @@ pub fn write_copilot_config(path: &Path, mcps: &[McpTuple]) -> Result<()> {
 
     // Write back with pretty formatting
     let json = serde_json::to_string_pretty(&config)?;
-    std::fs::write(path, json)?;
+    crate::utils::atomic::write_atomic(path, json)?;
 
     Ok(())
 }
@@ -348,7 +348,7 @@ pub fn remove_mcp_from_copilot_config(path: &Path, name: &str) -> Result<()> {
 
     // Write back
     let json = serde_json::to_string_pretty(&config)?;
-    std::fs::write(path, json)?;
+    crate::utils::atomic::write_atomic(path, json)?;
 
     Ok(())
 }

@@ -96,7 +96,7 @@ pub fn write_subagent_file(base_path: &Path, subagent: &SubAgent) -> Result<()> 
     let file_path = agents_dir.join(format!("{}.md", subagent.name));
     crate::utils::backup::backup_file(&file_path)?;
     let content = generate_subagent_markdown(subagent);
-    std::fs::write(file_path, content)?;
+    crate::utils::atomic::write_atomic(file_path, content)?;
 
     Ok(())
 }
@@ -190,7 +190,7 @@ pub fn write_subagent_file_opencode(base_path: &Path, subagent: &SubAgent) -> Re
     let file_path = agents_dir.join(format!("{}.md", subagent.name));
     crate::utils::backup::backup_file(&file_path)?;
     let content = generate_subagent_markdown_opencode(subagent);
-    std::fs::write(file_path, content)?;
+    crate::utils::atomic::write_atomic(file_path, content)?;
 
     Ok(())
 }

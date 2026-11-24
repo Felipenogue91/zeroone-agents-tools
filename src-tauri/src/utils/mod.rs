@@ -1,3 +1,5 @@
+pub mod agents_home;
+pub mod atomic;
 pub mod backup;
 pub mod codex_paths;
 pub mod copilot_paths;
