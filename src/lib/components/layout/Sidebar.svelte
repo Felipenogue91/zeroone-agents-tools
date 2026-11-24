@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { House, FolderOpen, Library, TerminalSquare, Settings, ChevronRight, Container, PanelBottom, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Layers, FileText, Shield, Store, PanelLeftClose, PanelLeftOpen, Plug } from 'lucide-svelte';
+	import { House, FolderOpen, Library, TerminalSquare, Settings, ChevronRight, Container, PanelBottom, BarChart3, TrendingUp, FolderSearch, GitCompareArrows, Layers, FileText, Shield, Store, PanelLeftClose, PanelLeftOpen, Plug , Trees } from 'lucide-svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { getVersion } from '@tauri-apps/api/app';
 	import TodayUsageWidget from './TodayUsageWidget.svelte';
@@ -74,11 +74,22 @@
 
 	const libraryPaths = ['/library', '/skills', '/subagents', '/hooks', '/commands', '/rules'];
 
+	// Code Forest tab only when the repo exists on this machine
+	let forestInstalled = $state(false);
+	$effect(() => {
+		import('@tauri-apps/api/core')
+			.then(({ invoke }) => invoke<{ installed: boolean }>('code_forest_status'))
+			.then((s) => (forestInstalled = !!s?.installed))
+			.catch(() => (forestInstalled = false));
+	});
+
 	let mainItems: NavItem[] = $derived([
 		{ href: '/', label: i18n.t('nav.home'), icon: House, badge: syncStore.divergenceCount },
 		{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen },
 		{ href: '/library', label: i18n.t('nav.library'), icon: Library, match: libraryPaths },
-		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare }
+		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare },
+		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container },
+		...(forestInstalled ? [{ href: '/code-forest', label: 'Code Forest', icon: Trees }] : [])
 	]);
 
 	let advancedItems: NavItem[] = $derived([
@@ -90,7 +101,6 @@
 		{ href: '/insights', label: i18n.t('nav.insights'), icon: TrendingUp },
 		{ href: '/sessions', label: i18n.t('nav.sessions'), icon: FolderSearch },
 		{ href: '/comparison', label: i18n.t('nav.comparison'), icon: GitCompareArrows },
-		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container },
 		{ href: '/marketplace', label: i18n.t('nav.marketplace'), icon: Store }
 	]);
 

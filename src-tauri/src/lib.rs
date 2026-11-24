@@ -526,6 +526,8 @@ pub fn run() {
             commands::sessions::get_project_sessions,
             commands::sessions::get_session_detail,
             // Container Commands
+            commands::code_forest::code_forest_status,
+            commands::code_forest::open_code_forest,
             commands::containers::list_docker_containers,
             commands::containers::docker_container_action,
             commands::containers::docker_container_logs,

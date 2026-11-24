@@ -20,7 +20,7 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 
 ## Próximo passo exato
 
-- Item 11 (aba Code Forest), depois verificação final (e2e, screenshots) e push só com ok.
+- Verificação final (e2e), depois Felipe confere; push e empacotamento só com ok dele.
 - "Empresa" nas mensagens do Felipe = a CLI de cada empresa (Anthropic/OpenAI/Google).
 
 ## Decisões em aberto
@@ -37,6 +37,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Item 11, aba Code Forest (2026-11-24, Claude Code):** item "Code Forest" no menu (só aparece se `~/Workspace/projects/code-forest/bin/code-forest` existe). A página sobe o servidor da floresta se preciso (`setsid bin/code-forest serve`, sobrevive ao app como o `code-forest open`) e abre a floresta numa **janela nativa** do app (`WebviewWindowBuilder`, label `code-forest`, `http://127.0.0.1:4790/`). Não é iframe porque a floresta manda `frame-ancestors 'none'` (protege o botão de poda); afrouxar isso no code-forest é decisão do Felipe. Nada do code-forest foi copiado para cá. Containers também subiu para o menu principal.
 
 - **Itens 9 e 10 (2026-11-24, Claude Code):** Regras: consultas com join usavam `created_at` sem prefixo (ambíguo) e a tela ficava vazia; corrigido com `rule_fields_as("r")` + teste. (Na máquina não há `~/.claude/rules`, então "0 regras" é real.) Containers: seção "Containers do Docker nesta máquina" (`list_docker_containers`, `docker_container_action`, `docker_container_logs`; bollard `all: true`), agrupada por projeto do compose com pasta, estado, portas, iniciar/parar/reiniciar, logs e "iniciar/parar todos"; atualiza a cada 5 s. Seletores nativos seguem o tema escuro (`color-scheme: dark`).
 
