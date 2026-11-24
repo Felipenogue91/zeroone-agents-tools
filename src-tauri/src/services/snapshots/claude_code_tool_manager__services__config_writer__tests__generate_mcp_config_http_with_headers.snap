@@ -1,15 +1,16 @@
 ---
 source: src/services/config_writer.rs
+assertion_line: 421
 expression: config
 ---
 {
   "mcpServers": {
     "remote-http": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
       "headers": {
         "Authorization": "Bearer token123"
-      },
-      "type": "http",
-      "url": "https://api.example.com/mcp"
+      }
     }
   }
 }

@@ -211,10 +211,12 @@ pub fn write_skill_file_with(
                 link_dir(&src, &skill_dir)?;
                 return Ok(());
             }
-            None => return Err(anyhow::anyhow!(
+            None => {
+                return Err(anyhow::anyhow!(
                 "{} is a broken link and the skill source was not found; refusing to replace it",
                 skill_dir.display()
-            )),
+            ))
+            }
         }
     }
 

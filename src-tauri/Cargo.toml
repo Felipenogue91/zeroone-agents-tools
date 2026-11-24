@@ -22,7 +22,7 @@ tauri-plugin-notification = "2"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -67,6 +67,9 @@ base64 = "0.22"
 
 # Regex for parsing
 regex = "1"
+
+# Unified diffs for sync previews
+similar = "2"
 tar = "0.4"
 
 # TOML parsing for Codex CLI config

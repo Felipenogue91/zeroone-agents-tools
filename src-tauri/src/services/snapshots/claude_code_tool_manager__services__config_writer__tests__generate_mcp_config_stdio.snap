@@ -1,15 +1,16 @@
 ---
 source: src/services/config_writer.rs
+assertion_line: 392
 expression: config
 ---
 {
   "mcpServers": {
     "test-mcp": {
+      "command": "npx",
       "args": [
         "-y",
         "@test/mcp-server"
       ],
-      "command": "npx",
       "env": {
         "API_KEY": "test123"
       }

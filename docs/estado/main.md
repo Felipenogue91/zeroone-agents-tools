@@ -1,22 +1,31 @@
-# Estado (atualizado em 2026-11-24 19:45 por claude-code)
+# Estado (atualizado em 2026-11-24 20:30 por claude-code)
 
 ## Fazendo agora
 
-Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0 e 1 concluídas.
+Frente **sync multi-CLI** (`docs/plano-sync-multi-cli.md`), executando as fases em sequência sem parar para aprovação (pedido do Felipe em 2026-11-24): commit por fase, sem push, sem empacotar. Fases 0, 1 e 2 concluídas.
 
 ## Próximo passo exato
 
-- Fase 2 (motor de sync): adaptadores Claude/Codex/agy com `read → plan → diff → apply` portando o `~/.agents/bin/mcp-sync`, backup e prévia de diff; skills materializadas por CLI.
+- Fase 3 (watcher + saúde): crate `notify` nos arquivos de config, comando de saúde com divergências por CLI (no arquivo e não na fonte / na fonte e não no arquivo) e ações importar/reaplicar.
 - Depois de todas as fases: o Felipe confere e empacota Linux + Windows juntos (não empacotar antes).
 - Pendente de antes: acompanhar a run da tag `v1.0.0` e trocar o pacote antigo `claude-code-tool-manager` (porta `23847`) pelo novo `.deb` quando o Felipe aprovar.
 
 ## Decisões em aberto
 
+- **Máquina real fora de sincronia (só leitura, nada aplicado):** `--sync-check` e `mcp-sync --check` concordam: global com Claude/agy divergentes (agy ainda tem `claude-code-tool-manager`, `figma`, `twenty`, `voice-studio`…), 4 projetos com `agy@` desatualizado e cópias antigas no escopo local do Claude. Aplicar (`mcp-sync` ou `zeroone-agents-tools --sync-apply`) só com aprovação do Felipe.
 - Fonte da verdade decidida: `~/.agents` (banco do app é só cache). Fase 7 (UI) liberada: as mudanças de UI/i18n do antigravity foram commitadas em `e11105b`.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
 
+- **Fase 2 sync multi-CLI (2026-11-24, Claude Code):**
+  - `src-tauri/src/sync/engine.rs`: porta Rust do `mcp-sync` (`read → plan → diff → apply`): Claude user scope (patch só de `mcpServers` no `~/.claude.json`, relido na hora de gravar), Codex global (preserva `codexGlobalKeep`, extras e o resto do TOML) e projeto (só `${VAR}`, vai pro git), agy global e por pasta/worktree (valor resolvido, 0600, `info/exclude`). `pluginProvided`, `overrides`, `disabledMcpjsonServers`, avisos de escopo local do Claude.
+  - `apply` com backup por conjunto (`<data>/com.zeroone.agents-tools/sync-backups/<id>`, 0700, últimos 30), pula arquivo que mudou desde a prévia e `undo` restaura. Diff unificado com segredos mascarados (`secrets.rs`).
+  - `src-tauri/src/sync/codex.rs`: `to_codex`, render TOML e `codex_rewrite` idênticos ao script (mesmo marcador). `serde_json` com `preserve_order` (2 snapshots do insta reordenados, conteúdo igual).
+  - `src-tauri/src/sync/skills.rs`: skill por CLI (symlink no Claude, `include_only` no `skills.json` do agy, Codex nativo).
+  - Comandos: `sync_preview`, `sync_apply`, `sync_undo`, `list_sync_backups`, `set_skill_target`, `run_external_sync_check`. Terminal: `zeroone-agents-tools --sync-here` (hook de sessão), `--sync-check [--json]`, `--sync-apply`.
+  - Paridade: teste roda o `mcp-sync --check` real com `HOME` na fixture depois do motor Rust aplicar → tudo "ok". Na máquina real, `--sync-check` gera saída idêntica ao `mcp-sync --check`.
+  - Verificação: `cargo test` 2091/2091 (+1 ignorado manual), Vitest 1568/1568, `npm run check` só com os 11 erros pré-existentes.
 - **Fase 1 sync multi-CLI (2026-11-24, Claude Code):**
   - `src-tauri/src/sync/model.rs`: `Resource` com `uid` próprio (`kind:escopo:nome`, sensível a maiúsculas, por projeto), `Cli` (claude/codex/agy), matriz de destinos (`On`/`Off`/`ProvidedByPlugin`/`Native`/`Unsupported`), overrides por CLI, `secret_refs` (`${VAR}`, nunca valor) e `literal_secret_keys`.
   - `src-tauri/src/sync/source.rs`: lê a fonte (`global.json`, `sync.json` ignorando `_doc`, `.mcp.json` + `disabledMcpjsonServers` dos projetos, `~/.agents/skills`, `~/.claude/skills`, agents). Codex lê `~/.agents/skills` nativamente (confirmado no binário 0.171: `user-agent-skills`); agy via `~/.gemini/config/skills.json`.

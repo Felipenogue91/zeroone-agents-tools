@@ -15,6 +15,12 @@ use mcp_server::server::{McpServerConfig, McpServerState, DEFAULT_MCP_SERVER_POR
 use services::docker::client::DockerClientManager;
 use services::mcp_session::McpSessionManager;
 
+/// Terminal subcommands (`--sync-here`, `--sync-check`, `--sync-apply`).
+/// Returns the exit code when the arguments are a CLI invocation.
+pub fn run_cli(args: &[String]) -> Option<i32> {
+    commands::sync::run_cli(args)
+}
+
 pub fn run() {
     env_logger::init();
 
@@ -235,6 +241,12 @@ pub fn run() {
             commands::sync::refresh_sync_occurrences,
             commands::sync::set_resource_favorite,
             commands::sync::set_resource_tags,
+            commands::sync::sync_preview,
+            commands::sync::sync_apply,
+            commands::sync::sync_undo,
+            commands::sync::list_sync_backups,
+            commands::sync::set_skill_target,
+            commands::sync::run_external_sync_check,
             commands::config::get_claude_paths,
             commands::config::open_config_file,
             commands::config::backup_configs,
