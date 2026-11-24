@@ -1,6 +1,6 @@
 {
   "name": "zeroone-agents-tools",
-  "version": "1.0.0",
+  "version": "3.21.0",
   "private": true,
   "type": "module",
   "scripts": {

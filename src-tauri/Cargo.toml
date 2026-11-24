@@ -1,6 +1,6 @@
 [package]
 name = "zeroone-agents-tools"
-version = "1.0.0"
+version = "3.21.0"
 description = "ZeroOne Agents Tools — Desktop control plane for MCP servers, Skills, Sub-Agents, and Hooks"
 authors = ["ZeroOne <https://github.com/Felipenogue91>"]
 edition = "2021"
