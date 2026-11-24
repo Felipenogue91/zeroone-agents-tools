@@ -1,4 +1,4 @@
-# Estado (atualizado em 2026-11-24 20:00 por claude-code)
+# Estado (atualizado em 2026-11-24 20:30 por claude-code)
 
 ## Fazendo agora
 
@@ -44,6 +44,8 @@ Ordem de execução: 1 → 3 → 2/4 → 5/6 → 8 → 9 → 10 → 7 → 11.
 - Config dos usuários ainda não foi tocada: o MCP `claude-code-tool-manager` (nome antigo) segue em `~/.gemini/config/mcp_config.json` e `~/.gemini/antigravity-cli/mcp_config.json`; limpar só com aprovação.
 
 ## Feito e verificado
+
+- **Versão 3.21.0 empacotada (2026-11-24 20:30):** `.deb` e AppImage Linux em `src-tauri/target/release/bundle/`, instalador Windows NSIS cruzado daqui (`cargo-xwin`, `--runner cargo-xwin --target x86_64-pc-windows-msvc`) em `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/`. Gerados com `createUpdaterArtifacts: false` (sem assinatura do updater). Falta: Felipe rodar `sudo apt install` do `.deb` (instalado ainda é 1.0.0); nada foi publicado (main 27 à frente do origin).
 
 - **Aba Code Forest embutida (2026-11-24 20:00):** a janela separada ficava branca porque o WebKitGTK quebrava no driver NVIDIA 595 (`libnvidia-eglcore`, divide error) ao desenhar WebGL. Conserto: `main.rs` liga `WEBKIT_DISABLE_DMABUF_RENDERER=1` no Linux (testado fora do app: sem ele crasha, com ele roda liso). A floresta agora é um iframe na área da aba; o code-forest libera `frame-ancestors` só pras origens do app (commit no repo code-forest). Verificado: iframe 1056×689, app conectado no servidor 4790, nenhum crash no kernel. Falta o Felipe olhar com os próprios olhos (print do bridge não captura iframe).
 
