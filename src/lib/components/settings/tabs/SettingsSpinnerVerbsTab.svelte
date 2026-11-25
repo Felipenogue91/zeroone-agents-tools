@@ -94,7 +94,7 @@
 	</div>
 
 	<div class="flex items-center gap-3">
-		<button
+		<button data-tip={i18n.t('tip.spinner.sync')}
 			onclick={handleSync}
 			disabled={isSyncing}
 			class="btn btn-secondary flex items-center gap-2"

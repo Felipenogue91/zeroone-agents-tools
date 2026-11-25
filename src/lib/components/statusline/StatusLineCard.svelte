@@ -117,7 +117,7 @@
 
 		<div class="mt-4 flex gap-2">
 			{#if statusline.isActive}
-				<button
+				<button data-tip={i18n.t('tip.sl.deactivate')}
 					onclick={() => onDeactivate?.()}
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 				>
@@ -125,7 +125,7 @@
 					{i18n.t('statuslineComp.deactivate')}
 				</button>
 			{:else}
-				<button
+				<button data-tip={i18n.t('tip.sl.activate')}
 					onclick={() => onActivate?.(statusline)}
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
 				>

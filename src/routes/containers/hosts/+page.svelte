@@ -31,7 +31,7 @@
 
 <div class="flex-1 overflow-auto p-6">
 	<div class="flex justify-end mb-6">
-		<button onclick={() => showAddHost = true}
+		<button data-tip={i18n.t('tip.containers.addHost')} onclick={() => showAddHost = true}
 			class="btn btn-primary gap-2">
 			<Plus class="w-4 h-4" aria-hidden="true" />
 			{i18n.t('containers.addHost')}

@@ -52,7 +52,7 @@
 
 <div class="flex-1 overflow-auto p-6">
 	<div class="flex justify-end mb-6">
-		<button onclick={() => (showAddCommand = true)} class="btn btn-primary">
+		<button data-tip={i18n.t('tip.commands.add')} onclick={() => (showAddCommand = true)} class="btn btn-primary">
 			<Plus class="w-4 h-4 mr-2" />
 			{i18n.t('command.addCommand')}
 		</button>

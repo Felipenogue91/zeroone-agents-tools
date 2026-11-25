@@ -222,7 +222,7 @@
 </script>
 
 <Header title={i18n.t('page.marketplace.title')} subtitle={i18n.t('page.marketplace.subtitle')}>
-	<button
+	<button data-tip={i18n.t('tip.mkt.syncAll')}
 		onclick={handleSyncAll}
 		disabled={repoLibrary.isSyncing}
 		class="btn btn-secondary"
@@ -253,7 +253,7 @@
 				</span>
 			{/if}
 			{#if !isAuthenticated}
-				<a href="/settings" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
+				<a data-tip={i18n.t('tip.mkt.addToken')} href="/settings" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
 					{i18n.t('marketplace.addToken')}
 				</a>
 			{/if}
@@ -262,7 +262,7 @@
 
 	<!-- Tabs -->
 	<div class="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-		<button
+		<button data-tip={i18n.t('tip.mkt.tabMcps')}
 			onclick={() => (activeTab = 'mcps')}
 			class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab ===
 			'mcps'
@@ -272,7 +272,7 @@
 			<Server class="w-4 h-4" />
 			MCPs ({repoLibrary.registryMcps.length})
 		</button>
-		<button
+		<button data-tip={i18n.t('tip.mkt.tabSkills')}
 			onclick={() => (activeTab = 'skills')}
 			class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab ===
 			'skills'
@@ -282,7 +282,7 @@
 			<FileCode class="w-4 h-4" />
 			Skills ({getFilteredItems('skill').length})
 		</button>
-		<button
+		<button data-tip={i18n.t('tip.mkt.tabAgents')}
 			onclick={() => (activeTab = 'agents')}
 			class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab ===
 			'agents'
@@ -292,7 +292,7 @@
 			<Bot class="w-4 h-4" />
 			Agents ({getFilteredItems('subagent').length})
 		</button>
-		<button
+		<button data-tip={i18n.t('tip.mkt.tabRepos')}
 			onclick={() => (activeTab = 'repos')}
 			class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors {activeTab ===
 			'repos'
@@ -494,7 +494,7 @@
 							</div>
 							<div class="flex items-center gap-2">
 								<!-- Toggle -->
-								<button
+								<button data-tip={i18n.t('tip.mkt.toggleRepo')}
 									onclick={() => handleToggleRepo(repo)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {repo.isEnabled
 										? 'bg-primary-600'
@@ -510,7 +510,7 @@
 									></span>
 								</button>
 								<!-- Sync -->
-								<button
+								<button data-tip={i18n.t('tip.mkt.syncRepo')}
 									onclick={() => handleSyncRepo(repo.id)}
 									disabled={repoLibrary.isSyncing}
 									class="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
@@ -530,7 +530,7 @@
 								</a>
 								<!-- Remove -->
 								{#if !repo.isDefault}
-									<button
+									<button data-tip={i18n.t('tip.mkt.removeRepo')}
 										onclick={() => handleRemoveRepo(repo)}
 										class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 										title={i18n.t('marketplace.removeRepo')}
@@ -765,7 +765,7 @@
 				<button onclick={() => (selectedItem = null)} class="btn btn-secondary">
 					{i18n.t('common.close')}
 				</button>
-				<button
+				<button data-tip={i18n.t('tip.mkt.import')}
 					onclick={() => {
 						handleImport(selectedItem!);
 						selectedItem = null;
@@ -908,7 +908,7 @@
 				<button onclick={() => (selectedRegistryMcp = null)} class="btn btn-secondary">
 					{i18n.t('common.close')}
 				</button>
-				<button
+				<button data-tip={i18n.t('tip.mkt.importMcp')}
 					onclick={() => handleImportRegistryMcp(selectedRegistryMcp!)}
 					disabled={isImportingMcp}
 					class="btn btn-primary"

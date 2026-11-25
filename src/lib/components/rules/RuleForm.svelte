@@ -200,11 +200,11 @@
 				</div>
 			</div>
 			<div class="flex items-center gap-2">
-				<button type="button" onclick={handleFileImport} class="btn btn-secondary text-sm">
+				<button data-tip={i18n.t('tip.form.file')} type="button" onclick={handleFileImport} class="btn btn-secondary text-sm">
 					<FileUp class="w-4 h-4 mr-1.5" />
 					{i18n.t('common.file')}
 				</button>
-				<button type="button" onclick={handlePasteFromClipboard} class="btn btn-secondary text-sm">
+				<button data-tip={i18n.t('tip.form.paste')} type="button" onclick={handlePasteFromClipboard} class="btn btn-secondary text-sm">
 					<Clipboard class="w-4 h-4 mr-1.5" />
 					{i18n.t('common.paste')}
 				</button>

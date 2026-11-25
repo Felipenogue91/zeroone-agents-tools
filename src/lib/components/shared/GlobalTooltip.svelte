@@ -23,7 +23,15 @@
 			titled.removeAttribute('title');
 			return titled;
 		}
+		// icon-only button: its accessible name is the only hint there is
+		const icon = node.closest<HTMLElement>(INTERACTIVE);
+		if (icon && !icon.textContent?.trim() && icon.getAttribute('aria-label')?.trim()) return icon;
 		return null;
+	}
+
+	/** Text shown for a target (explanation, else the icon button's name). */
+	export function tipText(el: HTMLElement | null): string {
+		return el?.dataset.tip?.trim() || el?.getAttribute('aria-label')?.trim() || '';
 	}
 </script>
 
@@ -38,7 +46,7 @@
 	let pending: HTMLElement | null = null;
 
 	const title = $derived(target?.dataset.tipTitle ?? '');
-	const text = $derived(target?.dataset.tip ?? '');
+	const text = $derived(tipText(target));
 
 	function clear() {
 		if (timer) clearTimeout(timer);

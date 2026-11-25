@@ -52,7 +52,7 @@
 
 <div class="flex-1 overflow-auto p-6">
 	<div class="flex justify-end mb-6">
-		<button onclick={() => (showAddSubAgent = true)} class="btn btn-primary">
+		<button data-tip={i18n.t('tip.agents.add')} onclick={() => (showAddSubAgent = true)} class="btn btn-primary">
 			<Plus class="w-4 h-4 mr-2" />
 			{i18n.t('subagent.addAgent')}
 		</button>

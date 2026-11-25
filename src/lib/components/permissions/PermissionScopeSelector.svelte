@@ -51,7 +51,7 @@
 		{@const isDisabled = key !== 'user' && !hasProject}
 		{@const isActive = selectedScope === key}
 		{@const count = getRuleCount(key)}
-		<button
+		<button data-tip={i18n.t('tip.perm.scope')}
 			onclick={() => onselect(key)}
 			disabled={isDisabled}
 			class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors flex-1

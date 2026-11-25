@@ -158,7 +158,7 @@
 						</div>
 					</div>
 				</div>
-				<button
+				<button data-tip={i18n.t('tip.cloud.disconnect')}
 					onclick={handleDisconnect}
 					class="btn btn-secondary text-sm flex items-center gap-1.5 text-red-600 dark:text-red-400"
 				>
@@ -177,7 +177,7 @@
 					</div>
 				{/if}
 
-				<button
+				<button data-tip={i18n.t('tip.cloud.connect')}
 					onclick={handleConnect}
 					disabled={cloudSyncStore.isConnecting}
 					class="btn btn-primary flex items-center gap-2"
@@ -338,7 +338,7 @@
 			</h3>
 
 			<div class="flex items-center gap-3 mb-6">
-				<button
+				<button data-tip={i18n.t('tip.cloud.push')}
 					onclick={handlePush}
 					disabled={cloudSyncStore.isPushing || cloudSyncStore.isPulling}
 					class="btn btn-primary flex items-center gap-2"
@@ -351,7 +351,7 @@
 						{i18n.t('settingsComp.pushToCloud')}
 					{/if}
 				</button>
-				<button
+				<button data-tip={i18n.t('tip.cloud.pull')}
 					onclick={handlePull}
 					disabled={cloudSyncStore.isPulling || cloudSyncStore.isPushing}
 					class="btn btn-secondary flex items-center gap-2"

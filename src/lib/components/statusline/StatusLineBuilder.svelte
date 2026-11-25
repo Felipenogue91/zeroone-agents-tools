@@ -179,7 +179,7 @@
 								? 'bg-primary-500 text-white'
 								: 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 					>{i18n.t('common.default')}</button>
-					<button
+					<button data-tip={i18n.t('tip.sl.powerline')}
 						onclick={() => (theme = 'powerline')}
 						class="px-2.5 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700
 							{theme === 'powerline'
@@ -188,7 +188,7 @@
 					>
 						<Zap class="w-3 h-3 inline -mt-0.5 mr-0.5" />{i18n.t('statuslineComp.themePowerline')}
 					</button>
-					<button
+					<button data-tip={i18n.t('tip.sl.round')}
 						onclick={() => (theme = 'powerline_round')}
 						class="px-2.5 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700
 							{theme === 'powerline_round'
@@ -209,7 +209,7 @@
 					class="w-16 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-white text-center"
 				/>
 			</div>
-			<button onclick={async () => {
+			<button data-tip={i18n.t('tip.sl.script')} onclick={async () => {
 				showScript = !showScript;
 				if (showScript && !scriptContent) {
 					scriptContent = await statuslineLibrary.generatePreview(segments, theme);
@@ -219,11 +219,11 @@
 				{showScript ? i18n.t('statuslineComp.hideScript') : i18n.t('statuslineComp.showScript')}
 			</button>
 			<div class="ml-auto flex items-center gap-2">
-				<button onclick={() => onSave?.(buildRequest())} class="btn btn-secondary text-sm" disabled={!name.trim()}>
+				<button data-tip={i18n.t('tip.sl.save')} onclick={() => onSave?.(buildRequest())} class="btn btn-secondary text-sm" disabled={!name.trim()}>
 					<Save class="w-4 h-4 mr-1.5" />
 					{i18n.t('common.save')}
 				</button>
-				<button onclick={() => onActivate?.(buildRequest())} class="btn btn-primary text-sm" disabled={!name.trim()}>
+				<button data-tip={i18n.t('tip.sl.saveActivate')} onclick={() => onActivate?.(buildRequest())} class="btn btn-primary text-sm" disabled={!name.trim()}>
 					<Play class="w-4 h-4 mr-1.5" />
 					{i18n.t('statuslineComp.saveActivate')}
 				</button>

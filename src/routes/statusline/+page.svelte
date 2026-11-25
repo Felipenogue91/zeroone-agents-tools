@@ -137,7 +137,7 @@
 	<!-- Tab bar -->
 	<div class="flex items-center justify-between mb-6">
 		<div class="flex border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-			<button
+			<button data-tip={i18n.t('tip.sl.mine')}
 				onclick={() => (activeTab = 'library')}
 				class="px-4 py-2 text-sm font-medium transition-colors
 					{activeTab === 'library'
@@ -146,7 +146,7 @@
 			>
 				{i18n.t('statusline.myStatusLines')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.sl.builder')}
 				onclick={() => (activeTab = 'builder')}
 				class="px-4 py-2 text-sm font-medium transition-colors border-x border-gray-200 dark:border-gray-700
 					{activeTab === 'builder'
@@ -158,7 +158,7 @@
 					{i18n.t('statusline.builder')}
 				</span>
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.sl.gallery')}
 				onclick={() => (activeTab = 'gallery')}
 				class="px-4 py-2 text-sm font-medium transition-colors
 					{activeTab === 'gallery'
@@ -173,7 +173,7 @@
 		</div>
 
 		{#if activeTab === 'library'}
-			<button onclick={() => (showAddRaw = true)} class="btn btn-primary">
+			<button data-tip={i18n.t('tip.sl.raw')} onclick={() => (showAddRaw = true)} class="btn btn-primary">
 				<Plus class="w-4 h-4 mr-2" />
 				{i18n.t('statusline.addRawCommand')}
 			</button>

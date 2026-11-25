@@ -72,7 +72,7 @@
 					{i18n.t('statuslineComp.installed')}
 				</button>
 			{:else}
-				<button
+				<button data-tip={i18n.t('tip.sl.install')}
 					onclick={() => onInstall?.(entry)}
 					disabled={isInstalling}
 					class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50"

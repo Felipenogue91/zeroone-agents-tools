@@ -183,7 +183,7 @@
 
 			<!-- Action bar -->
 			<div class="flex items-center gap-3">
-				<button
+				<button data-tip={i18n.t('tip.memory.save')}
 					onclick={handleSave}
 					disabled={!memoryLibrary.hasUnsavedChanges}
 					class="btn btn-primary"
@@ -191,7 +191,7 @@
 					<Save class="w-4 h-4 mr-2" />
 					{i18n.t('common.save')}
 				</button>
-				<button
+				<button data-tip={i18n.t('tip.memory.discard')}
 					onclick={handleDiscard}
 					disabled={!memoryLibrary.hasUnsavedChanges}
 					class="btn btn-secondary"
@@ -206,7 +206,7 @@
 
 				<div class="flex-1"></div>
 
-				<button
+				<button data-tip={i18n.t('tip.memory.delete')}
 					onclick={() => (showDeleteConfirm = true)}
 					class="btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
 				>
@@ -230,7 +230,7 @@
 						{/if}
 					</p>
 				</div>
-				<button
+				<button data-tip={i18n.t('tip.memory.create')}
 					onclick={handleCreate}
 					class="btn btn-primary"
 				>

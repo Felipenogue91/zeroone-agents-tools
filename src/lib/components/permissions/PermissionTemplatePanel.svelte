@@ -98,7 +98,7 @@
 						</div>
 						<div class="space-y-2">
 							{#each catTemplates as template}
-								<button
+								<button data-tip={i18n.t('tip.perm.applyTemplate')}
 									onclick={() => onApply(template)}
 									class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
 								>

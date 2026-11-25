@@ -260,11 +260,11 @@
 						{/each}
 					</select>
 				{/if}
-				<button type="button" onclick={handleFileImport} class="btn btn-secondary text-sm">
+				<button data-tip={i18n.t('tip.form.file')} type="button" onclick={handleFileImport} class="btn btn-secondary text-sm">
 					<FileUp class="w-4 h-4 mr-1.5" />
 					{i18n.t('common.file')}
 				</button>
-				<button type="button" onclick={handlePasteFromClipboard} class="btn btn-secondary text-sm">
+				<button data-tip={i18n.t('tip.form.paste')} type="button" onclick={handlePasteFromClipboard} class="btn btn-secondary text-sm">
 					<Clipboard class="w-4 h-4 mr-1.5" />
 					{i18n.t('common.paste')}
 				</button>
@@ -337,7 +337,7 @@
 			{i18n.t('hookForm.hookType')} <span class="text-red-500">*</span>
 		</label>
 		<div class="flex gap-3">
-			<button
+			<button data-tip={i18n.t('tip.hooks.typeCommand')}
 				type="button"
 				onclick={() => (hookType = 'command')}
 				class="flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 {hookType === 'command'
@@ -353,7 +353,7 @@
 				</div>
 			</button>
 
-			<button
+			<button data-tip={i18n.t('tip.hooks.typePrompt')}
 				type="button"
 				onclick={() => (hookType = 'prompt')}
 				class="flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 {hookType === 'prompt'

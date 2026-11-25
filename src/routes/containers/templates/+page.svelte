@@ -95,7 +95,7 @@
 				<div class="space-y-2">
 					<div class="flex items-center justify-between">
 						<label class="text-sm font-medium text-gray-700 dark:text-gray-300">{i18n.t('containers.envVars')}</label>
-						<button type="button" onclick={addEnvVar}
+						<button data-tip={i18n.t('tip.containers.addVar')} type="button" onclick={addEnvVar}
 							class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1">
 							<Plus class="w-3 h-3" aria-hidden="true" /> {i18n.t('containers.addVariable')}
 						</button>
@@ -128,7 +128,7 @@
 					class="btn btn-secondary">
 					{i18n.t('common.cancel')}
 				</button>
-				<button onclick={handleCreate} disabled={!containerName}
+				<button data-tip={i18n.t('tip.containers.create')} onclick={handleCreate} disabled={!containerName}
 					class="btn btn-primary">
 					{i18n.t('containers.createContainer')}
 				</button>

@@ -136,14 +136,14 @@
 
 		<!-- Actions -->
 		<div class="flex items-center gap-2">
-			<button
+			<button data-tip={i18n.t('tip.perm.templates')}
 				onclick={() => (showTemplatePanel = true)}
 				class="btn btn-secondary"
 			>
 				<Sparkles class="w-4 h-4 mr-2" />
 				{i18n.t('permissions.templates')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.perm.merged')}
 				onclick={() => (showMergedView = true)}
 				class="btn btn-secondary"
 			>

@@ -608,7 +608,7 @@
 								<p class="text-sm font-medium text-green-800 dark:text-green-200">{i18n.t('settingsComp.serverUrl')}</p>
 								<p class="text-sm font-mono text-green-600 dark:text-green-400">{mcpServerStatus.mcpEndpoint}</p>
 							</div>
-							<button onclick={copyConnectionConfig} class="btn btn-secondary text-xs py-1.5 px-3">
+							<button data-tip={i18n.t('tip.app.copyServerConfig')} onclick={copyConnectionConfig} class="btn btn-secondary text-xs py-1.5 px-3">
 								<Copy class="w-3 h-3 mr-1" />
 								{i18n.t('settingsComp.copyConfig')}
 							</button>
@@ -618,7 +618,7 @@
 
 				<div class="flex items-center gap-3">
 					{#if mcpServerStatus.isRunning}
-						<button onclick={stopMcpServer} disabled={isServerLoading} class="btn btn-secondary">
+						<button data-tip={i18n.t('tip.app.stopServer')} onclick={stopMcpServer} disabled={isServerLoading} class="btn btn-secondary">
 							{#if isServerLoading}
 								<div class="w-4 h-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
 							{:else}
@@ -627,7 +627,7 @@
 							{i18n.t('settingsComp.stopServer')}
 						</button>
 					{:else}
-						<button onclick={startMcpServer} disabled={isServerLoading} class="btn btn-primary">
+						<button data-tip={i18n.t('tip.app.startServer')} onclick={startMcpServer} disabled={isServerLoading} class="btn btn-primary">
 							{#if isServerLoading}
 								<div class="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
 							{:else}
@@ -638,12 +638,12 @@
 					{/if}
 
 					{#if isSelfMcpInLibrary}
-						<button onclick={removeSelfMcpFromLibrary} class="btn btn-ghost text-red-600 dark:text-red-400">
+						<button data-tip={i18n.t('tip.app.removeSelf')} onclick={removeSelfMcpFromLibrary} class="btn btn-ghost text-red-600 dark:text-red-400">
 							<Trash2 class="w-4 h-4 mr-2" />
 							{i18n.t('settingsComp.removeFromLibrary')}
 						</button>
 					{:else}
-						<button onclick={addSelfMcpToLibrary} class="btn btn-secondary">
+						<button data-tip={i18n.t('tip.app.addSelf')} onclick={addSelfMcpToLibrary} class="btn btn-secondary">
 							<Library class="w-4 h-4 mr-2" />
 							{i18n.t('settingsComp.addToLibrary')}
 						</button>
@@ -762,7 +762,7 @@
 								<p class="text-sm font-medium text-green-800 dark:text-green-200">{i18n.t('settingsComp.gatewayUrl')}</p>
 								<p class="text-sm font-mono text-green-600 dark:text-green-400">{gatewayStatus.mcpEndpoint}</p>
 							</div>
-							<button onclick={copyGatewayConnectionConfig} class="btn btn-secondary text-xs py-1.5 px-3">
+							<button data-tip={i18n.t('tip.app.copyGatewayConfig')} onclick={copyGatewayConnectionConfig} class="btn btn-secondary text-xs py-1.5 px-3">
 								<Copy class="w-3 h-3 mr-1" />
 								{i18n.t('settingsComp.copyConfig')}
 							</button>
@@ -772,7 +772,7 @@
 
 				<div class="flex items-center gap-3">
 					{#if gatewayStatus.isRunning}
-						<button onclick={stopGateway} disabled={isGatewayLoading} class="btn btn-secondary">
+						<button data-tip={i18n.t('tip.app.stopGateway')} onclick={stopGateway} disabled={isGatewayLoading} class="btn btn-secondary">
 							{#if isGatewayLoading}
 								<div class="w-4 h-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
 							{:else}
@@ -781,7 +781,7 @@
 							{i18n.t('settingsComp.stopGateway')}
 						</button>
 					{:else}
-						<button onclick={startGateway} disabled={isGatewayLoading} class="btn btn-primary">
+						<button data-tip={i18n.t('tip.app.startGateway')} onclick={startGateway} disabled={isGatewayLoading} class="btn btn-primary">
 							{#if isGatewayLoading}
 								<div class="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
 							{:else}
@@ -852,7 +852,7 @@
 										<span class="px-2 py-0.5 rounded text-xs font-medium {getBackendStatusBadgeClass(backend.status)}">
 											{backend.status}
 										</span>
-										<button
+										<button data-tip={i18n.t('tip.app.restartBackend')}
 											onclick={() => restartBackend(backend.mcpId)}
 											disabled={restartingBackend === backend.mcpId}
 											class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -1088,7 +1088,7 @@
 		<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
 			{i18n.t('settingsComp.backupDesc')}
 		</p>
-		<button onclick={backupConfigs} class="btn btn-secondary">
+		<button data-tip={i18n.t('tip.app.backup')} onclick={backupConfigs} class="btn btn-secondary">
 			<RefreshCw class="w-4 h-4 mr-2" />
 			{i18n.t('settingsComp.createBackup')}
 		</button>

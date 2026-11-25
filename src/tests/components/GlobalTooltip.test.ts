@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tipTarget, TIP_DELAY_MS } from '$lib/components/shared/GlobalTooltip.svelte';
+import { tipTarget, tipText, TIP_DELAY_MS } from '$lib/components/shared/GlobalTooltip.svelte';
 
 function html(markup: string): HTMLElement {
 	const root = document.createElement('div');
@@ -38,6 +38,14 @@ describe('GlobalTooltip.tipTarget', () => {
 		const b = root.querySelector('button')!;
 		expect(tipTarget(b)).toBe(b);
 		expect(b.hasAttribute('title')).toBe(false);
+	});
+
+	it('names an icon-only button by its aria-label', () => {
+		const root = html('<button aria-label="Apagar regra"><svg></svg></button><button aria-label="x">Salvar</button>');
+		const [icon, text] = [...root.querySelectorAll('button')];
+		expect(tipTarget(icon)).toBe(icon);
+		expect(tipText(icon)).toBe('Apagar regra');
+		expect(tipTarget(text)).toBeNull(); // visible text already says it
 	});
 
 	it('ignores empty explanations', () => {

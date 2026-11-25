@@ -87,19 +87,19 @@
 
 <div class="flex-1 overflow-auto p-6">
 	<div class="flex flex-wrap gap-3 justify-end mb-6">
-		<button onclick={() => (showSoundWizard = true)} class="btn btn-secondary">
+		<button data-tip={i18n.t('tip.hooks.sounds')} onclick={() => (showSoundWizard = true)} class="btn btn-secondary">
 			<Volume2 class="w-4 h-4 mr-2" />
 			{i18n.t('hook.soundNotifications')}
 		</button>
-		<button onclick={() => (showExportModal = true)} class="btn btn-secondary">
+		<button data-tip={i18n.t('tip.hooks.export')} onclick={() => (showExportModal = true)} class="btn btn-secondary">
 			<Download class="w-4 h-4 mr-2" />
 			{i18n.t('common.export')}
 		</button>
-		<button onclick={() => (showSoundBrowser = true)} class="btn btn-secondary">
+		<button data-tip={i18n.t('tip.hooks.manageSounds')} onclick={() => (showSoundBrowser = true)} class="btn btn-secondary">
 			<Music class="w-4 h-4 mr-2" />
 			{i18n.t('hook.manageSounds')}
 		</button>
-		<button onclick={() => (showAddHook = true)} class="btn btn-primary">
+		<button data-tip={i18n.t('tip.hooks.add')} onclick={() => (showAddHook = true)} class="btn btn-primary">
 			<Plus class="w-4 h-4 mr-2" />
 			{i18n.t('hook.addHook')}
 		</button>

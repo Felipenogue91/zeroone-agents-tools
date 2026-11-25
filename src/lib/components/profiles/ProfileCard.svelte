@@ -76,7 +76,7 @@
 							<Edit class="w-4 h-4" />
 							{i18n.t('common.edit')}
 						</button>
-						<button
+						<button data-tip={i18n.t('tip.profiles.capture')}
 							onclick={() => { showMenu = false; onCapture?.(profile); }}
 							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						>
@@ -99,7 +99,7 @@
 		<!-- Action buttons -->
 		<div class="mt-4 flex gap-2">
 			{#if profile.isActive}
-				<button
+				<button data-tip={i18n.t('tip.profiles.deactivate')}
 					onclick={() => onDeactivate?.()}
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 				>
@@ -107,7 +107,7 @@
 					{i18n.t('profileComp.deactivate')}
 				</button>
 			{:else}
-				<button
+				<button data-tip={i18n.t('tip.profiles.activate')}
 					onclick={() => onActivate?.(profile)}
 					class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
 				>

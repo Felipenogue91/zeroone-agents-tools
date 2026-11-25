@@ -108,7 +108,7 @@
 					<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
 						{selectedScope === 'user' ? i18n.t('subagentComp.noMemoryFileUser') : i18n.t('subagentComp.noMemoryFileProject')}
 					</p>
-					<button onclick={handleCreate} class="btn btn-primary">
+					<button data-tip={i18n.t('tip.agents.memory')} onclick={handleCreate} class="btn btn-primary">
 						<Plus class="w-4 h-4 mr-2" />
 						{i18n.t('subagentComp.createMemoryMd')}
 					</button>

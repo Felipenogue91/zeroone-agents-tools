@@ -120,7 +120,7 @@
 			</h3>
 		</div>
 		{#if !isAdding}
-			<button
+			<button data-tip={i18n.t('tip.skills.addFile')}
 				type="button"
 				onclick={() => isAdding = true}
 				class="btn btn-secondary text-sm"

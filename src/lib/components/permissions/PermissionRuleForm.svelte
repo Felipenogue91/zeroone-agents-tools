@@ -81,7 +81,7 @@
 		<div class="px-6 py-4 space-y-4">
 			<!-- Mode toggle -->
 			<div class="flex items-center gap-2">
-				<button
+				<button data-tip={i18n.t('tip.perm.builder')}
 					onclick={() => (rawMode = false)}
 					class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
 						{!rawMode ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
@@ -89,7 +89,7 @@
 					<Wand2 class="w-4 h-4" />
 					{i18n.t('permComp.builder')}
 				</button>
-				<button
+				<button data-tip={i18n.t('tip.perm.raw')}
 					onclick={() => (rawMode = true)}
 					class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
 						{rawMode ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
@@ -155,7 +155,7 @@
 		<!-- Footer -->
 		<div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
 			<button onclick={onclose} class="btn btn-secondary">{i18n.t('common.cancel')}</button>
-			<button
+			<button data-tip={i18n.t('tip.perm.addRule')}
 				onclick={handleSubmit}
 				disabled={!preview}
 				class="btn text-white {categoryColors[category]} disabled:opacity-50 disabled:cursor-not-allowed"

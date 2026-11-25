@@ -211,7 +211,7 @@
 
 		<!-- View Mode Toggle -->
 		<div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-			<button
+			<button data-tip={i18n.t('tip.hooks.viewAll')}
 				onclick={() => hookLibrary.setViewMode('all')}
 				class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {hookLibrary.viewMode ===
 				'all'
@@ -221,7 +221,7 @@
 				<List class="w-4 h-4" />
 				{i18n.t('hook.event.all')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.hooks.viewScope')}
 				onclick={() => hookLibrary.setViewMode('byScope')}
 				class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {hookLibrary.viewMode ===
 				'byScope'
