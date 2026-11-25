@@ -66,6 +66,16 @@ pub enum ClaudePatch {
         name: String,
         disabled: bool,
     },
+    /// Write one local-scope entry `projects[project].mcpServers[name]`.
+    /// It is how Claude gets a project server whose source uses `${VAR}`:
+    /// Claude only expands variables from its own environment, which does
+    /// not hold the vault, so the private `~/.claude.json` keeps the
+    /// resolved copy (same idea as the user scope for global servers).
+    SetLocal {
+        project: String,
+        name: String,
+        value: Value,
+    },
 }
 
 impl ClaudePatch {
@@ -114,6 +124,31 @@ impl ClaudePatch {
                     list.push(Value::String(name.clone()));
                 }
                 entry.insert("disabledMcpServers".into(), Value::Array(list));
+            }
+            ClaudePatch::SetLocal {
+                project,
+                name,
+                value,
+            } => {
+                let projects = m
+                    .entry("projects")
+                    .or_insert_with(|| Value::Object(Map::new()));
+                let Some(entry) = projects
+                    .as_object_mut()
+                    .map(|ps| {
+                        ps.entry(project.clone())
+                            .or_insert_with(|| Value::Object(Map::new()))
+                    })
+                    .and_then(|e| e.as_object_mut())
+                else {
+                    return;
+                };
+                let servers = entry
+                    .entry("mcpServers")
+                    .or_insert_with(|| Value::Object(Map::new()));
+                if let Some(servers) = servers.as_object_mut() {
+                    servers.insert(name.clone(), value.clone());
+                }
             }
         }
     }

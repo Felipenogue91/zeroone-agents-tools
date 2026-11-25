@@ -9,6 +9,7 @@
 	import { installDebugInterceptor } from '$lib/utils/debugLogger';
 	import { syncStore } from '$lib/stores/syncStore.svelte';
 	import CommandPalette from '$lib/components/sync/CommandPalette.svelte';
+	import GlobalTooltip from '$lib/components/shared/GlobalTooltip.svelte';
 
 	let { children } = $props();
 
@@ -78,5 +79,6 @@
 
 <CommandPalette />
 <Toast />
+<GlobalTooltip />
 <UpdateNotification />
 <WhatsNewModal />

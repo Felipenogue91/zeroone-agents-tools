@@ -721,7 +721,13 @@ mod tests {
         assert!(view.pending.is_empty(), "{:?}", view.pending);
         // nothing reported as "only in CLI"
         let occ = crate::sync::occurrences::collect(&home, &[proj.clone()]);
-        let health = crate::sync::health::compute_health(&s, &s.resources(), &occ, &eng.plan(None));
+        let health = crate::sync::health::compute_health(
+            &s,
+            &s.resources(),
+            &occ,
+            &eng.plan(None),
+            &eng.secrets,
+        );
         assert!(
             !health
                 .divergences

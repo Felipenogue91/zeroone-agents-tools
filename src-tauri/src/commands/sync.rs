@@ -321,7 +321,8 @@ pub fn get_sync_health(
     }
     let eng = Engine::new(&snap);
     let plan = eng.plan(None);
-    let mut health = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+    let mut health =
+        crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan, &eng.secrets);
     for d in &mut health.divergences {
         d.message = eng.secrets.mask(&d.message);
     }
@@ -358,7 +359,8 @@ pub fn health_action_preview(
     let home = home_dir()?;
     let snap = SourceSnapshot::load(&home);
     let eng = Engine::new(&snap);
-    let changes = health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
+    let (changes, _to_store) =
+        health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
     Ok(changes.iter().map(|c| change_view(&eng, c)).collect())
 }
 
@@ -375,7 +377,11 @@ pub fn health_action_apply(
     let home = home_dir()?;
     let snap = SourceSnapshot::load(&home);
     let eng = Engine::new(&snap);
-    let changes = health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
+    let (changes, to_store) = health_changes(&snap, &eng, action, cli, project, &name, &file_path)?;
+    // keys found while importing go to the vault before the source gets `${VAR}`
+    for (var, value) in &to_store {
+        crate::sync::vault::set_secret(&snap.agents.secrets_file, var, Some(value))?;
+    }
     let out = engine::apply(&changes, &backup_root()?).map_err(|e| e.to_string())?;
     if let Ok(db) = db.lock() {
         let _ = refresh_occurrences_in_db(&db);
@@ -391,49 +397,67 @@ fn health_changes(
     project: Option<String>,
     name: &str,
     file_path: &str,
-) -> Result<Vec<FileChange>, String> {
+) -> Result<(Vec<FileChange>, Vec<(String, String)>), String> {
     use crate::sync::health::{self, HealthAction};
     match action {
         HealthAction::Import => {
             let scope = parse_scope(project);
-            Ok(vec![health::plan_import(
+            let vault = std::fs::read_to_string(&snap.agents.secrets_file).unwrap_or_default();
+            let (ch, to_store) = health::plan_import(
                 snap,
                 &eng.secrets,
+                &vault,
                 cli,
                 &scope,
                 std::path::Path::new(file_path),
                 name,
-            )?])
+            )?;
+            Ok((vec![ch], to_store))
+        }
+        HealthAction::RefreshLocalCopy => {
+            let project = project.ok_or("RefreshLocalCopy precisa do projeto")?;
+            Ok((
+                vec![health::plan_refresh_local(
+                    snap,
+                    &eng.secrets,
+                    &project,
+                    name,
+                )?],
+                Vec::new(),
+            ))
         }
         HealthAction::Reapply => {
             let plan = eng.plan(project.as_deref().map(std::path::Path::new));
             let mine = plan.changes.into_iter().filter(|c| c.cli == cli);
             if name.is_empty() {
                 // the whole CLI ("Igualar à fonte" on the CLIs screen)
-                Ok(mine.collect())
+                Ok((mine.collect(), Vec::new()))
             } else {
                 // one item: touch only that server, only in its scope
                 let scope = parse_scope(project.clone());
-                Ok(mine
-                    .filter(|c| c.scope == scope)
-                    .filter_map(|c| crate::sync::engine::narrow_to_server(&c, name))
-                    .collect())
+                Ok((
+                    mine.filter(|c| c.scope == scope)
+                        .filter_map(|c| crate::sync::engine::narrow_to_server(&c, name))
+                        .collect(),
+                    Vec::new(),
+                ))
             }
         }
         HealthAction::RemoveLocalCopy => {
             let project = project.ok_or("RemoveLocalCopy precisa do projeto")?;
-            Ok(
+            Ok((
                 health::plan_remove_local(snap, &project, &[name.to_string()])
                     .into_iter()
                     .collect(),
-            )
+                Vec::new(),
+            ))
         }
-        HealthAction::FixAgySkills => Ok(crate::sync::skills::plan_agy_reads_shared(
-            &snap.home,
-            &snap.agents,
-        )
-        .into_iter()
-        .collect()),
+        HealthAction::FixAgySkills => Ok((
+            crate::sync::skills::plan_agy_reads_shared(&snap.home, &snap.agents)
+                .into_iter()
+                .collect(),
+            Vec::new(),
+        )),
     }
 }
 
@@ -896,7 +920,13 @@ pub fn run_cli(args: &[String]) -> Option<i32> {
             let projects: Vec<PathBuf> = snap.projects.iter().map(|p| p.path.clone()).collect();
             let occ = occurrences::collect(&home, &projects);
             let plan = eng.plan(None);
-            let mut h = crate::sync::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+            let mut h = crate::sync::health::compute_health(
+                &snap,
+                &snap.resources(),
+                &occ,
+                &plan,
+                &eng.secrets,
+            );
             h.cli_versions = crate::sync::versions::detect_all();
             if args.iter().any(|a| a == "--json") {
                 println!(

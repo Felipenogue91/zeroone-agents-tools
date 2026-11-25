@@ -259,8 +259,9 @@ fn health_on_fixtures_lists_the_expected_divergences() {
     let h = home();
     let snap = SourceSnapshot::load(&h.home);
     let occ = super::occurrences::collect(&h.home, &[h.proj.clone()]);
-    let plan = Engine::with_secrets(&snap, secrets()).plan(None);
-    let health = super::health::compute_health(&snap, &snap.resources(), &occ, &plan);
+    let eng = Engine::with_secrets(&snap, secrets());
+    let plan = eng.plan(None);
+    let health = super::health::compute_health(&snap, &snap.resources(), &occ, &plan, &eng.secrets);
     let names: Vec<(String, String)> = health
         .divergences
         .iter()

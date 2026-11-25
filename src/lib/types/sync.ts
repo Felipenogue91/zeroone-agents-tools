@@ -42,7 +42,7 @@ export interface ResourceView {
 }
 
 export type DivergenceKind = 'onlyInCli' | 'missingInCli' | 'drift' | 'claudeLocalScope' | 'agySkillsFolder';
-export type HealthAction = 'import' | 'reapply' | 'removeLocalCopy' | 'fixAgySkills';
+export type HealthAction = 'import' | 'reapply' | 'removeLocalCopy' | 'refreshLocalCopy' | 'fixAgySkills';
 
 export interface Divergence {
 	kind: DivergenceKind;

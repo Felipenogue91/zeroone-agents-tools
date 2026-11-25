@@ -36,6 +36,9 @@ pub enum HealthAction {
     Reapply,
     /// Remove the stale Claude local-scope copy.
     RemoveLocalCopy,
+    /// Rewrite Claude's local-scope copy from the source with the vault
+    /// values filled in (how Claude gets a project server that uses `${VAR}`).
+    RefreshLocalCopy,
     /// Make agy read `~/.agents/skills`.
     FixAgySkills,
 }
@@ -83,6 +86,7 @@ pub fn compute_health(
     resources: &[Resource],
     occ: &[Occurrence],
     plan: &Plan,
+    secrets: &Secrets,
 ) -> Health {
     let mut out: Vec<Divergence> = Vec::new();
     let mut seen: BTreeSet<(Cli, String)> = BTreeSet::new(); // (cli, uid)
@@ -103,6 +107,37 @@ pub fn compute_health(
         }
         let global_uid = resource_uid(ResourceKind::Mcp, &Scope::Global, &o.name);
         let shadows = src_uids.contains(o.uid.as_str()) || src_uids.contains(global_uid.as_str());
+        // Source uses vault variables: Claude cannot expand them (the vault is
+        // not in its environment), so the local copy with the values filled in
+        // is what makes the server work there. Equal to the resolved source =
+        // fine; different = outdated, refresh it (removing would break it).
+        if let Some(want) = claude_local_want(snap, secrets, &o.scope, &o.name) {
+            let project = o.scope.project_path().map(PathBuf::from);
+            let have = read_cli_entry(
+                Cli::Claude,
+                Path::new(&o.file_path),
+                project.as_deref(),
+                &o.name,
+            )
+            .map(|v| super::engine::claude_norm(&v));
+            if have.as_ref() == Some(&want) {
+                continue;
+            }
+            out.push(Divergence {
+                kind: DivergenceKind::ClaudeLocalScope,
+                cli: Cli::Claude,
+                scope: o.scope.clone(),
+                name: o.name.clone(),
+                file_path: o.file_path.clone(),
+                message: format!(
+                    "{}: a cópia com as chaves que o Claude usa está desatualizada ({})",
+                    o.name,
+                    scope_label(&o.scope)
+                ),
+                actions: vec![HealthAction::RefreshLocalCopy],
+            });
+            continue;
+        }
         out.push(Divergence {
             kind: DivergenceKind::ClaudeLocalScope,
             cli: Cli::Claude,
@@ -427,19 +462,25 @@ pub fn read_cli_entry(cli: Cli, file: &Path, project: Option<&Path>, name: &str)
     }
 }
 
-/// Planned edit adding `name` (from a CLI file) to the source.
+/// Planned edit adding `name` (from a CLI file) to the source, plus the
+/// `(VAR, value)` pairs that must be stored in the vault first.
 pub fn plan_import(
     snap: &SourceSnapshot,
     secrets: &Secrets,
+    vault_text: &str,
     cli: Cli,
     scope: &Scope,
     file: &Path,
     name: &str,
-) -> Result<FileChange, String> {
+) -> Result<(FileChange, Vec<(String, String)>), String> {
     let project = scope.project_path().map(PathBuf::from);
     let raw = read_cli_entry(cli, file, project.as_deref(), name)
         .ok_or_else(|| format!("{} não encontrado em {}", name, file.display()))?;
     let cfg = to_claude_format(cli, &raw, secrets);
+    // Literal keys never reach the source (which may go to git): they become
+    // `${VAR}` and the values go to the vault. Claude keeps working through
+    // its local copy (see `claude_local_want`).
+    let (cfg, to_store) = super::vault::redact_config(name, &cfg, vault_text);
     let target = match &project {
         Some(p) => p.join(".mcp.json"),
         None => snap.agents.global_mcp_file.clone(),
@@ -449,17 +490,89 @@ pub fn plan_import(
         .clone()
         .unwrap_or_else(|| "{\n  \"mcpServers\": {}\n}\n".to_string());
     let after = super::jsonedit::set_server(&base, name, Some(&cfg))?;
+    Ok((
+        FileChange {
+            cli: Cli::Claude,
+            scope: scope.clone(),
+            label: "fonte".into(),
+            path: target,
+            before,
+            after: Some(after),
+            mode: None,
+            servers: vec![name.to_string()],
+            ensure_ignored: None,
+            claude_patch: None,
+        },
+        to_store,
+    ))
+}
+
+/// What Claude's local-scope copy of `name` should be when the source entry
+/// references vault variables: the source with the values filled in. `None`
+/// when the source has no `${VAR}` (or no entry), or a variable is missing
+/// from the vault (nothing correct to write then).
+pub fn claude_local_want(
+    snap: &SourceSnapshot,
+    secrets: &Secrets,
+    scope: &Scope,
+    name: &str,
+) -> Option<Value> {
+    let path = scope.project_path()?;
+    let ps = snap
+        .projects
+        .iter()
+        .find(|p| p.path.to_string_lossy() == path)?;
+    let src = snap.sync.with_overrides(&ps.name, Cli::Claude, &ps.servers);
+    let cfg = src.get(name).or_else(|| snap.global.get(name))?;
+    let mut refs = Vec::new();
+    super::model::collect_var_refs(cfg, &mut refs);
+    if refs.is_empty() {
+        return None;
+    }
+    let mut missing = BTreeSet::new();
+    let resolved = secrets.resolve(cfg, &mut missing);
+    missing
+        .is_empty()
+        .then(|| super::engine::claude_norm(&resolved))
+}
+
+/// Planned rewrite of Claude's local-scope copy of `name` from the source.
+pub fn plan_refresh_local(
+    snap: &SourceSnapshot,
+    secrets: &Secrets,
+    project: &str,
+    name: &str,
+) -> Result<FileChange, String> {
+    let scope = Scope::Project {
+        path: project.to_string(),
+    };
+    let value = claude_local_want(snap, secrets, &scope, name).ok_or_else(|| {
+        format!(
+            "{}: a fonte não usa chaves do cofre ou falta alguma no cofre",
+            name
+        )
+    })?;
+    let path = snap.home.join(".claude.json");
+    let before = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let mut doc: Value = serde_json::from_str(&before).map_err(|e| e.to_string())?;
+    let patch = super::engine::ClaudePatch::SetLocal {
+        project: project.to_string(),
+        name: name.to_string(),
+        value,
+    };
+    patch.apply_to(&mut doc);
+    let after = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())? + "\n";
     Ok(FileChange {
         cli: Cli::Claude,
-        scope: scope.clone(),
-        label: "fonte".into(),
-        path: target,
-        before,
+        scope,
+        label: "claude (escopo local)".into(),
+        path,
+        before: Some(before),
         after: Some(after),
         mode: None,
         servers: vec![name.to_string()],
         ensure_ignored: None,
-        claude_patch: None,
+        claude_patch: Some(patch),
     })
 }
 
@@ -556,7 +669,7 @@ mod tests {
         let occ = occurrences::collect(home, &projects);
         let eng = Engine::with_secrets(&snap, secrets());
         let plan = eng.plan(None);
-        compute_health(&snap, &res, &occ, &plan)
+        compute_health(&snap, &res, &occ, &plan, &secrets())
     }
 
     fn find<'a>(
@@ -603,9 +716,10 @@ mod tests {
     fn import_from_codex_keeps_references_and_file_style() {
         let (_t, home, _p) = fx();
         let snap = SourceSnapshot::load(&home);
-        let ch = plan_import(
+        let (ch, _) = plan_import(
             &snap,
             &secrets(),
+            "",
             Cli::Codex,
             &Scope::Global,
             &home.join(".codex/config.toml"),
@@ -623,9 +737,10 @@ mod tests {
     fn import_from_agy_turns_resolved_secret_back_into_reference() {
         let (_t, home, _p) = fx();
         let snap = SourceSnapshot::load(&home);
-        let ch = plan_import(
+        let (ch, _) = plan_import(
             &snap,
             &secrets(),
+            "",
             Cli::Agy,
             &Scope::Global,
             &home.join(".gemini/config/mcp_config.json"),
@@ -635,6 +750,89 @@ mod tests {
         let after = ch.after.unwrap();
         assert!(!after.contains("tok-secret-1"));
         assert!(after.contains("Bearer ${TOK}"));
+    }
+
+    /// Project whose `.mcp.json` uses a vault key and whose Claude local copy
+    /// holds the value: the copy is what makes the server work in Claude.
+    fn fx_vault(local_value: &str) -> (TempDir, PathBuf, PathBuf) {
+        let (t, home, proj) = fx();
+        write(
+            &proj.join(".mcp.json"),
+            &json!({"mcpServers": {"sb": {"type": "http", "url": "http://sb"},
+                "host": {"type": "http", "url": "http://h", "headers": {"Authorization": "Bearer ${TOK}"}}}})
+            .to_string(),
+        );
+        let mut cj: Value =
+            serde_json::from_str(&std::fs::read_to_string(home.join(".claude.json")).unwrap())
+                .unwrap();
+        cj["projects"][proj.to_string_lossy().as_ref()]["mcpServers"]["host"] = json!(
+            {"type": "http", "url": "http://h", "headers": {"Authorization": format!("Bearer {}", local_value)}});
+        write(&home.join(".claude.json"), &cj.to_string());
+        (t, home, proj)
+    }
+
+    #[test]
+    fn local_copy_with_the_vault_values_is_not_a_problem() {
+        let (_t, home, _p) = fx_vault("tok-secret-1");
+        let h = health(&home);
+        assert!(find(&h, DivergenceKind::ClaudeLocalScope, Cli::Claude, "host").is_none());
+    }
+
+    #[test]
+    fn outdated_local_copy_is_refreshed_not_removed() {
+        let (_t, home, proj) = fx_vault("old-value");
+        let h = health(&home);
+        let d = find(&h, DivergenceKind::ClaudeLocalScope, Cli::Claude, "host").unwrap();
+        assert_eq!(d.actions, vec![HealthAction::RefreshLocalCopy]);
+        let snap = SourceSnapshot::load(&home);
+        let ch = plan_refresh_local(&snap, &secrets(), &proj.to_string_lossy(), "host").unwrap();
+        crate::sync::engine::apply(&[ch], &home.join("bk")).unwrap();
+        assert!(find(
+            &health(&home),
+            DivergenceKind::ClaudeLocalScope,
+            Cli::Claude,
+            "host"
+        )
+        .is_none());
+        let text = std::fs::read_to_string(home.join(".claude.json")).unwrap();
+        assert!(text.contains("Bearer tok-secret-1"));
+        assert!(!text.contains("old-value"));
+    }
+
+    #[test]
+    fn import_moves_literal_keys_to_the_vault() {
+        let (_t, home, proj) = fx();
+        let mut cj: Value =
+            serde_json::from_str(&std::fs::read_to_string(home.join(".claude.json")).unwrap())
+                .unwrap();
+        cj["projects"][proj.to_string_lossy().as_ref()]["mcpServers"]["hostinger"] = json!(
+            {"command": "npx", "args": ["hostinger-mcp"], "env": {"HOSTINGER_API_TOKEN": "literal-abc-123", "DEBUG": "1"}});
+        write(&home.join(".claude.json"), &cj.to_string());
+        let snap = SourceSnapshot::load(&home);
+        let scope = Scope::Project {
+            path: proj.to_string_lossy().to_string(),
+        };
+        let (ch, store) = plan_import(
+            &snap,
+            &secrets(),
+            "",
+            Cli::Claude,
+            &scope,
+            &home.join(".claude.json"),
+            "hostinger",
+        )
+        .unwrap();
+        let after = ch.after.unwrap();
+        assert!(!after.contains("literal-abc-123"), "{}", after);
+        assert!(
+            after.contains("${HOSTINGER_HOSTINGER_API_TOKEN}")
+                || after.contains("${HOSTINGER_API_TOKEN}"),
+            "{}",
+            after
+        );
+        assert!(after.contains("\"DEBUG\": \"1\""));
+        assert_eq!(store.len(), 1);
+        assert_eq!(store[0].1, "literal-abc-123");
     }
 
     #[test]
@@ -666,7 +864,8 @@ mod tests {
             ),
         ] {
             let snap = SourceSnapshot::load(&home);
-            let ch = plan_import(&snap, &secrets(), cli, &Scope::Global, &file, name).unwrap();
+            let (ch, _) =
+                plan_import(&snap, &secrets(), "", cli, &Scope::Global, &file, name).unwrap();
             std::fs::write(&ch.path, ch.after.unwrap()).unwrap();
         }
         drop(eng);

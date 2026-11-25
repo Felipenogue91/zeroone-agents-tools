@@ -35,6 +35,17 @@
 		return i18n.t(`sync.action.${action}` as never);
 	}
 
+	/** What happens when clicking, in plain words (shown on a longer hover). */
+	function actionTip(d: Divergence, action: HealthAction) {
+		const cli = CLI_LABEL[d.cli];
+		if (action === 'reapply') {
+			if (d.kind === 'onlyInCli') return i18n.t('sync.tip.removeFromCli', { cli });
+			if (d.kind === 'missingInCli') return i18n.t('sync.tip.addToCli', { cli });
+			return i18n.t('sync.tip.matchSource', { cli });
+		}
+		return i18n.t(`sync.tip.${action}` as never);
+	}
+
 	let panel = $state<{ title: string; subtitle?: string; changes: ChangeView[]; loading: boolean; run: () => Promise<unknown> } | null>(null);
 
 	async function open(d: Divergence, action: HealthAction) {
@@ -73,7 +84,7 @@
 					</div>
 					<div class="flex items-center gap-1 shrink-0">
 						{#each d.actions as action (action)}
-							<button class="btn {action === 'import' ? 'btn-secondary' : 'btn-ghost'} text-xs px-2 py-1" onclick={() => open(d, action)}>
+							<button class="btn {action === 'import' || action === 'refreshLocalCopy' ? 'btn-secondary' : 'btn-ghost'} text-xs px-2 py-1" data-tip={actionTip(d, action)} onclick={() => open(d, action)}>
 								{actionLabel(d, action)}
 							</button>
 						{/each}
