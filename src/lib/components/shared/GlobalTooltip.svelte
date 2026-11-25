@@ -62,6 +62,12 @@
 		const r = target.getBoundingClientRect();
 		const b = box.getBoundingClientRect();
 		const gap = 8;
+		// side menu: open beside it, not over the next items
+		if (target.dataset.tipSide === 'right' && r.right + gap + b.width < window.innerWidth - 8) {
+			const top = r.top + r.height / 2 - b.height / 2;
+			pos = { top: Math.max(8, Math.min(top, window.innerHeight - b.height - 8)), left: r.right + gap, above: false };
+			return;
+		}
 		const above = r.bottom + gap + b.height > window.innerHeight - 8;
 		const top = above ? r.top - gap - b.height : r.bottom + gap;
 		let left = r.left + r.width / 2 - b.width / 2;

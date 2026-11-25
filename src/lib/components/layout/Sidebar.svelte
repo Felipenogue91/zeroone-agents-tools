@@ -70,6 +70,8 @@
 		/** Extra paths that also mark the item as active. */
 		match?: string[];
 		badge?: number;
+		/** What the tab is for and what pain it solves (longer hover). */
+		tip?: string;
 	}
 
 	const libraryPaths = ['/library', '/skills', '/subagents', '/hooks', '/commands', '/rules'];
@@ -84,25 +86,25 @@
 	});
 
 	let mainItems: NavItem[] = $derived([
-		{ href: '/', label: i18n.t('nav.home'), icon: House, badge: syncStore.divergenceCount },
-		{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen },
-		{ href: '/library', label: i18n.t('nav.library'), icon: Library, match: libraryPaths },
-		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare },
-		{ href: '/context', label: i18n.t('nav.context'), icon: Gauge },
-		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container },
-		...(forestInstalled ? [{ href: '/code-forest', label: 'Code Forest', icon: Trees }] : [])
+		{ href: '/', label: i18n.t('nav.home'), icon: House, tip: i18n.t('tip.nav.home'), badge: syncStore.divergenceCount },
+		{ href: '/projects', label: i18n.t('nav.projects'), icon: FolderOpen, tip: i18n.t('tip.nav.projects') },
+		{ href: '/library', label: i18n.t('nav.library'), icon: Library, match: libraryPaths, tip: i18n.t('tip.nav.library') },
+		{ href: '/clis', label: i18n.t('nav.clis'), icon: TerminalSquare, tip: i18n.t('tip.nav.clis') },
+		{ href: '/context', label: i18n.t('nav.context'), icon: Gauge, tip: i18n.t('tip.nav.context') },
+		{ href: '/containers', label: i18n.t('nav.containers'), icon: Container, tip: i18n.t('tip.nav.containers') },
+		...(forestInstalled ? [{ href: '/code-forest', label: 'Code Forest', icon: Trees, tip: i18n.t('tip.nav.codeForest') }] : [])
 	]);
 
 	let advancedItems: NavItem[] = $derived([
-		{ href: '/profiles', label: i18n.t('nav.profiles'), icon: Layers },
-		{ href: '/permissions', label: i18n.t('nav.permissions'), icon: Shield },
-		{ href: '/memory', label: i18n.t('nav.memory'), icon: FileText },
-		{ href: '/statusline', label: i18n.t('nav.statusLine'), icon: PanelBottom },
-		{ href: '/analytics', label: i18n.t('nav.analytics'), icon: BarChart3 },
-		{ href: '/insights', label: i18n.t('nav.insights'), icon: TrendingUp },
-		{ href: '/sessions', label: i18n.t('nav.sessions'), icon: FolderSearch },
-		{ href: '/comparison', label: i18n.t('nav.comparison'), icon: GitCompareArrows },
-		{ href: '/marketplace', label: i18n.t('nav.marketplace'), icon: Store }
+		{ href: '/profiles', label: i18n.t('nav.profiles'), icon: Layers, tip: i18n.t('tip.nav.profiles') },
+		{ href: '/permissions', label: i18n.t('nav.permissions'), icon: Shield, tip: i18n.t('tip.nav.permissions') },
+		{ href: '/memory', label: i18n.t('nav.memory'), icon: FileText, tip: i18n.t('tip.nav.memory') },
+		{ href: '/statusline', label: i18n.t('nav.statusLine'), icon: PanelBottom, tip: i18n.t('tip.nav.statusLine') },
+		{ href: '/analytics', label: i18n.t('nav.analytics'), icon: BarChart3, tip: i18n.t('tip.nav.analytics') },
+		{ href: '/insights', label: i18n.t('nav.insights'), icon: TrendingUp, tip: i18n.t('tip.nav.insights') },
+		{ href: '/sessions', label: i18n.t('nav.sessions'), icon: FolderSearch, tip: i18n.t('tip.nav.sessions') },
+		{ href: '/comparison', label: i18n.t('nav.comparison'), icon: GitCompareArrows, tip: i18n.t('tip.nav.comparison') },
+		{ href: '/marketplace', label: i18n.t('nav.marketplace'), icon: Store, tip: i18n.t('tip.nav.marketplace') }
 	]);
 
 	function isActive(item: NavItem): boolean {
@@ -138,7 +140,7 @@
 			{#if collapsed}
 				<div class="h-px bg-gray-200 dark:bg-gray-700 mx-2 mb-2"></div>
 			{:else}
-				<button onclick={toggleAdvanced} aria-expanded={advancedOpen || advancedActive}
+				<button onclick={toggleAdvanced} aria-expanded={advancedOpen || advancedActive} data-tip-side="right" data-tip={i18n.t('tip.nav.advanced')}
 					class="w-full flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded">
 					<ChevronRight class="w-3 h-3 transition-transform {advancedOpen || advancedActive ? 'rotate-90' : ''}" aria-hidden="true" />
 					{i18n.t('nav.advanced')}
@@ -158,10 +160,11 @@
 		{#if !collapsed}
 			<TodayUsageWidget />
 		{/if}
-		{@render navLink({ href: '/settings', label: i18n.t('nav.settings'), icon: Settings }, isSettingsActive)}
+		{@render navLink({ href: '/settings', label: i18n.t('nav.settings'), icon: Settings, tip: i18n.t('tip.nav.settings') }, isSettingsActive)}
 		<button onclick={toggleCollapse}
 			class="flex items-center w-full rounded-lg text-sm font-medium transition-colors mt-1 {collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'} text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200"
-			title={collapsed ? i18n.t('sidebar.expandTitle') : i18n.t('sidebar.collapseTitle')}>
+			aria-label={collapsed ? i18n.t('sidebar.expandTitle') : i18n.t('sidebar.collapseTitle')}
+			data-tip-side="right" data-tip={collapsed ? i18n.t('tip.nav.expand') : i18n.t('tip.nav.collapse')}>
 			{#if collapsed}
 				<PanelLeftOpen class="w-5 h-5 shrink-0" aria-hidden="true" />
 			{:else}
@@ -177,7 +180,8 @@
 
 {#snippet navLink(item: NavItem, forceActive?: boolean)}
 	{@const active = forceActive ?? isActive(item)}
-	<a href={item.href} title={collapsed ? item.label : undefined} aria-current={active ? 'page' : undefined}
+	<a href={item.href} aria-current={active ? 'page' : undefined} aria-label={collapsed ? item.label : undefined}
+		data-tip-side="right" data-tip-title={item.tip ? item.label : undefined} data-tip={item.tip ?? (collapsed ? item.label : undefined)}
 		class="flex items-center rounded-lg text-sm font-medium transition-colors {collapsed ? 'justify-center px-0 py-2 relative' : 'gap-3 px-3 py-2'}
 			{active ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-200' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50'}">
 		<item.icon class="w-5 h-5 shrink-0" aria-hidden="true" />

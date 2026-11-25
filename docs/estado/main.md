@@ -1,6 +1,9 @@
-# Estado (atualizado em 2026-11-24 20:30 por claude-code)
+# Estado (atualizado em 2026-11-24 22:00 por claude-code)
 
 ## Fazendo agora
+
+Frente **interface didática** (pedido do Felipe em 2026-11-24 21:00): todo botão e aba com explicação ao parar o mouse (janelinha global `GlobalTooltip`, `data-tip`/`data-tip-title`/`data-tip-side`, 700 ms), dizendo o que faz e a dor que resolve. Feito: cofre no importar + cópia do Claude (f8609f3), menu lateral e cabeçalho. Falta: botões das telas principais (Início, Projetos, Biblioteca, CLIs, Contexto, Containers), telas do "Claude Code avançado", depois empacotar/instalar 3.21.x.
+
 
 Frente **aba Contexto**: Claude Code, **Codex e agy feitos** (sem push). Aguardando o Felipe conferir em `/context` no `npm run tauri dev`.
 

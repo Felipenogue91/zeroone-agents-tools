@@ -67,8 +67,8 @@
 		<button
 			onclick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
 			class="btn btn-ghost text-xs gap-2 border border-gray-200 dark:border-gray-700"
-			title={i18n.t('header.searchTitle')}
 			aria-label={i18n.t('header.searchTitle')}
+			data-tip={i18n.t('tip.header.search')}
 		>
 			<Search class="w-4 h-4" aria-hidden="true" />
 			<span class="hidden md:inline text-gray-500 dark:text-gray-400">{i18n.t('header.search')}</span>
@@ -79,7 +79,7 @@
 			onclick={handleRefresh}
 			class="btn btn-ghost"
 			aria-label={i18n.t('header.refresh')}
-			title={i18n.t('header.refresh')}
+			data-tip={i18n.t('tip.header.refresh')}
 			disabled={isRefreshing}
 		>
 			<RefreshCw class="w-4 h-4 {isRefreshing ? 'animate-spin' : ''}" aria-hidden="true" />
@@ -89,7 +89,7 @@
 			onclick={toggleTheme}
 			class="btn btn-ghost"
 			aria-label={i18n.t('header.toggleTheme')}
-			title={i18n.t('header.toggleTheme')}
+			data-tip={i18n.t('tip.header.theme')}
 			data-testid="theme-toggle"
 		>
 			{#if isDark}
