@@ -115,6 +115,6 @@
 	{/if}
 	{#snippet footer()}
 		<button class="btn btn-ghost" onclick={() => (panel = null)}>{i18n.t('sync.panel.cancel')}</button>
-		<button class="btn btn-primary" disabled={!panel || panel.loading || panel.changes.length === 0} onclick={confirm}>{i18n.t('sync.panel.apply')}</button>
+		<button data-tip={i18n.t('tip.sync.apply')} class="btn btn-primary" disabled={!panel || panel.loading || panel.changes.length === 0} onclick={confirm}>{i18n.t('sync.panel.apply')}</button>
 	{/snippet}
 </SidePanel>

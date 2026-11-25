@@ -12,7 +12,11 @@
 	export function tipTarget(node: EventTarget | null): HTMLElement | null {
 		if (!(node instanceof Element)) return null;
 		const tipped = node.closest<HTMLElement>('[data-tip]');
-		if (tipped && tipped.dataset.tip?.trim()) return tipped;
+		if (tipped && tipped.dataset.tip?.trim()) {
+			// the explanation wins: no native tooltip on top of it
+			if (tipped.hasAttribute('title')) tipped.removeAttribute('title');
+			return tipped;
+		}
 		const titled = node.closest<HTMLElement>('[title]');
 		if (titled && titled.matches(INTERACTIVE) && titled.title.trim()) {
 			titled.dataset.tip = titled.title;

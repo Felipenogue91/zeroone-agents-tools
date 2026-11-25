@@ -86,7 +86,7 @@
 			<div class="card text-body">
 				<p class="font-medium">{i18n.t('sync.home.loadFailed')}</p>
 				<p class="text-meta mt-1 break-all">{syncStore.error}</p>
-				<button class="btn btn-secondary mt-3" onclick={() => syncStore.loadHealth()}>{i18n.t('sync.home.tryAgain')}</button>
+				<button data-tip={i18n.t('tip.home.tryAgain')} class="btn btn-secondary mt-3" onclick={() => syncStore.loadHealth()}>{i18n.t('sync.home.tryAgain')}</button>
 			</div>
 		{:else if health}
 			{#if syncStore.management && !syncStore.management.externallyManaged && health.resources === 0}
@@ -99,7 +99,7 @@
 							<pre class="font-mono text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded-lg p-3">~/.agents/mcp/global.json
 ~/.agents/mcp/sync.json
 ~/.agents/skills/</pre>
-							<a href="/library" class="btn btn-primary">{i18n.t('sync.home.goLibrary')}</a>
+							<a data-tip={i18n.t('tip.home.goLibrary')} href="/library" class="btn btn-primary">{i18n.t('sync.home.goLibrary')}</a>
 						</div>
 					</div>
 				</section>
@@ -123,7 +123,7 @@
 						</h2>
 						<p class="text-meta mt-1">{i18n.t('sync.home.summary', { n: health.resources, time: checkedAt })}</p>
 					</div>
-					<button class="btn btn-primary" onclick={openApplyAll}>
+					<button data-tip={i18n.t('tip.home.reviewAll')} class="btn btn-primary" onclick={openApplyAll}>
 						<Eye class="w-4 h-4 mr-1.5" aria-hidden="true" />
 						{i18n.t('sync.home.reviewAll')}
 					</button>
@@ -133,7 +133,7 @@
 			<!-- Per CLI -->
 			<section class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label={i18n.t('sync.home.perCli')}>
 				{#each perCli as row (row.cli)}
-					<a href="/clis#cli-{row.cli}" class="card flex items-center gap-3 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+					<a data-tip={i18n.t('tip.home.cliCard')} href="/clis#cli-{row.cli}" class="card flex items-center gap-3 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
 						<CliChip cli={row.cli} label />
 						<div class="flex-1 min-w-0">
 							<p class="text-body font-medium">{CLI_LABEL[row.cli]}</p>
@@ -169,7 +169,7 @@
 						<div class="flex items-center gap-3">
 							<ShieldAlert class="w-4 h-4 text-red-500" aria-hidden="true" />
 							<p class="text-body flex-1">{i18n.t('sync.secrets.openPermissions')}</p>
-							<button class="btn btn-secondary" onclick={fixPermissions}>{i18n.t('sync.secrets.fixPermissions')}</button>
+							<button data-tip={i18n.t('tip.home.fixPermissions')} class="btn btn-secondary" onclick={fixPermissions}>{i18n.t('sync.secrets.fixPermissions')}</button>
 						</div>
 					{/if}
 				</section>
@@ -181,7 +181,7 @@
 			<!-- Engine report (same wording as mcp-sync --check) -->
 			{#if health.report.length}
 				<details class="card">
-					<summary class="text-body font-medium cursor-pointer">{i18n.t('sync.home.report')}</summary>
+					<summary data-tip={i18n.t('tip.home.report')} class="text-body font-medium cursor-pointer">{i18n.t('sync.home.report')}</summary>
 					<ul class="mt-3 space-y-2">
 						{#each health.report as r (r.check)}
 							<li class="text-body">
@@ -216,7 +216,7 @@
 	{/if}
 	{#snippet footer()}
 		<button class="btn btn-ghost" onclick={() => (panel = null)}>{i18n.t('sync.panel.cancel')}</button>
-		<button class="btn btn-primary" disabled={!panel || panel.loading || panel.changes.length === 0} onclick={confirmPanel}>
+		<button data-tip={i18n.t('tip.sync.apply')} class="btn btn-primary" disabled={!panel || panel.loading || panel.changes.length === 0} onclick={confirmPanel}>
 			{i18n.t('sync.panel.apply')}
 		</button>
 	{/snippet}

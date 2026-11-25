@@ -101,7 +101,7 @@
 						<p class="text-body font-medium">{i18n.t('sync.project.unmanagedTitle')}</p>
 						<p class="text-meta mt-1">{i18n.t('sync.project.unmanagedBody')}</p>
 					</div>
-					<button class="btn btn-primary" disabled={syncStore.isBusy(`manage:${path}`)} onclick={() => manage(true)}>
+					<button data-tip={i18n.t('tip.project.manage')} class="btn btn-primary" disabled={syncStore.isBusy(`manage:${path}`)} onclick={() => manage(true)}>
 						{i18n.t('sync.project.manage')}
 					</button>
 				</section>
@@ -111,7 +111,7 @@
 						<span class="chip border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
 							<TriangleAlert class="w-3 h-3" aria-hidden="true" />{i18n.t('sync.project.pending', { clis: view.pending.join(', ') })}
 						</span>
-						<button class="btn btn-secondary text-xs px-3 py-1" onclick={async () => { await syncStore.applyAll(path); await load(); }}>
+						<button data-tip={i18n.t('tip.project.applyNow')} class="btn btn-secondary text-xs px-3 py-1" onclick={async () => { await syncStore.applyAll(path); await load(); }}>
 							{i18n.t('sync.project.applyNow')}
 						</button>
 					{:else}
@@ -130,7 +130,7 @@
 						<h3 class="text-body font-semibold">{i18n.t('sync.project.own')} <span class="text-meta font-normal">({own.length})</span></h3>
 						<p class="text-meta">{i18n.t('sync.project.ownHint')}</p>
 					</div>
-					<button class="btn btn-secondary text-xs px-3 py-1.5" onclick={() => (adding = true)}>
+					<button data-tip={i18n.t('tip.project.addMcp')} class="btn btn-secondary text-xs px-3 py-1.5" onclick={() => (adding = true)}>
 						<Plus class="w-3.5 h-3.5 mr-1" aria-hidden="true" />{i18n.t('sync.lib.addMcp')}
 					</button>
 				</header>
@@ -204,7 +204,7 @@
 
 			{#if view.managed}
 				<p class="text-meta">
-					<button class="underline hover:text-gray-700 dark:hover:text-gray-200" onclick={() => manage(false)}>{i18n.t('sync.project.unmanage')}</button>
+					<button data-tip={i18n.t('tip.project.unmanage')} class="underline hover:text-gray-700 dark:hover:text-gray-200" onclick={() => manage(false)}>{i18n.t('sync.project.unmanage')}</button>
 				</p>
 			{/if}
 		</div>

@@ -53,7 +53,7 @@
 					<p class="text-body">{i18n.t('forest.notInstalled')}</p>
 				{:else if error}
 					<p class="text-body text-red-500" role="alert">{i18n.t('forest.failed')}: {error}</p>
-					<button class="btn btn-primary" onclick={start}>
+					<button data-tip={i18n.t('tip.forest.retry')} class="btn btn-primary" onclick={start}>
 						<RotateCw class="w-4 h-4 mr-1.5" aria-hidden="true" />{i18n.t('forest.retry')}
 					</button>
 				{:else}

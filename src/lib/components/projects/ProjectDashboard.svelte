@@ -19,13 +19,13 @@
 	let project = $derived(projectsStore.getProjectById(projectProp.id) ?? projectProp);
 
 	type Tab = 'mcps' | 'skills' | 'agents' | 'commands' | 'hooks' | 'settings';
-	const tabs: { id: Tab; key: string }[] = [
-		{ id: 'mcps', key: 'sync.project.tabMcps' },
-		{ id: 'skills', key: 'nav.skills' },
-		{ id: 'agents', key: 'nav.agents' },
-		{ id: 'commands', key: 'nav.commands' },
-		{ id: 'hooks', key: 'nav.hooks' },
-		{ id: 'settings', key: 'nav.settings' }
+	const tabs: { id: Tab; key: string; tip: string }[] = [
+		{ id: 'mcps', key: 'sync.project.tabMcps', tip: 'tip.ptab.mcps' },
+		{ id: 'skills', key: 'nav.skills', tip: 'tip.ptab.skills' },
+		{ id: 'agents', key: 'nav.agents', tip: 'tip.ptab.agents' },
+		{ id: 'commands', key: 'nav.commands', tip: 'tip.ptab.commands' },
+		{ id: 'hooks', key: 'nav.hooks', tip: 'tip.ptab.hooks' },
+		{ id: 'settings', key: 'nav.settings', tip: 'tip.ptab.settings' }
 	];
 
 	let activeTab = $derived.by<Tab>(() => {
@@ -83,7 +83,7 @@
 		<div role="tablist" aria-label={i18n.t('sync.project.tabsLabel')} class="flex px-6 overflow-x-auto">
 			{#each tabs as t, i (t.id)}
 				<button id="ptab-{t.id}" role="tab" aria-selected={activeTab === t.id} tabindex={activeTab === t.id ? 0 : -1}
-					onclick={() => switchTab(t.id)} onkeydown={(e) => onTabKey(e, i)}
+					data-tip={i18n.t(t.tip as never)} onclick={() => switchTab(t.id)} onkeydown={(e) => onTabKey(e, i)}
 					class="px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors {activeTab === t.id
 						? 'border-primary-500 text-primary-700 dark:text-primary-300'
 						: 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100'}">

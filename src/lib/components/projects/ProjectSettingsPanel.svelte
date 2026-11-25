@@ -87,6 +87,7 @@
 				{#each scopedCategories as category}
 					{@const isActive = activeSection === category.id}
 					<button
+						data-tip={i18n.t(category.tipKey)}
 						onclick={() => handleSectionChange(category.id)}
 						class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-0.5
 							{isActive

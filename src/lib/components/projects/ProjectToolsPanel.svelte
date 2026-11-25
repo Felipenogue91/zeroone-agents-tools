@@ -532,7 +532,7 @@
 			{i18n.t('projComp.selectedCount', { count: selectedCount })}
 		</span>
 		<div class="flex items-center gap-2">
-			<button
+			<button data-tip={i18n.t('tip.ptools.bulkOn')}
 				onclick={() => bulkToggle(true)}
 				disabled={bulkLoading}
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
@@ -540,7 +540,7 @@
 				<Power class="w-3.5 h-3.5" />
 				{i18n.t('common.enable')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.ptools.bulkOff')}
 				onclick={() => bulkToggle(false)}
 				disabled={bulkLoading}
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
@@ -548,7 +548,7 @@
 				<PowerOff class="w-3.5 h-3.5" />
 				{i18n.t('common.disable')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.ptools.bulkRemove')}
 				onclick={bulkRemove}
 				disabled={bulkLoading}
 				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors disabled:opacity-50"
@@ -556,7 +556,7 @@
 				<Trash2 class="w-3.5 h-3.5" />
 				{i18n.t('common.remove')}
 			</button>
-			<button
+			<button data-tip={i18n.t('tip.ptools.clearSelection')}
 				onclick={clearSelection}
 				class="ml-1 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded transition-colors"
 			>
@@ -647,7 +647,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3">
-								<button
+								<button data-tip={i18n.t('tip.ptools.toggle')}
 									onclick={() => handleToggleMcp(assignment.id, !assignment.isEnabled)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
@@ -656,7 +656,7 @@
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
-								<button
+								<button data-tip={i18n.t('tip.ptools.remove')}
 									onclick={() => handleRemoveMcp(assignment.mcpId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.removeFromProject')}
@@ -707,7 +707,7 @@
 										<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({mcp.type})</span>
 									</div>
 								</div>
-								<button
+								<button data-tip={i18n.t('tip.ptools.add')}
 									onclick={() => handleAddMcp(mcp)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.addToProject')}
@@ -811,7 +811,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3 flex-shrink-0">
-								<button
+								<button data-tip={i18n.t('tip.ptools.toggle')}
 									onclick={() => handleToggleSkill(assignment.id, !assignment.isEnabled)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
@@ -820,7 +820,7 @@
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
-								<button
+								<button data-tip={i18n.t('tip.ptools.remove')}
 									onclick={() => handleRemoveSkill(assignment.skillId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.removeFromProject')}
@@ -873,7 +873,7 @@
 										{/if}
 									</div>
 								</div>
-								<button
+								<button data-tip={i18n.t('tip.ptools.add')}
 									onclick={() => handleAddSkill(skill)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
 									title={i18n.t('projComp.addToProject')}
@@ -977,7 +977,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3 flex-shrink-0">
-								<button
+								<button data-tip={i18n.t('tip.ptools.toggle')}
 									onclick={() => handleToggleSubAgent(assignment.id, !assignment.isEnabled)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
@@ -986,7 +986,7 @@
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
-								<button
+								<button data-tip={i18n.t('tip.ptools.remove')}
 									onclick={() => handleRemoveSubAgent(assignment.subagentId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.removeFromProject')}
@@ -1039,7 +1039,7 @@
 										{/if}
 									</div>
 								</div>
-								<button
+								<button data-tip={i18n.t('tip.ptools.add')}
 									onclick={() => handleAddSubAgent(agent)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
 									title={i18n.t('projComp.addToProject')}
@@ -1143,7 +1143,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3 flex-shrink-0">
-								<button
+								<button data-tip={i18n.t('tip.ptools.toggle')}
 									onclick={() => handleToggleCommand(assignment.id, !assignment.isEnabled)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
@@ -1152,7 +1152,7 @@
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
-								<button
+								<button data-tip={i18n.t('tip.ptools.remove')}
 									onclick={() => handleRemoveCommand(assignment.commandId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.removeFromProject')}
@@ -1205,7 +1205,7 @@
 										{/if}
 									</div>
 								</div>
-								<button
+								<button data-tip={i18n.t('tip.ptools.add')}
 									onclick={() => handleAddCommand(command)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
 									title={i18n.t('projComp.addToProject')}
@@ -1309,7 +1309,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3 flex-shrink-0">
-								<button
+								<button data-tip={i18n.t('tip.ptools.toggle')}
 									onclick={() => handleToggleHook(assignment.id, !assignment.isEnabled)}
 									class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {assignment.isEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}"
 									role="switch"
@@ -1318,7 +1318,7 @@
 								>
 									<span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {assignment.isEnabled ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
-								<button
+								<button data-tip={i18n.t('tip.ptools.remove')}
 									onclick={() => handleRemoveHook(assignment.hookId)}
 									class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
 									title={i18n.t('projComp.removeFromProject')}
@@ -1371,7 +1371,7 @@
 										</p>
 									</div>
 								</div>
-								<button
+								<button data-tip={i18n.t('tip.ptools.add')}
 									onclick={() => handleAddHook(hook)}
 									class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex-shrink-0"
 									title={i18n.t('projComp.addToProject')}

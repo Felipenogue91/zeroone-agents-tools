@@ -153,10 +153,10 @@
 					</div>
 					{#if g.project && g.items.length > 1}
 						{#if g.running < g.items.length}
-							<button class="btn btn-ghost text-xs px-2 py-1" onclick={() => actGroup(g.items, 'start')}><Play class="w-3.5 h-3.5 mr-1" aria-hidden="true" />{i18n.t('docker.startAll')}</button>
+							<button data-tip={i18n.t('tip.docker.startAll')} class="btn btn-ghost text-xs px-2 py-1" onclick={() => actGroup(g.items, 'start')}><Play class="w-3.5 h-3.5 mr-1" aria-hidden="true" />{i18n.t('docker.startAll')}</button>
 						{/if}
 						{#if g.running > 0}
-							<button class="btn btn-ghost text-xs px-2 py-1" onclick={() => actGroup(g.items, 'stop')}><Square class="w-3.5 h-3.5 mr-1" aria-hidden="true" />{i18n.t('docker.stopAll')}</button>
+							<button data-tip={i18n.t('tip.docker.stopAll')} class="btn btn-ghost text-xs px-2 py-1" onclick={() => actGroup(g.items, 'stop')}><Square class="w-3.5 h-3.5 mr-1" aria-hidden="true" />{i18n.t('docker.stopAll')}</button>
 						{/if}
 					{/if}
 				</header>
@@ -175,12 +175,12 @@
 							</div>
 							<div class="flex items-center gap-1 shrink-0">
 								{#if c.state === 'running'}
-									<button class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'restart')} title={i18n.t('docker.restart')} aria-label="{i18n.t('docker.restart')} {c.name}"><RotateCw class="w-4 h-4 {isBusy ? 'animate-spin' : ''}" aria-hidden="true" /></button>
-									<button class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'stop')} title={i18n.t('docker.stop')} aria-label="{i18n.t('docker.stop')} {c.name}"><Square class="w-4 h-4" aria-hidden="true" /></button>
+									<button data-tip={i18n.t('tip.docker.restart')} class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'restart')} title={i18n.t('docker.restart')} aria-label="{i18n.t('docker.restart')} {c.name}"><RotateCw class="w-4 h-4 {isBusy ? 'animate-spin' : ''}" aria-hidden="true" /></button>
+									<button data-tip={i18n.t('tip.docker.stop')} class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'stop')} title={i18n.t('docker.stop')} aria-label="{i18n.t('docker.stop')} {c.name}"><Square class="w-4 h-4" aria-hidden="true" /></button>
 								{:else}
-									<button class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'start')} title={i18n.t('docker.start')} aria-label="{i18n.t('docker.start')} {c.name}"><Play class="w-4 h-4" aria-hidden="true" /></button>
+									<button data-tip={i18n.t('tip.docker.start')} class="btn btn-ghost p-1.5" disabled={isBusy} onclick={() => act(c, 'start')} title={i18n.t('docker.start')} aria-label="{i18n.t('docker.start')} {c.name}"><Play class="w-4 h-4" aria-hidden="true" /></button>
 								{/if}
-								<button class="btn btn-ghost p-1.5" onclick={() => openLogs(c)} title={i18n.t('docker.logs')} aria-label="{i18n.t('docker.logs')} {c.name}"><ScrollText class="w-4 h-4" aria-hidden="true" /></button>
+								<button data-tip={i18n.t('tip.docker.logs')} class="btn btn-ghost p-1.5" onclick={() => openLogs(c)} title={i18n.t('docker.logs')} aria-label="{i18n.t('docker.logs')} {c.name}"><ScrollText class="w-4 h-4" aria-hidden="true" /></button>
 							</div>
 						</li>
 					{/each}
@@ -197,7 +197,7 @@
 		<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-gray-50 dark:bg-gray-900 rounded-lg p-3 max-h-[70vh] overflow-auto">{logs.lines.map((l) => l.message).join('\n') || i18n.t('docker.noLogs')}</pre>
 	{/if}
 	{#snippet footer()}
-		<button class="btn btn-ghost" onclick={() => logs && openLogs(logs.c)}>{i18n.t('docker.reloadLogs')}</button>
+		<button data-tip={i18n.t('tip.docker.reloadLogs')} class="btn btn-ghost" onclick={() => logs && openLogs(logs.c)}>{i18n.t('docker.reloadLogs')}</button>
 		<button class="btn btn-primary" onclick={() => (logs = null)}>{i18n.t('docker.close')}</button>
 	{/snippet}
 </SidePanel>

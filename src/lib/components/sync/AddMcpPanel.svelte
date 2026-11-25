@@ -105,8 +105,8 @@
 	<fieldset class="space-y-1">
 		<legend class="text-body font-medium">{i18n.t('sync.add.type')}</legend>
 		<div class="flex gap-2">
-			<button type="button" class="btn {kind === 'stdio' ? 'btn-primary' : 'btn-secondary'}" aria-pressed={kind === 'stdio'} onclick={() => pickTemplate('stdio')}>{i18n.t('sync.add.local')}</button>
-			<button type="button" class="btn {kind === 'http' ? 'btn-primary' : 'btn-secondary'}" aria-pressed={kind === 'http'} onclick={() => pickTemplate('http')}>{i18n.t('sync.add.remote')}</button>
+			<button data-tip={i18n.t('tip.add.local')} type="button" class="btn {kind === 'stdio' ? 'btn-primary' : 'btn-secondary'}" aria-pressed={kind === 'stdio'} onclick={() => pickTemplate('stdio')}>{i18n.t('sync.add.local')}</button>
+			<button data-tip={i18n.t('tip.add.remote')} type="button" class="btn {kind === 'http' ? 'btn-primary' : 'btn-secondary'}" aria-pressed={kind === 'http'} onclick={() => pickTemplate('http')}>{i18n.t('sync.add.remote')}</button>
 		</div>
 	</fieldset>
 	<label class="block space-y-1">
@@ -127,6 +127,6 @@
 	{#if error}<p class="text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>{/if}
 	{#snippet footer()}
 		<button class="btn btn-ghost" onclick={onClose}>{i18n.t('sync.panel.cancel')}</button>
-		<button class="btn btn-primary" onclick={submit}>{i18n.t('sync.add.submit')}</button>
+		<button data-tip={i18n.t('tip.add.submit')} class="btn btn-primary" onclick={submit}>{i18n.t('sync.add.submit')}</button>
 	{/snippet}
 </SidePanel>

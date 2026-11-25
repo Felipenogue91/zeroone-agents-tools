@@ -264,7 +264,7 @@
 			{i18n.t('sync.lib.onlyProblems')}
 		</label>
 		{#if hasFilters}
-			<button class="btn btn-ghost text-xs px-2 py-1" onclick={clearFilters}><X class="w-3 h-3 mr-1" aria-hidden="true" />{i18n.t('sync.lib.clear')}</button>
+			<button data-tip={i18n.t('tip.lib.clearFilters')} class="btn btn-ghost text-xs px-2 py-1" onclick={clearFilters}><X class="w-3 h-3 mr-1" aria-hidden="true" />{i18n.t('sync.lib.clear')}</button>
 		{/if}
 		<div class="flex-1"></div>
 		{#if kind === 'mcp'}
@@ -274,7 +274,7 @@
 			</button>
 		{/if}
 		{#if onAdd}
-			<button class="btn btn-primary" onclick={onAdd}><Plus class="w-4 h-4 mr-1.5" aria-hidden="true" />{addLabel ?? i18n.t('sync.lib.addMcp')}</button>
+			<button data-tip={i18n.t('tip.lib.add')} class="btn btn-primary" onclick={onAdd}><Plus class="w-4 h-4 mr-1.5" aria-hidden="true" />{addLabel ?? i18n.t('sync.lib.addMcp')}</button>
 		{/if}
 	</div>
 
@@ -283,13 +283,13 @@
 		<div class="px-6 py-2 border-b border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-950/40 flex items-center gap-2 flex-wrap text-sm" role="region" aria-label={i18n.t('sync.matrix.bulkLabel')}>
 			<span class="font-medium">{i18n.t('sync.matrix.selected', { n: selectedRows.length })}</span>
 			<span class="text-meta ml-2">{i18n.t('sync.matrix.turnOnIn')}</span>
-			{#each CLIS as cli (cli)}<button class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk([cli], true)}>{CLI_SHORT[cli]}</button>{/each}
-			<button class="btn btn-primary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk(CLIS, true)}>{i18n.t('sync.matrix.allThree')}</button>
+			{#each CLIS as cli (cli)}<button data-tip={i18n.t('tip.lib.bulkOnCli', { cli: CLI_LABEL[cli] })} class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk([cli], true)}>{CLI_SHORT[cli]}</button>{/each}
+			<button data-tip={i18n.t('tip.lib.bulkOnAll')} class="btn btn-primary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk(CLIS, true)}>{i18n.t('sync.matrix.allThree')}</button>
 			<span class="text-meta ml-2">{i18n.t('sync.matrix.turnOffIn')}</span>
-			{#each CLIS as cli (cli)}<button class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk([cli], false)}>{CLI_SHORT[cli]}</button>{/each}
-			<button class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk(CLIS, false)}>{i18n.t('sync.matrix.allThree')}</button>
+			{#each CLIS as cli (cli)}<button data-tip={i18n.t('tip.lib.bulkOffCli', { cli: CLI_LABEL[cli] })} class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk([cli], false)}>{CLI_SHORT[cli]}</button>{/each}
+			<button data-tip={i18n.t('tip.lib.bulkOffAll')} class="btn btn-secondary text-xs px-2 py-1" disabled={bulkBusy} onclick={() => bulk(CLIS, false)}>{i18n.t('sync.matrix.allThree')}</button>
 			<div class="flex-1"></div>
-			<button class="btn btn-ghost text-xs px-2 py-1" onclick={() => (selected = new Set())}>{i18n.t('sync.matrix.clearSelection')}</button>
+			<button data-tip={i18n.t('tip.lib.clearSelection')} class="btn btn-ghost text-xs px-2 py-1" onclick={() => (selected = new Set())}>{i18n.t('sync.matrix.clearSelection')}</button>
 		</div>
 	{/if}
 
@@ -301,11 +301,11 @@
 				<!-- Header -->
 				<div role="row" class="{grid} px-6 py-2 text-meta font-medium border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
 					<span role="columnheader"><input type="checkbox" class="rounded border-gray-300 dark:border-gray-600" checked={allSelected} onchange={toggleSelectAll} aria-label={i18n.t('sync.matrix.selectAll')} /></span>
-					<button role="columnheader" class="text-left flex items-center gap-1 hover:text-gray-900 dark:hover:text-white" onclick={() => sortBy('name')} aria-sort={sortKey === 'name' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+					<button data-tip={i18n.t('tip.lib.sortName')} role="columnheader" class="text-left flex items-center gap-1 hover:text-gray-900 dark:hover:text-white" onclick={() => sortBy('name')} aria-sort={sortKey === 'name' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
 						{i18n.t('sync.matrix.name')} ({filtered.length})
 						{#if sortKey === 'name'}<ArrowUp class="w-3 h-3 {sortAsc ? '' : 'rotate-180'}" aria-hidden="true" />{:else}<ArrowUpDown class="w-3 h-3 opacity-40" aria-hidden="true" />{/if}
 					</button>
-					<button role="columnheader" class="text-left flex items-center gap-1 hover:text-gray-900 dark:hover:text-white" onclick={() => sortBy('origin')} aria-sort={sortKey === 'origin' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+					<button data-tip={i18n.t('tip.lib.sortOrigin')} role="columnheader" class="text-left flex items-center gap-1 hover:text-gray-900 dark:hover:text-white" onclick={() => sortBy('origin')} aria-sort={sortKey === 'origin' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
 						{i18n.t('sync.lib.origin')}
 						{#if sortKey === 'origin'}<ArrowUp class="w-3 h-3 {sortAsc ? '' : 'rotate-180'}" aria-hidden="true" />{:else}<ArrowUpDown class="w-3 h-3 opacity-40" aria-hidden="true" />{/if}
 					</button>
@@ -340,7 +340,7 @@
 				{#if filtered.length === 0}
 					<div class="flex flex-col items-center justify-center text-center py-16 px-6 gap-3">
 						<p class="text-body font-medium">{rows.length === 0 ? i18n.t('sync.lib.emptyTitle') : i18n.t('sync.lib.noMatch')}</p>
-						{#if hasFilters}<button class="btn btn-secondary" onclick={clearFilters}>{i18n.t('sync.lib.clear')}</button>{/if}
+						{#if hasFilters}<button data-tip={i18n.t('tip.lib.clearFilters')} class="btn btn-secondary" onclick={clearFilters}>{i18n.t('sync.lib.clear')}</button>{/if}
 					</div>
 				{/if}
 
@@ -355,7 +355,7 @@
 					<div role="row" class="{grid} px-6 py-1.5 border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/30 {selected.has(r.uid) ? 'bg-primary-50/60 dark:bg-primary-950/30' : ''}">
 						<span role="cell"><input type="checkbox" class="rounded border-gray-300 dark:border-gray-600" checked={selected.has(r.uid)} onchange={() => toggleSelect(r)} aria-label={i18n.t('sync.matrix.selectRow', { name: r.name })} /></span>
 						<span role="cell" class="min-w-0">
-							<button class="text-left w-full min-w-0 flex items-center gap-1.5 group" onclick={() => onOpen(r)}>
+							<button data-tip={i18n.t('tip.lib.openItem')} class="text-left w-full min-w-0 flex items-center gap-1.5 group" onclick={() => onOpen(r)}>
 								<span class="font-medium text-sm text-gray-900 dark:text-white truncate group-hover:underline">{r.name}</span>
 								{#if problem}<TriangleAlert class="w-3.5 h-3.5 shrink-0 text-amber-500" aria-label={i18n.t('sync.lib.problem')} />{/if}
 							</button>

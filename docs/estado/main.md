@@ -2,7 +2,7 @@
 
 ## Fazendo agora
 
-Frente **interface didática** (pedido do Felipe em 2026-11-24 21:00): todo botão e aba com explicação ao parar o mouse (janelinha global `GlobalTooltip`, `data-tip`/`data-tip-title`/`data-tip-side`, 700 ms), dizendo o que faz e a dor que resolve. Feito: cofre no importar + cópia do Claude (f8609f3), menu lateral e cabeçalho. Falta: botões das telas principais (Início, Projetos, Biblioteca, CLIs, Contexto, Containers), telas do "Claude Code avançado", depois empacotar/instalar 3.21.x.
+Frente **interface didática** (pedido do Felipe em 2026-11-24 21:00): todo botão e aba com explicação ao parar o mouse (janelinha global `GlobalTooltip`, `data-tip`/`data-tip-title`/`data-tip-side`, 700 ms), dizendo o que faz e a dor que resolve. Feito: cofre no importar + cópia do Claude (f8609f3), menu lateral e cabeçalho (9be8389), telas principais (Início, Biblioteca, Projetos, CLIs, Contexto, Containers, Code Forest) e categorias de Configurações. Ajudante pra pôr explicação: scratchpad addtip.py (anchor único → data-tip na tag anterior + chaves pt/en). Falta: telas do "Claude Code avançado", depois empacotar/instalar.
 
 
 Frente **aba Contexto**: Claude Code, **Codex e agy feitos** (sem push). Aguardando o Felipe conferir em `/context` no `npm run tauri dev`.

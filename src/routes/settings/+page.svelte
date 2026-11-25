@@ -111,6 +111,7 @@
 						aria-controls="settings-tabpanel"
 						id="tab-{category.id}"
 						tabindex={isActive ? 0 : -1}
+						data-tip={i18n.t(category.tipKey)}
 						onclick={() => switchTab(category.id)}
 						onkeydown={(e) => handleTabKeydown(e, scopedCategories)}
 						class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-0.5
@@ -138,6 +139,7 @@
 						aria-controls="settings-tabpanel"
 						id="tab-{category.id}"
 						tabindex={isActive ? 0 : -1}
+						data-tip={i18n.t(category.tipKey)}
 						onclick={() => switchTab(category.id)}
 						onkeydown={(e) => handleTabKeydown(e, standaloneCategories)}
 						class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-0.5

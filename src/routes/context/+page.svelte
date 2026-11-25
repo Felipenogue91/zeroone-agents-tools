@@ -260,7 +260,7 @@
 		<section class="card space-y-3" aria-label={i18n.t('context.folder')}>
 			<div class="flex flex-wrap items-center gap-2" role="tablist" aria-label={i18n.t('context.cli')}>
 				{#each CLIS as c (c.key)}
-					<button
+					<button data-tip={i18n.t('tip.context.pickCli', { cli: c.label })}
 						role="tab"
 						aria-selected={cli === c.key}
 						class="btn {cli === c.key ? 'btn-primary' : 'btn-secondary'}"
@@ -364,8 +364,8 @@
 						</div>
 						{#if turns.length > 1}
 							<div class="flex gap-1" role="group" aria-label={i18n.t('context.turnsTitle')}>
-								<button class="btn {turnSort === 'order' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'order'} onclick={() => (turnSort = 'order')}>{i18n.t('context.sortOrder')}</button>
-								<button class="btn {turnSort === 'growth' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'growth'} onclick={() => (turnSort = 'growth')}>{i18n.t('context.sortGrowth')}</button>
+								<button data-tip={i18n.t('tip.context.sortOrder')} class="btn {turnSort === 'order' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'order'} onclick={() => (turnSort = 'order')}>{i18n.t('context.sortOrder')}</button>
+								<button data-tip={i18n.t('tip.context.sortGrowth')} class="btn {turnSort === 'growth' ? 'btn-primary' : 'btn-ghost'}" aria-pressed={turnSort === 'growth'} onclick={() => (turnSort = 'growth')}>{i18n.t('context.sortGrowth')}</button>
 							</div>
 						{/if}
 					</div>
@@ -493,10 +493,10 @@
 												{#if confirmHook === h.id}
 													<div class="flex items-center gap-2">
 														<button class="btn btn-ghost" onclick={() => (confirmHook = null)}>{i18n.t('context.cancel')}</button>
-														<button class="btn btn-primary" onclick={() => runHook(h.id)}>{i18n.t('context.runConfirm')}</button>
+														<button data-tip={i18n.t('tip.context.runConfirm')} class="btn btn-primary" onclick={() => runHook(h.id)}>{i18n.t('context.runConfirm')}</button>
 													</div>
 												{:else}
-													<button class="btn btn-secondary" disabled={runningHook !== null} onclick={() => (confirmHook = h.id)}>
+													<button data-tip={i18n.t('tip.context.runHook')} class="btn btn-secondary" disabled={runningHook !== null} onclick={() => (confirmHook = h.id)}>
 														<Play class="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />{runningHook === h.id ? i18n.t('context.running') : i18n.t('context.run')}
 													</button>
 												{/if}

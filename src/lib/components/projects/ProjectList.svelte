@@ -76,7 +76,7 @@
 			</p>
 		</div>
 		{#if onAddProject}
-			<button onclick={onAddProject} class="btn btn-primary">
+			<button data-tip={i18n.t('tip.projects.add')} onclick={onAddProject} class="btn btn-primary">
 				<Plus class="w-4 h-4 mr-2" />
 				{i18n.t('projComp.addProject')}
 			</button>
@@ -97,7 +97,7 @@
 		<div class="card">
 			<EmptyState icon={FolderOpen} title={i18n.t('projComp.noProjects')} description={i18n.t('projComp.noProjectsDesc')}>
 				{#if onAddProject}
-					<button onclick={onAddProject} class="btn btn-primary">
+					<button data-tip={i18n.t('tip.projects.add')} onclick={onAddProject} class="btn btn-primary">
 						<Plus class="w-4 h-4 mr-2" />
 						{i18n.t('projComp.addFirstProject')}
 					</button>

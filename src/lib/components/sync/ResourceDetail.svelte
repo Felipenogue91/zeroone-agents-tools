@@ -82,7 +82,7 @@
 				<div class="flex items-center">
 					<h3 class="text-meta uppercase tracking-wide font-semibold flex-1">{i18n.t('sync.detail.config')}</h3>
 					{#if !editing && resource.kind === 'mcp'}
-						<button class="btn btn-ghost text-xs px-2 py-1" onclick={startEdit}><Pencil class="w-3 h-3 mr-1" aria-hidden="true" />{i18n.t('sync.detail.edit')}</button>
+						<button data-tip={i18n.t('tip.detail.edit')} class="btn btn-ghost text-xs px-2 py-1" onclick={startEdit}><Pencil class="w-3 h-3 mr-1" aria-hidden="true" />{i18n.t('sync.detail.edit')}</button>
 					{/if}
 				</div>
 				{#if editing}
@@ -94,7 +94,7 @@
 					<p class="text-meta">{i18n.t('sync.detail.secretsHint')}</p>
 					<div class="flex gap-2 justify-end">
 						<button class="btn btn-ghost" onclick={() => (editing = false)}>{i18n.t('sync.panel.cancel')}</button>
-						<button class="btn btn-primary" onclick={saveEdit}>{i18n.t('sync.detail.save')}</button>
+						<button data-tip={i18n.t('tip.detail.save')} class="btn btn-primary" onclick={saveEdit}>{i18n.t('sync.detail.save')}</button>
 					</div>
 				{:else}
 					<pre class="font-mono text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto">{JSON.stringify(resource.config, null, 2)}</pre>
@@ -142,9 +142,9 @@
 			{#if confirmDelete}
 				<span class="text-body mr-auto">{i18n.t('sync.detail.confirmRemove')}</span>
 				<button class="btn btn-ghost" onclick={() => (confirmDelete = false)}>{i18n.t('sync.panel.cancel')}</button>
-				<button class="btn bg-red-600 text-white hover:bg-red-700" onclick={remove}>{i18n.t('sync.detail.remove')}</button>
+				<button data-tip={i18n.t('tip.detail.removeConfirm')} class="btn bg-red-600 text-white hover:bg-red-700" onclick={remove}>{i18n.t('sync.detail.remove')}</button>
 			{:else}
-				<button class="btn btn-ghost text-red-600 dark:text-red-400 mr-auto" onclick={() => (confirmDelete = true)}>
+				<button data-tip={i18n.t('tip.detail.remove')} class="btn btn-ghost text-red-600 dark:text-red-400 mr-auto" onclick={() => (confirmDelete = true)}>
 					<Trash2 class="w-4 h-4 mr-1.5" aria-hidden="true" />{i18n.t('sync.detail.remove')}
 				</button>
 				<button class="btn btn-secondary" onclick={onClose}>{i18n.t('sync.panel.close')}</button>

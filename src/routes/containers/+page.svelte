@@ -96,17 +96,17 @@
 			{/if}
 		</div>
 		<div class="flex gap-2">
-			<a href="/containers/templates"
+			<a data-tip={i18n.t('tip.containers.templates')} href="/containers/templates"
 				class="btn btn-secondary gap-2">
 				<LayoutTemplate class="w-4 h-4" aria-hidden="true" />
 				{i18n.t('containers.templates')}
 			</a>
-			<a href="/containers/hosts"
+			<a data-tip={i18n.t('tip.containers.hosts')} href="/containers/hosts"
 				class="btn btn-secondary gap-2">
 				<Server class="w-4 h-4" aria-hidden="true" />
 				{i18n.t('containers.hosts')}
 			</a>
-			<button onclick={() => showAddContainer = true} class="btn btn-primary gap-2">
+			<button data-tip={i18n.t('tip.containers.new')} onclick={() => showAddContainer = true} class="btn btn-primary gap-2">
 				<Plus class="w-4 h-4" aria-hidden="true" />
 				{i18n.t('containers.newContainer')}
 			</button>

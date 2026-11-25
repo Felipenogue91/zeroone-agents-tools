@@ -33,6 +33,13 @@ describe('GlobalTooltip.tipTarget', () => {
 		expect(root.querySelector('p')!.title).toBe('/caminho/longo');
 	});
 
+	it('drops the native title when there is an explanation', () => {
+		const root = html('<button data-tip="Longa" title="Curta">x</button>');
+		const b = root.querySelector('button')!;
+		expect(tipTarget(b)).toBe(b);
+		expect(b.hasAttribute('title')).toBe(false);
+	});
+
 	it('ignores empty explanations', () => {
 		const root = html('<button data-tip="  ">x</button>');
 		expect(tipTarget(root.querySelector('button'))).toBeNull();
