@@ -91,7 +91,7 @@ Começar só depois que a sessão do antigravity commitar as mudanças de UI pen
 7. Painel lateral de detalhe com prévia do diff.
 8. Ctrl+K (command palette).
 9. Copy: pt-BR por padrão (screenshots saíram em EN — checar detecção), tirar jargão ("Unified control plane", "Gateway"), tooltips nos ícones do header, onboarding sem "onde você usa Claude Code".
-10. Design system: tokens, 8pt, escala 20/14/12, um acento, skeletons, empty states com ação, dark como padrão (ver `CLAUDE.md`), medir contraste AA do cinza secundário. Animações mínimas.
+10. Design system: tokens, 8pt, escala 20/14/12, um acento, skeletons, empty states com ação, dark como padrão (ver `AGENTS.md`, "Contexto de design"), medir contraste AA do cinza secundário. Animações mínimas.
 
 ## Guardrails para quem implementar
 
